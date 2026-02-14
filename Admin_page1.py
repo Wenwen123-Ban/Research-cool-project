@@ -39,7 +39,8 @@ DB_FILES = {
     'transactions': 'transactions.json',
     'ratings': 'ratings.json',
     'config': 'system_config.json',
-    'tickets': 'tickets.json'  # Password Recovery Registry
+    'tickets': 'tickets.json',  # Password Recovery Registry
+    'categories': 'categories.json'
 }
 
 ACTIVE_SESSIONS = {}
@@ -52,13 +53,21 @@ def initialize_system():
     logger.info("SYSTEM INIT: verifying database integrity...")
     for key, file_path in DB_FILES.items():
         if not os.path.exists(file_path):
-            initial_data = [] if key != 'config' else {
-                "system_version": "4.8.3",
-                "rating_enabled": True,
-                "last_reboot": datetime.now().strftime("%Y-%m-%d %H:%M")
-            }
+            if key == 'config':
+                initial_data = {
+                    "system_version": "4.8.3",
+                    "rating_enabled": True,
+                    "last_reboot": datetime.now().strftime("%Y-%m-%d %H:%M")
+                }
+            elif key == 'categories':
+                initial_data = ["General", "Mathematics", "Science", "Literature"]
+            else:
+                initial_data = []
             with open(file_path, 'w', encoding='utf-8') as f:
                 json.dump(initial_data, f, indent=4)
+
+    # Ensure categories are available and in sync with book data
+    sync_categories_with_books()
 
     # MIGRATION: Ensure status fields exist
     users = get_db('users')
@@ -92,6 +101,43 @@ def save_db(key, data):
             json.dump(data, f, indent=4, ensure_ascii=False)
     except Exception as e:
         logger.error(f"DB WRITE ERROR ({key}): {e}")
+
+def sanitize_category_name(value):
+    clean = str(value or '').strip()
+    return clean[:80] if clean else ''
+
+def get_categories():
+    categories = get_db('categories')
+    if not isinstance(categories, list):
+        categories = []
+
+    clean = []
+    for c in categories:
+        normalized = sanitize_category_name(c)
+        if normalized and normalized not in clean:
+            clean.append(normalized)
+
+    for default in ["General", "Mathematics", "Science", "Literature"]:
+        if default not in clean:
+            clean.append(default)
+    return clean
+
+def save_categories(categories):
+    unique = []
+    for c in categories:
+        normalized = sanitize_category_name(c)
+        if normalized and normalized not in unique:
+            unique.append(normalized)
+    save_db('categories', unique)
+    return unique
+
+def sync_categories_with_books():
+    categories = get_categories()
+    for b in get_db('books'):
+        cat = sanitize_category_name(b.get('category'))
+        if cat and cat not in categories:
+            categories.append(cat)
+    return save_categories(categories)
 
 # ==============================================================================
 #   SECURITY & UTILITY FUNCTIONS
@@ -193,7 +239,7 @@ def bulk_register():
     try:
         data = request.json
         raw_text = data.get('text', '')
-        category = data.get('category', 'General')
+        category = sanitize_category_name(data.get('category', 'General')) or 'General'
         clear_first = data.get('clear_first', False)
         
         books = [] if clear_first else get_db('books')
@@ -226,12 +272,14 @@ def bulk_register():
                     added += 1
                     
         save_db('books', books)
+        categories = sync_categories_with_books()
         # Return keys for both legacy and new frontend versions
         return jsonify({
             "success": True, 
             "added": added, 
             "items_added": added, 
-            "total_in_db": len(books)
+            "total_in_db": len(books),
+            "categories": categories
         })
     except Exception as e:
         logger.error(f"Bulk Import Failed: {e}")
@@ -378,6 +426,38 @@ def api_login():
 @app.route('/api/books')
 def api_get_books(): return jsonify(run_auto_sync_engine())
 
+@app.route('/api/categories')
+def api_get_categories():
+    return jsonify(sync_categories_with_books())
+
+@app.route('/api/categories', methods=['POST'])
+def api_add_category():
+    category = sanitize_category_name(request.json.get('category'))
+    if not category:
+        return jsonify({"success": False, "message": "Invalid category name"}), 400
+
+    categories = get_categories()
+    if category in categories:
+        return jsonify({"success": True, "categories": categories, "created": False})
+
+    categories.append(category)
+    categories = save_categories(categories)
+    return jsonify({"success": True, "categories": categories, "created": True})
+
+@app.route('/api/categories/delete', methods=['POST'])
+def api_delete_category():
+    category = sanitize_category_name(request.json.get('category'))
+    if not category:
+        return jsonify({"success": False, "message": "Invalid category name"}), 400
+
+    books_using = [b for b in get_db('books') if sanitize_category_name(b.get('category')) == category]
+    if books_using:
+        return jsonify({"success": False, "message": "Category is in use by existing books"}), 400
+
+    categories = [c for c in get_categories() if c != category]
+    save_categories(categories)
+    return jsonify({"success": True, "categories": categories})
+
 @app.route('/api/users')
 def api_get_users(): return jsonify(get_db('users'))
 
@@ -400,8 +480,11 @@ def api_update_book():
     books = get_db('books')
     for b in books:
         if b['book_no'] == data['book_no']:
+            if 'category' in data:
+                data['category'] = sanitize_category_name(data['category']) or 'General'
             b.update({k:v for k,v in data.items() if k in b})
             save_db('books', books)
+            sync_categories_with_books()
             return jsonify({"success": True})
     return jsonify({"success": False}), 404
 
@@ -410,6 +493,44 @@ def api_del_book():
     data = request.json
     books = [b for b in get_db('books') if b['book_no'] != data['book_no']]
     save_db('books', books)
+    sync_categories_with_books()
+    return jsonify({"success": True})
+
+@app.route('/api/update_member', methods=['POST'])
+def api_update_member():
+    data = request.json
+    school_id = str(data.get('school_id', '')).strip().lower()
+    name = str(data.get('name', '')).strip()
+    target_type = str(data.get('type', 'student')).strip().lower()
+
+    if not school_id or not name:
+        return jsonify({"success": False, "message": "Missing required fields"}), 400
+
+    db_key = 'admins' if target_type == 'admin' else 'users'
+    records = get_db(db_key)
+    for row in records:
+        if str(row.get('school_id', '')).strip().lower() == school_id:
+            row['name'] = name
+            save_db(db_key, records)
+            return jsonify({"success": True})
+    return jsonify({"success": False, "message": "Member not found"}), 404
+
+@app.route('/api/delete_member', methods=['POST'])
+def api_delete_member():
+    data = request.json
+    school_id = str(data.get('school_id', '')).strip().lower()
+    target_type = str(data.get('type', 'student')).strip().lower()
+
+    if not school_id:
+        return jsonify({"success": False, "message": "Missing school_id"}), 400
+
+    db_key = 'admins' if target_type == 'admin' else 'users'
+    records = get_db(db_key)
+    filtered = [r for r in records if str(r.get('school_id', '')).strip().lower() != school_id]
+    if len(filtered) == len(records):
+        return jsonify({"success": False, "message": "Member not found"}), 404
+
+    save_db(db_key, filtered)
     return jsonify({"success": True})
 
 @app.route('/api/approve_user', methods=['POST'])
