@@ -1,0 +1,30 @@
+diff a/Admin_page1.py b/Admin_page1.py	(rejected hunks)
+@@ -551,26 +672,26 @@ def api_submit_rating():
+ 
+     ratings = get_db('ratings')
+     ratings.append({
+         "rating_id": str(uuid.uuid4())[:10],
+         "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+         "school_id": s_id,
+         "stars": int(data.get('stars', 5)),
+         "feedback": data.get('feedback', 'N/A'),
+         "platform": "Mobile" if is_mobile_request() else "Tablet"
+     })
+     save_db('ratings', ratings)
+     return jsonify({"success": True})
+ 
+ @app.route('/api/ratings_summary')
+ def api_get_ratings():
+     """Data feed for the Developer Analysis dashboard."""
+     return jsonify(get_db('ratings'))
+ 
+ @app.route('/Profile/<path:filename>')
+ def serve_file(filename):
+     try: return send_from_directory(app.config['UPLOAD_FOLDER'], filename)
+     except: return send_from_directory(app.config['UPLOAD_FOLDER'], 'default.png')
+ 
+ if __name__ == '__main__':
+     initialize_system()
+-    app.run(host='0.0.0.0', port=80, debug=True)
+\ No newline at end of file
++    app.run(host='0.0.0.0', port=80, debug=True)
