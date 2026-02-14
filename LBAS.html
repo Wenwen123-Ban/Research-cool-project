@@ -186,6 +186,7 @@
             <i class="fas fa-search position-absolute text-muted" style="left: 20px; top: 18px;"></i>
         </div>
         
+<<<<<<< HEAD
         <div class="filter-wrapper" id="catFilterList">
             <div class="cat-pill active" onclick="setCategoryFilter('All')">All Collection</div>
             <div class="cat-pill" onclick="setCategoryFilter('Science')">Science</div>
@@ -193,6 +194,9 @@
             <div class="cat-pill" onclick="setCategoryFilter('Literature')">Literature</div>
             <div class="cat-pill" onclick="setCategoryFilter('General')">General</div>
         </div>
+=======
+        <div class="filter-wrapper" id="catFilterList"></div>
+>>>>>>> e4ac5b40fbb07dc4c1e46b648de77c897704caac
 
         <div id="bookContainer" class="pb-5"></div>
     </div>
@@ -203,6 +207,10 @@
     let currentToken = null;
     let selectedCategory = 'All';
     let selectedStars = 5;
+<<<<<<< HEAD
+=======
+    let availableCategories = [];
+>>>>>>> e4ac5b40fbb07dc4c1e46b648de77c897704caac
 
     // --- LOGIN LOGIC ---
     async function handleLogin() {
@@ -334,6 +342,30 @@
         toggleModal('statusModal', true);
     }
 
+<<<<<<< HEAD
+=======
+    function renderCategoryFilters() {
+        const list = document.getElementById('catFilterList');
+        let html = `<div class="cat-pill ${selectedCategory === 'All' ? 'active' : ''}" onclick="setCategoryFilter('All')">All Collection</div>`;
+        availableCategories.forEach(cat => {
+            html += `<div class="cat-pill ${selectedCategory === cat ? 'active' : ''}" onclick="setCategoryFilter('${cat}')">${cat}</div>`;
+        });
+        list.innerHTML = html;
+    }
+
+    async function fetchCategories() {
+        try {
+            const res = await fetch('/api/categories');
+            const cats = await res.json();
+            availableCategories = Array.isArray(cats) ? cats : [];
+            renderCategoryFilters();
+        } catch (e) {
+            availableCategories = ['General', 'Mathematics', 'Science', 'Literature'];
+            renderCategoryFilters();
+        }
+    }
+
+>>>>>>> e4ac5b40fbb07dc4c1e46b648de77c897704caac
     // --- PORTAL LOGIC ---
     function initPortal(profile) {
         if(!profile) return logout();
@@ -356,9 +388,17 @@
         document.getElementById('id_val').innerText = "ID: " + profile.school_id;
         document.getElementById('user_pic').src = profile.photo ? "/Profile/" + profile.photo : "/Profile/default.png";
         
+<<<<<<< HEAD
         loadData();
         checkRatingStatus();
         setInterval(loadData, 5000);
+=======
+        fetchCategories();
+        loadData();
+        checkRatingStatus();
+        setInterval(loadData, 5000);
+        setInterval(fetchCategories, 12000);
+>>>>>>> e4ac5b40fbb07dc4c1e46b648de77c897704caac
         setInterval(updateTimers, 1000);
     }
 
@@ -416,7 +456,14 @@
 
     function setCategoryFilter(cat) {
         selectedCategory = cat;
+<<<<<<< HEAD
         document.querySelectorAll('.cat-pill').forEach(p => p.classList.toggle('active', p.innerText.includes(cat) || (cat==='All' && p.innerText.includes('All'))));
+=======
+        document.querySelectorAll('#catFilterList .cat-pill').forEach(p => {
+            const isAll = cat === 'All' && p.innerText.includes('All');
+            p.classList.toggle('active', p.innerText.trim() === cat || isAll);
+        });
+>>>>>>> e4ac5b40fbb07dc4c1e46b648de77c897704caac
         loadData();
     }
 
@@ -473,6 +520,10 @@
     function logout() { localStorage.clear(); location.reload(); }
     
     window.onload = () => {
+<<<<<<< HEAD
+=======
+        fetchCategories();
+>>>>>>> e4ac5b40fbb07dc4c1e46b648de77c897704caac
         const savedID = localStorage.getItem('lbas_id');
         if(savedID) {
             // Auto-login attempt logic could go here, but for security in v4.8 request system

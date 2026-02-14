@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -270,4 +271,278 @@
     setInterval(updateAnalytics, 10000);
 </script>
 </body>
+=======
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LBAS | Developer Analytics V4.6</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/dist/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        :root { 
+            --admin-dark: #0f172a; 
+            --accent: #38bdf8; 
+            --success: #22c55e;
+            --danger: #ef4444;
+        }
+        body { background-color: #f1f5f9; font-family: 'Inter', sans-serif; color: #334155; }
+        
+        /* Header Styling */
+        .sidebar-header { 
+            background: var(--admin-dark); 
+            color: white; 
+            padding: 25px 0; 
+            border-bottom: 4px solid var(--accent);
+        }
+
+        /* Analytics Cards */
+        .stat-card { 
+            background: white; 
+            border-radius: 20px; 
+            padding: 25px; 
+            border: none; 
+            box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1);
+            transition: transform 0.2s;
+        }
+        .stat-card:hover { transform: translateY(-5px); }
+
+        .chart-container { position: relative; height: 320px; width: 100%; }
+        
+        /* Feedback List */
+        .feedback-scroll { max-height: 500px; overflow-y: auto; padding-right: 10px; }
+        .feedback-item { 
+            background: #fff; 
+            border-radius: 12px; 
+            padding: 15px; 
+            margin-bottom: 15px; 
+            border-left: 5px solid var(--accent);
+            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);
+        }
+
+        .badge-star { background: #fffbeb; color: #b45309; border: 1px solid #fde68a; font-weight: 700; }
+        
+        /* State Indicators */
+        .status-indicator { width: 12px; height: 12px; border-radius: 50%; display: inline-block; margin-right: 8px; }
+        .pulse-red { 
+            background: var(--danger); 
+            box-shadow: 0 0 0 rgba(239, 68, 68, 0.4); 
+            animation: pulse 1.5s infinite; 
+        }
+        @keyframes pulse { 
+            0% { box-shadow: 0 0 0 0px rgba(239, 68, 68, 0.7); } 
+            70% { box-shadow: 0 0 0 10px rgba(239, 68, 68, 0); } 
+            100% { box-shadow: 0 0 0 0px rgba(239, 68, 68, 0); } 
+        }
+        
+        .sync-active { color: var(--success); font-weight: 800; font-size: 0.7rem; }
+    </style>
+</head>
+<body>
+
+<div class="sidebar-header mb-5 shadow-lg">
+    <div class="container d-flex justify-content-between align-items-center">
+        <div>
+            <h3 class="m-0 fw-black"><i class="fas fa-chart-line me-3 text-info"></i>Developer Metrics</h3>
+            <p class="text-info mb-0 small opacity-75 fw-bold">LBAS CENTRAL ANALYTICS ENGINE</p>
+        </div>
+        <div class="d-flex align-items-center gap-4">
+            <div class="text-end">
+                <span id="syncText" class="sync-active"><i class="fas fa-sync fa-spin me-1"></i> LIVE STREAM ACTIVE</span>
+                <div class="text-white-50 small" id="lastUpdated">Last sync: --:--:--</div>
+            </div>
+            <button id="launchBtn" class="btn btn-info fw-bold px-4 py-2 rounded-pill" onclick="toggleRatingPeriod()">
+                INITIALIZING...
+            </button>
+        </div>
+    </div>
+</div>
+
+<div class="container pb-5">
+    <div id="systemStateBanner" class="alert alert-dark text-center fw-bold mb-5 border-0 shadow-sm py-3" style="border-radius: 15px;">
+        <span class="status-indicator" id="stateDot"></span>
+        DATA COLLECTION STATUS: <span id="stateText" class="ms-1">SYNCING WITH SERVER...</span>
+    </div>
+
+    <div class="row g-4 mb-5">
+        <div class="col-lg-7">
+            <div class="stat-card">
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <h6 class="fw-bold text-uppercase m-0">Rating Distribution</h6>
+                    <span class="badge bg-light text-dark border">Quantitative N=<span id="sampleSize">0</span></span>
+                </div>
+                <div class="chart-container">
+                    <canvas id="ratingsChart"></canvas>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-lg-5">
+            <div class="stat-card text-center d-flex flex-column justify-content-center h-100 bg-white">
+                <p class="text-muted fw-bold text-uppercase small mb-2">User Satisfaction Index</p>
+                <h1 class="display-1 fw-black text-primary mb-0" id="avgRating" style="font-size: 6rem;">0.0</h1>
+                <div id="starDisplay" class="mb-3 text-warning"></div>
+                <div class="p-3 bg-light rounded-4">
+                    <span class="h5 text-dark fw-bold d-block mb-1" id="totalVotes">0 Total Votes</span>
+                    <small class="text-muted">Aggregated from unique School IDs</small>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-12">
+            <div class="stat-card">
+                <h6 class="fw-bold mb-4 text-uppercase"><i class="fas fa-comments me-2 text-primary"></i>Qualitative User Sentiment</h6>
+                <div class="feedback-scroll" id="feedbackList">
+                    </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    let myChart;
+
+    // Toggle the rating feature globally
+    async function toggleRatingPeriod() {
+        try {
+            const res = await fetch('/api/toggle_rating', { method: 'POST' });
+            const data = await res.json();
+            updateUIState(data.is_enabled);
+        } catch (e) {
+            alert("Connection Failed: Unable to toggle system state.");
+        }
+    }
+
+    function updateUIState(isEnabled) {
+        const btn = document.getElementById('launchBtn');
+        const stateText = document.getElementById('stateText');
+        const stateDot = document.getElementById('stateDot');
+        const banner = document.getElementById('systemStateBanner');
+
+        if (isEnabled) {
+            btn.innerText = "HALT COLLECTION";
+            btn.className = "btn btn-danger fw-bold px-4 py-2 rounded-pill shadow";
+            stateText.innerText = "LIVE DATA COLLECTION ACTIVE";
+            stateText.className = "text-danger ms-1";
+            stateDot.className = "status-indicator pulse-red";
+            banner.className = "alert alert-white border-danger text-center fw-bold mb-4 shadow-sm";
+        } else {
+            btn.innerText = "START RATING PERIOD";
+            btn.className = "btn btn-success fw-bold px-4 py-2 rounded-pill shadow";
+            stateText.innerText = "IDLE - SYSTEM STANDBY";
+            stateText.className = "text-muted ms-1";
+            stateDot.className = "status-indicator bg-secondary";
+            banner.className = "alert alert-light text-center fw-bold mb-4 shadow-sm border";
+        }
+    }
+
+    async function updateAnalytics() {
+        try {
+            const res = await fetch('/api/ratings_summary');
+            const data = await res.json();
+            
+            const counts = {5:0, 4:0, 3:0, 2:0, 1:0};
+            let sum = 0;
+            
+            data.forEach(r => {
+                counts[r.stars]++;
+                sum += r.stars;
+            });
+
+            const total = data.length;
+            const avg = total > 0 ? (sum / total).toFixed(1) : "0.0";
+
+            // Update UI Elements
+            document.getElementById('avgRating').innerText = avg;
+            document.getElementById('totalVotes').innerText = `${total} Total Verdicts`;
+            document.getElementById('sampleSize').innerText = total;
+            document.getElementById('lastUpdated').innerText = `Last sync: ${new Date().toLocaleTimeString()}`;
+            
+            // Visual Stars
+            let starsHtml = '';
+            for(let i=1; i<=5; i++) {
+                starsHtml += `<i class="${i <= Math.round(avg) ? 'fas' : 'far'} fa-star fa-2x mx-1"></i>`;
+            }
+            document.getElementById('starDisplay').innerHTML = starsHtml;
+
+            updateChart(counts);
+
+            // Updated Table-less List View for cleaner Analytics
+            const listContainer = document.getElementById('feedbackList');
+            listContainer.innerHTML = data.slice().reverse().map(r => `
+                <div class="feedback-item">
+                    <div class="d-flex justify-content-between align-items-start mb-2">
+                        <div>
+                            <span class="badge badge-star me-2">${r.stars} <i class="fas fa-star"></i></span>
+                            <span class="fw-bold text-dark">${r.school_id}</span>
+                        </div>
+                        <small class="text-muted font-monospace">${r.timestamp}</small>
+                    </div>
+                    <p class="mb-2 fst-italic text-secondary">"${r.feedback || 'No qualitative data provided.'}"</p>
+                    <div class="d-flex align-items-center gap-2">
+                        <i class="fas fa-laptop-code text-muted small"></i>
+                        <small class="text-muted" style="font-size: 10px; letter-spacing: 0.5px;">${r.user_agent}</small>
+                    </div>
+                </div>
+            `).join('') || '<div class="text-center py-5 text-muted">Awaiting incoming user verdicts...</div>';
+
+        } catch (e) {
+            document.getElementById('syncText').innerHTML = "<i class='fas fa-exclamation-triangle'></i> DATABASE DISCONNECTED";
+            document.getElementById('syncText').className = "text-danger fw-bold small";
+        }
+    }
+
+    function updateChart(counts) {
+        const ctx = document.getElementById('ratingsChart').getContext('2d');
+        const chartData = [counts[1], counts[2], counts[3], counts[4], counts[5]];
+
+        if (myChart) {
+            myChart.data.datasets[0].data = chartData;
+            myChart.update();
+        } else {
+            myChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: ['1 Star', '2 Star', '3 Star', '4 Star', '5 Star'],
+                    datasets: [{
+                        data: chartData,
+                        backgroundColor: ['#f87171', '#fb923c', '#fbbf24', '#a3e635', '#4ade80'],
+                        borderRadius: 12,
+                        barThickness: 40
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: { 
+                        y: { 
+                            beginAtZero: true, 
+                            grid: { display: false },
+                            ticks: { stepSize: 1, color: '#94a3b8' } 
+                        },
+                        x: { grid: { display: false }, ticks: { color: '#94a3b8' } }
+                    }
+                }
+            });
+        }
+    }
+
+    window.onload = () => {
+        updateAnalytics();
+        // Check actual system state from server
+        fetch('/api/rating_status/DEV_CHECK').then(r => r.json()).then(d => {
+            updateUIState(d.reason !== "Period Closed");
+        });
+    };
+
+    // Fast polling for analytics (10 seconds)
+    setInterval(updateAnalytics, 10000);
+</script>
+</body>
+>>>>>>> e4ac5b40fbb07dc4c1e46b648de77c897704caac
 </html>

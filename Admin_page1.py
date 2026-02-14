@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 import os
 import json
 import uuid
@@ -52,6 +53,62 @@ ACTIVE_SESSIONS = {}
 def initialize_system():
     logger.info("SYSTEM INIT: verifying database integrity...")
     for key, file_path in DB_FILES.items():
+=======
+import os
+import json
+import uuid
+import logging
+import sys
+import operator
+import random   # REQUIRED for Ticket Codes
+import string   # REQUIRED for Ticket Codes
+from flask import Flask, render_template, request, jsonify, send_from_directory, redirect, url_for, make_response
+from datetime import datetime, timedelta
+from werkzeug.utils import secure_filename
+
+# ==============================================================================
+#   SYSTEM INITIALIZATION & CONFIGURATION
+# ==============================================================================
+
+app = Flask(__name__, template_folder='.', static_folder='.')
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s | %(levelname)s | %(message)s',
+    handlers=[logging.StreamHandler(sys.stdout)]
+)
+logger = logging.getLogger("LBAS_Command_Center")
+
+PROFILE_FOLDER = 'Profile'
+app.config['UPLOAD_FOLDER'] = PROFILE_FOLDER
+app.config['MAX_CONTENT_LENGTH'] = 32 * 1024 * 1024 
+app.config['JSONIFY_PRETTYPRINT_REGULAR'] = True
+
+if not os.path.exists(PROFILE_FOLDER):
+    os.makedirs(PROFILE_FOLDER)
+    logger.info(f"SYSTEM INIT: Created secure profile storage at ./{PROFILE_FOLDER}")
+
+# Database Map: Full restoration of all required DBs
+DB_FILES = {
+    'books': 'books.json',
+    'admins': 'admins.json',
+    'users': 'users.json',
+    'transactions': 'transactions.json',
+    'ratings': 'ratings.json',
+    'config': 'system_config.json',
+    'tickets': 'tickets.json',  # Password Recovery Registry
+    'categories': 'categories.json'
+}
+
+ACTIVE_SESSIONS = {}
+
+# ==============================================================================
+#   DATABASE ENGINE & SYNC LOGIC
+# ==============================================================================
+
+def initialize_system():
+    logger.info("SYSTEM INIT: verifying database integrity...")
+    for key, file_path in DB_FILES.items():
+>>>>>>> e4ac5b40fbb07dc4c1e46b648de77c897704caac
         if not os.path.exists(file_path):
             if key == 'config':
                 initial_data = {
@@ -68,6 +125,7 @@ def initialize_system():
 
     # Ensure categories are available and in sync with book data
     sync_categories_with_books()
+<<<<<<< HEAD
 
     # MIGRATION: Ensure status fields exist
     users = get_db('users')
@@ -99,6 +157,39 @@ def save_db(key, data):
     try:
         with open(DB_FILES[key], 'w', encoding='utf-8') as f:
             json.dump(data, f, indent=4, ensure_ascii=False)
+=======
+
+    # MIGRATION: Ensure status fields exist
+    users = get_db('users')
+    changed = False
+    for u in users:
+        if 'status' not in u:
+            u['status'] = 'approved'; changed = True
+    if changed: save_db('users', users)
+
+    # Ensure Root Admin exists
+    admins = get_db('admins')
+    if not admins:
+        admins.append({
+            "name": "System Administrator", "school_id": "admin", "password": "admin",
+            "category": "Staff", "photo": "default.png", "status": "approved", "created_at": "SYSTEM_INIT"
+        })
+        save_db('admins', admins)
+
+def get_db(key):
+    try:
+        if not os.path.exists(DB_FILES[key]): return {} if key == 'config' else []
+        with open(DB_FILES[key], 'r', encoding='utf-8') as f:
+            return json.load(f)
+    except Exception as e:
+        logger.error(f"DB READ ERROR ({key}): {e}")
+        return {} if key == 'config' else []
+
+def save_db(key, data):
+    try:
+        with open(DB_FILES[key], 'w', encoding='utf-8') as f:
+            json.dump(data, f, indent=4, ensure_ascii=False)
+>>>>>>> e4ac5b40fbb07dc4c1e46b648de77c897704caac
     except Exception as e:
         logger.error(f"DB WRITE ERROR ({key}): {e}")
 
@@ -138,6 +229,7 @@ def sync_categories_with_books():
         if cat and cat not in categories:
             categories.append(cat)
     return save_categories(categories)
+<<<<<<< HEAD
 
 # ==============================================================================
 #   SECURITY & UTILITY FUNCTIONS
@@ -271,6 +363,141 @@ def bulk_register():
                     })
                     added += 1
                     
+=======
+
+# ==============================================================================
+#   SECURITY & UTILITY FUNCTIONS
+# ==============================================================================
+
+def find_any_user(s_id):
+    s_id = str(s_id).strip().lower()
+    if not s_id: return None
+
+    for admin in get_db('admins'):
+        if str(admin.get('school_id', '')).strip().lower() == s_id:
+            admin['registry_origin'] = 'admins.json'; admin['is_staff'] = True
+            return admin
+            
+    for student in get_db('users'):
+        if str(student.get('school_id', '')).strip().lower() == s_id:
+            student['registry_origin'] = 'users.json'; student['is_staff'] = False
+            return student
+    return None
+
+def is_mobile_request():
+    ua = request.headers.get('User-Agent', '').lower()
+    return any(x in ua for x in ['mobile', 'android', 'iphone', 'ipad', 'windows phone'])
+
+def run_auto_sync_engine():
+    """
+    CRITICAL SYNC ENGINE (RESTORED):
+    1. Manages Book Reservations (Expires them after 30 mins).
+    2. Manages Ticket Requests (Deletes them after 5 mins).
+    3. Manages Overdue Calculations.
+    """
+    books = get_db('books')
+    transactions = get_db('transactions')
+    tickets = get_db('tickets')
+    now = datetime.now()
+    changes_made = False
+    
+    # 1. Sync Reservations (Expire if not claimed)
+    for t in transactions:
+        if t['status'] == 'Reserved' and 'expiry' in t:
+            try:
+                if now > datetime.strptime(t['expiry'], "%Y-%m-%d %H:%M"):
+                    t['status'] = 'Expired'
+                    for b in books:
+                        if b['book_no'] == t['book_no']:
+                            b['status'] = 'Available'; changes_made = True
+            except: pass
+            
+    # 2. Sync Recovery Tickets (Cleanup expired)
+    initial_tickets = len(tickets)
+    tickets = [t for t in tickets if datetime.strptime(t['expiry'], "%Y-%m-%d %H:%M:%S") > now]
+    if len(tickets) != initial_tickets:
+        save_db('tickets', tickets)
+
+    if changes_made:
+        save_db('books', books)
+        save_db('transactions', transactions)
+        
+    return books
+
+# ==============================================================================
+#   PAGE ROUTING (RESTORED TABLET ROUTE)
+# ==============================================================================
+
+@app.route('/')
+def index_gateway():
+    if is_mobile_request(): return redirect(url_for('lbas_site'))
+    # Pre-load data for dashboard
+    return render_template('admin_dashboard.html', 
+                           books=run_auto_sync_engine(), 
+                           users=get_db('users'), 
+                           admins=get_db('admins'))
+
+@app.route('/lbas')
+def lbas_site(): return render_template('LBAS.html')
+
+@app.route('/tablet')
+def tablet_kiosk(): 
+    """Restored Kiosk Mode for Library Tablet"""
+    return render_template('user_tablet.html')
+
+@app.route('/audit_users')
+def audit_view(): return render_template('Admin_users_list.html')
+
+@app.route('/dev/analysis')
+def dev_analysis(): return render_template('Developers_rate_analysis.html')
+
+# ==============================================================================
+#   API REGION: BULK IMPORT (FIXED & SMART)
+# ==============================================================================
+
+@app.route('/api/bulk_register', methods=['POST'])
+def bulk_register():
+    """
+    SMART BULK IMPORTER:
+    Handles '|', ',', or Space delimiters.
+    Fixes the issue where 'LIT-001, Title' was failing.
+    """
+    try:
+        data = request.json
+        raw_text = data.get('text', '')
+        category = sanitize_category_name(data.get('category', 'General')) or 'General'
+        clear_first = data.get('clear_first', False)
+        
+        books = [] if clear_first else get_db('books')
+        added = 0
+        
+        for line in raw_text.strip().split('\n'):
+            line = line.strip()
+            if not line: continue
+            
+            # DELIMITER DETECTION
+            if '|' in line:
+                parts = [p.strip() for p in line.split('|')]
+            elif ',' in line:
+                parts = [p.strip() for p in line.split(',', 1)]
+            else:
+                parts = line.split(maxsplit=1)
+
+            if len(parts) >= 2:
+                b_no = parts[0].strip().upper().replace(',', '') # Clean ID
+                title = parts[1].strip()
+                
+                # Duplicate Check
+                if not any(b['book_no'] == b_no for b in books):
+                    books.append({
+                        "book_no": b_no, 
+                        "title": title, 
+                        "status": "Available",
+                        "category": category
+                    })
+                    added += 1
+                    
+>>>>>>> e4ac5b40fbb07dc4c1e46b648de77c897704caac
         save_db('books', books)
         categories = sync_categories_with_books()
         # Return keys for both legacy and new frontend versions
@@ -281,6 +508,7 @@ def bulk_register():
             "total_in_db": len(books),
             "categories": categories
         })
+<<<<<<< HEAD
     except Exception as e:
         logger.error(f"Bulk Import Failed: {e}")
         return jsonify({"success": False, "message": str(e)}), 500
@@ -423,6 +651,150 @@ def api_login():
 #   API REGION: ASSET CRUD & TRANSACTIONS (RESTORED KIOSK LOGIC)
 # ==============================================================================
 
+=======
+    except Exception as e:
+        logger.error(f"Bulk Import Failed: {e}")
+        return jsonify({"success": False, "message": str(e)}), 500
+
+# ==============================================================================
+#   API REGION: TICKET SYSTEM (V4.8.2)
+# ==============================================================================
+
+@app.route('/api/request_reset', methods=['POST'])
+def api_request_reset():
+    """Step 1: Student requests ticket."""
+    s_id = str(request.json.get('school_id', '')).strip().lower()
+    if not find_any_user(s_id): return jsonify({"success": False, "message": "ID not found"}), 404
+    
+    tickets = get_db('tickets')
+    tickets = [t for t in tickets if t['school_id'] != s_id] # Clean old requests
+    
+    tickets.append({
+        "school_id": s_id, "status": "pending", "code": None,
+        "expiry": (datetime.now() + timedelta(minutes=5)).strftime("%Y-%m-%d %H:%M:%S")
+    })
+    save_db('tickets', tickets)
+    return jsonify({"success": True})
+
+@app.route('/api/check_ticket_status', methods=['POST'])
+def api_check_ticket():
+    """Step 2: Mobile checks if approved."""
+    s_id = str(request.json.get('school_id', '')).strip().lower()
+    tickets = get_db('tickets')
+    ticket = next((t for t in tickets if t['school_id'] == s_id), None)
+    
+    if ticket and ticket['status'] == 'approved':
+        return jsonify({"status": "approved", "code": ticket['code']})
+    return jsonify({"status": "pending"})
+
+@app.route('/api/admin/tickets')
+def api_get_tickets():
+    """Step 3: Dashboard gets list."""
+    return jsonify(get_db('tickets'))
+
+@app.route('/api/admin/approve_ticket', methods=['POST'])
+def api_approve_ticket():
+    """Step 4: Admin approves & generates code."""
+    s_id = request.json.get('school_id')
+    tickets = get_db('tickets')
+    for t in tickets:
+        if t['school_id'] == s_id:
+            t['status'] = 'approved'
+            t['code'] = ''.join(random.choices(string.ascii_uppercase + string.digits, k=6))
+            save_db('tickets', tickets)
+            return jsonify({"success": True, "code": t['code']})
+    return jsonify({"success": False}), 404
+
+@app.route('/api/finalize_reset', methods=['POST'])
+def api_finalize_reset():
+    """Step 5: Apply new password."""
+    data = request.json
+    s_id = str(data.get('school_id', '')).strip().lower()
+    new_pwd = data.get('new_password')
+    code = data.get('code')
+    
+    tickets = get_db('tickets')
+    ticket = next((t for t in tickets if t['school_id'] == s_id and t['code'] == code), None)
+    
+    if ticket:
+        # Update user registry
+        for db in ['users', 'admins']:
+            registry = get_db(db)
+            updated = False
+            for u in registry:
+                if u['school_id'] == s_id:
+                    u['password'] = new_pwd
+                    updated = True
+            if updated: save_db(db, registry)
+            
+        # Consume ticket
+        save_db('tickets', [t for t in tickets if t['school_id'] != s_id])
+        return jsonify({"success": True})
+    return jsonify({"success": False}), 401
+
+# ==============================================================================
+#   API REGION: USER REGISTRATION & AUTH
+# ==============================================================================
+
+@app.route('/api/register_student', methods=['POST'])
+def api_reg_student(): return perform_registration('users', 'Student')
+
+@app.route('/api/register_librarian', methods=['POST'])
+def api_reg_staff(): return perform_registration('admins', 'Staff')
+
+def perform_registration(target_db_key, category_name):
+    if request.is_json:
+        data = request.json
+        name = data.get('name'); s_id = str(data.get('school_id')).strip().lower(); pwd = data.get('password')
+    else:
+        name = request.form.get('name'); s_id = str(request.form.get('school_id')).strip().lower(); pwd = request.form.get('password')
+
+    if find_any_user(s_id): return jsonify({"success": False, "message": "ID Exists"}), 400
+
+    photo = "default.png"
+    if 'photo' in request.files:
+        f = request.files['photo']
+        if f.filename != '':
+            ext = f.filename.split('.')[-1]
+            photo = secure_filename(f"{s_id}_{int(datetime.now().timestamp())}.{ext}")
+            f.save(os.path.join(app.config['UPLOAD_FOLDER'], photo))
+    
+    # Students = Pending, Staff = Approved
+    status = 'approved' if category_name == 'Staff' else 'pending'
+    
+    registry = get_db(target_db_key)
+    registry.append({
+        "name": name, "school_id": s_id, "password": pwd,
+        "category": category_name, "photo": photo, "status": status,
+        "created_at": datetime.now().strftime("%Y-%m-%d %H:%M")
+    })
+    save_db(target_db_key, registry)
+    return jsonify({"success": True})
+
+@app.route('/api/login', methods=['POST'])
+def api_login():
+    data = request.json
+    s_id = str(data.get('school_id', '')).strip().lower()
+    pwd = data.get('password')
+    
+    user = find_any_user(s_id)
+    if not user: return jsonify({"success": False, "message": "ID not found"}), 404
+    
+    if user['status'] == 'pending':
+        return jsonify({"success": False, "message": "Account Pending Approval"}), 401
+        
+    if user.get('password') == pwd:
+        token = str(uuid.uuid4())
+        ACTIVE_SESSIONS[s_id] = token
+        return jsonify({"success": True, "token": token, "profile": user})
+        
+    return jsonify({"success": False, "message": "Invalid Password"}), 401
+
+# ==============================================================================
+#   API REGION: ASSET CRUD & TRANSACTIONS (RESTORED KIOSK LOGIC)
+# ==============================================================================
+
+>>>>>>> e4ac5b40fbb07dc4c1e46b648de77c897704caac
 @app.route('/api/books')
 def api_get_books(): return jsonify(run_auto_sync_engine())
 
@@ -457,6 +829,7 @@ def api_delete_category():
     categories = [c for c in get_categories() if c != category]
     save_categories(categories)
     return jsonify({"success": True, "categories": categories})
+<<<<<<< HEAD
 
 @app.route('/api/users')
 def api_get_users(): return jsonify(get_db('users'))
@@ -475,6 +848,26 @@ def api_get_specific_user(s_id):
     return jsonify({"success": False}), 404
 
 @app.route('/api/update_book', methods=['POST'])
+=======
+
+@app.route('/api/users')
+def api_get_users(): return jsonify(get_db('users'))
+
+@app.route('/api/admins')
+def api_get_admins(): return jsonify(get_db('admins'))
+
+@app.route('/api/transactions')
+def api_get_transactions(): return jsonify(get_db('transactions'))
+
+@app.route('/api/user/<s_id>')
+def api_get_specific_user(s_id):
+    """Restored: Required for Tablet Kiosk to Scan User"""
+    user = find_any_user(s_id)
+    if user: return jsonify({"success": True, "profile": user})
+    return jsonify({"success": False}), 404
+
+@app.route('/api/update_book', methods=['POST'])
+>>>>>>> e4ac5b40fbb07dc4c1e46b648de77c897704caac
 def api_update_book():
     data = request.json
     books = get_db('books')
@@ -487,8 +880,13 @@ def api_update_book():
             sync_categories_with_books()
             return jsonify({"success": True})
     return jsonify({"success": False}), 404
+<<<<<<< HEAD
 
 @app.route('/api/delete_book', methods=['POST'])
+=======
+
+@app.route('/api/delete_book', methods=['POST'])
+>>>>>>> e4ac5b40fbb07dc4c1e46b648de77c897704caac
 def api_del_book():
     data = request.json
     books = [b for b in get_db('books') if b['book_no'] != data['book_no']]
@@ -532,6 +930,7 @@ def api_delete_member():
 
     save_db(db_key, filtered)
     return jsonify({"success": True})
+<<<<<<< HEAD
 
 @app.route('/api/approve_user', methods=['POST'])
 def api_approve_user():
@@ -695,3 +1094,168 @@ def serve_file(filename):
 if __name__ == '__main__':
     initialize_system()
     app.run(host='0.0.0.0', port=80, debug=True)
+=======
+
+@app.route('/api/approve_user', methods=['POST'])
+def api_approve_user():
+    data = request.json
+    users = get_db('users')
+    for u in users:
+        if u['school_id'] == data['school_id']:
+            u['status'] = 'approved'
+            save_db('users', users)
+            return jsonify({"success": True})
+    return jsonify({"success": False}), 404
+
+@app.route('/api/reject_user', methods=['POST'])
+def api_reject_user():
+    data = request.json
+    users = [u for u in get_db('users') if u['school_id'] != data['school_id']]
+    save_db('users', users)
+    return jsonify({"success": True})
+
+@app.route('/api/process_transaction', methods=['POST'])
+def api_process_trans():
+    """
+    MASTER TRANSACTION HANDLER
+    Restored: Now handles 'borrow' logic for Kiosk/Tablet.
+    """
+    data = request.json
+    b_no = data.get('book_no')
+    action = data.get('action') # 'borrow' or 'return'
+    s_id = str(data.get('school_id', '')).strip().lower()
+    
+    books = get_db('books')
+    transactions = get_db('transactions')
+    
+    # LOGIC 1: RETURN
+    if action == 'return':
+        for b in books:
+            if b['book_no'] == b_no: b['status'] = 'Available'
+        # Close all open transactions for this book
+        for t in transactions:
+            if t['book_no'] == b_no and t['status'] in ['Reserved', 'Borrowed']:
+                t['status'] = 'Returned'
+                t['return_date'] = datetime.now().strftime("%Y-%m-%d %H:%M")
+                
+    # LOGIC 2: BORROW (Restored for Tablet)
+    elif action == 'borrow':
+        target_book = next((b for b in books if b['book_no'] == b_no), None)
+        
+        # Validation: Is it available or reserved by THIS user?
+        user_reserved = any(t['book_no'] == b_no and t['school_id'] == s_id and t['status'] == 'Reserved' for t in transactions)
+        
+        if target_book and (target_book['status'] == 'Available' or user_reserved):
+            target_book['status'] = 'Borrowed'
+            
+            # Close reservation if exists
+            for t in transactions:
+                if t['book_no'] == b_no and t['status'] == 'Reserved':
+                    t['status'] = 'Converted' # Mark old reservation as done
+            
+            # Create Borrow Record
+            transactions.append({
+                "book_no": b_no, "school_id": s_id, "status": "Borrowed",
+                "date": datetime.now().strftime("%Y-%m-%d %H:%M"),
+                "expiry": (datetime.now() + timedelta(days=7)).strftime("%Y-%m-%d %H:%M") # 7 Day Loan
+            })
+        else:
+            return jsonify({"success": False, "message": "Book Unavailable"}), 400
+                
+    save_db('books', books)
+    save_db('transactions', transactions)
+    return jsonify({"success": True})
+
+@app.route('/api/reserve', methods=['POST'])
+def api_reserve():
+    data = request.json
+    b_no = data.get('book_no')
+    s_id = str(data.get('school_id', '')).strip().lower()
+    
+    books = get_db('books')
+    transactions = get_db('transactions')
+    
+    for b in books:
+        if b['book_no'] == b_no and b['status'] == 'Available':
+            b['status'] = 'Reserved'
+            transactions.append({
+                "book_no": b_no, "school_id": s_id, "status": "Reserved",
+                "date": datetime.now().strftime("%Y-%m-%d %H:%M"),
+                "expiry": (datetime.now() + timedelta(minutes=30)).strftime("%Y-%m-%d %H:%M")
+            })
+            save_db('books', books)
+            save_db('transactions', transactions)
+            return jsonify({"success": True})
+            
+    return jsonify({"success": False, "message": "Unavailable"})
+
+# ==============================================================================
+#   API REGION: DEVELOPER RATINGS (ENHANCED SYNC)
+# ==============================================================================
+
+@app.route('/dev/analysis')
+def dev_analysis_portal():
+    """Admin-only portal for rating metrics and database health."""
+    if is_mobile_request():
+        return "Access Forbidden: Desktop Analysis only.", 403
+    return render_template('Developers_rate_analysis.html')
+
+# --- RATING & FEEDBACK ENGINE ---
+
+@app.route('/api/toggle_rating', methods=['POST'])
+def api_toggle_rating():
+    """Global switch to enable/disable the rating prompt on Tablet/LBAS."""
+    config = get_db('config')
+    current = config.get('rating_enabled', False)
+    config['rating_enabled'] = not current
+    config['last_modified'] = datetime.now().strftime("%Y-%m-%d %H:%M")
+    save_db('config', config)
+    return jsonify({"success": True, "new_state": config['rating_enabled']})
+
+@app.route('/api/rating_status/<school_id>')
+def api_rating_eligibility(school_id):
+    """Checks if a user has already rated to prevent spam."""
+    config = get_db('config')
+    if not config.get('rating_enabled', False):
+        return jsonify({"show": False, "reason": "System Closed"})
+
+    ratings = get_db('ratings')
+    search_id = str(school_id).strip().lower()
+    already_done = any(str(r.get('school_id')).strip().lower() == search_id for r in ratings)
+    return jsonify({"show": not already_done})
+
+@app.route('/api/rate', methods=['POST'])
+def api_submit_rating():
+    """Saves student feedback with session token validation."""
+    data = request.json
+    s_id = str(data.get('school_id', '')).strip().lower()
+    
+    if ACTIVE_SESSIONS.get(s_id) != data.get('token'):
+        return jsonify({"success": False, "message": "Security Handshake Failed"}), 401
+
+    ratings = get_db('ratings')
+    ratings.append({
+        "rating_id": str(uuid.uuid4())[:10],
+        "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+        "school_id": s_id,
+        "stars": int(data.get('stars', 5)),
+        "feedback": data.get('feedback', 'N/A'),
+        "platform": "Mobile" if is_mobile_request() else "Tablet"
+    })
+    save_db('ratings', ratings)
+    return jsonify({"success": True})
+
+@app.route('/api/ratings_summary')
+def api_get_ratings():
+    """Data feed for the Developer Analysis dashboard."""
+    return jsonify(get_db('ratings'))
+
+@app.route('/Profile/<path:filename>')
+def serve_file(filename):
+    try: return send_from_directory(app.config['UPLOAD_FOLDER'], filename)
+    except: return send_from_directory(app.config['UPLOAD_FOLDER'], 'default.png')
+
+if __name__ == '__main__':
+    initialize_system()
+    app.run(host='0.0.0.0', port=80, debug=True)
+>>>>>>> e4ac5b40fbb07dc4c1e46b648de77c897704caac
