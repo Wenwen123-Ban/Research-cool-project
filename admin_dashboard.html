@@ -380,7 +380,8 @@
         pendingRequests = [],
         adminHistory = JSON.parse(localStorage.getItem('adminHistory') || '[]'), 
         isStaff = false, 
-        activeFilterCat = 'All';
+        activeFilterCat = 'All',
+        masterCategories = [];
 
     const editModal = new bootstrap.Modal(document.getElementById('editModal'));
 
@@ -395,17 +396,19 @@
 
     async function loadData() {
         try {
-            const [bRes, uRes, aRes, tRes] = await Promise.all([
+            const [bRes, uRes, aRes, tRes, cRes] = await Promise.all([
                 fetch('/api/books'),
                 fetch('/api/users'), 
                 fetch('/api/admins'),
-                fetch('/api/transactions')
+                fetch('/api/transactions'),
+                fetch('/api/categories')
             ]);
             
             masterBooks = await bRes.json();
             const allUsers = await uRes.json();
             masterAdmins = await aRes.json();
             masterTransactions = await tRes.json();
+            masterCategories = await cRes.json();
             
             masterUsers = allUsers.filter(u => u.status !== 'pending');
             pendingRequests = allUsers.filter(u => u.status === 'pending');
@@ -429,56 +432,79 @@
     }
 
     // --- DYNAMIC CATEGORIES (NEW FEATURE) ---
+    function getResolvedCategories() {
+        const fromBooks = masterBooks.map(b => b.category).filter(Boolean);
+        return [...new Set([...masterCategories, ...fromBooks])].sort();
+    }
+
     function renderCategoryPills() {
-        // Extract unique categories from loaded books
-        const uniqueCats = [...new Set(masterBooks.map(b => b.category))].sort();
-        // Add default ones if missing to keep UI consistent
-        const defaults = ['General', 'Mathematics', 'Science', 'Literature'];
-        defaults.forEach(d => { if(!uniqueCats.includes(d)) uniqueCats.push(d); });
-        
+        const uniqueCats = getResolvedCategories();
         const container = document.getElementById('categoryPillContainer');
-        // Preserve "All" pill
         let html = `<div class="cat-pill ${activeFilterCat==='All'?'active':''}" onclick="setCategoryFilter('All', this)">All Collections</div>`;
         
         uniqueCats.forEach(cat => {
-            html += `<div class="cat-pill ${activeFilterCat===cat?'active':''}" onclick="setCategoryFilter('${cat}', this)">${cat}</div>`;
+            html += `<div class="cat-pill ${activeFilterCat===cat?'active':''}" onclick="setCategoryFilter('${cat}', this)">${cat}${isStaff ? ` <i class='fas fa-times ms-2 text-danger' onclick="event.stopPropagation(); deleteCategory('${cat}')"></i>` : ''}</div>`;
         });
         container.innerHTML = html;
-        
-        // Also update the dropdowns (Bulk & Edit)
+
+        if (activeFilterCat !== 'All' && !uniqueCats.includes(activeFilterCat)) {
+            activeFilterCat = 'All';
+        }
         updateDropdowns(uniqueCats);
     }
 
     function updateDropdowns(categories) {
         const bulkSel = document.getElementById('bulkCat');
         const editSel = document.getElementById('editCategory');
-        
-        // Only update if we have new categories to show (simple check)
-        if(bulkSel.options.length < categories.length) {
-            // Keep current selection
-            const currentBulk = bulkSel.value;
-            bulkSel.innerHTML = categories.map(c => `<option value="${c}">Target: ${c}</option>`).join('');
-            bulkSel.value = currentBulk;
+        const currentBulk = bulkSel.value;
+        const currentEdit = editSel.value;
 
-            const currentEdit = editSel.value;
-            editSel.innerHTML = categories.map(c => `<option value="${c}">${c}</option>`).join('');
-            editSel.value = currentEdit;
-        }
+        bulkSel.innerHTML = categories.map(c => `<option value="${c}">Target: ${c}</option>`).join('');
+        editSel.innerHTML = categories.map(c => `<option value="${c}">${c}</option>`).join('');
+
+        bulkSel.value = categories.includes(currentBulk) ? currentBulk : (categories[0] || 'General');
+        editSel.value = categories.includes(currentEdit) ? currentEdit : (categories[0] || 'General');
     }
 
-    function addCustomCategory() {
+    async function addCustomCategory() {
         const newCat = prompt("Enter Name for New Category:");
-        if(newCat && newCat.trim() !== "") {
-            const clean = newCat.trim();
-            // Add to dropdown immediately for use
-            const bulkSel = document.getElementById('bulkCat');
-            const opt = document.createElement("option");
-            opt.value = clean;
-            opt.text = "Target: " + clean;
-            bulkSel.add(opt);
-            bulkSel.value = clean; // Select it automatically
-            alert(`Category "${clean}" created. You can now import books into it.`);
+        if(!newCat || newCat.trim() === "") return;
+
+        const clean = newCat.trim();
+        const res = await fetch('/api/categories', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({ category: clean })
+        });
+        const data = await res.json();
+
+        if(!data.success) {
+            return alert(data.message || 'Failed to create category.');
         }
+
+        masterCategories = data.categories || masterCategories;
+        renderCategoryPills();
+        document.getElementById('bulkCat').value = clean;
+        alert(data.created ? `Category "${clean}" created.` : `Category "${clean}" already exists.`);
+    }
+
+
+    async function deleteCategory(cat) {
+        if(!isStaff) return;
+        if(!confirm(`Delete category "${cat}"? This works only when no books use it.`)) return;
+
+        const res = await fetch('/api/categories/delete', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({ category: cat })
+        });
+        const data = await res.json();
+
+        if(!data.success) return alert(data.message || 'Unable to delete category.');
+
+        masterCategories = data.categories || [];
+        renderCategoryPills();
+        filterInventory();
     }
 
     // --- BULK REGISTER (FIXED) ---
