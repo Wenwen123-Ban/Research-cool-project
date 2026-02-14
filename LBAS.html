@@ -1,0 +1,493 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>LBAS | Secured Mobile Access</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        :root { --primary: #0f172a; --accent: #38bdf8; --success: #10b981; --danger: #ef4444; --warning: #f59e0b; }
+        body { background-color: #f1f5f9; font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; overflow-x: hidden; }
+        .network-banner { background: var(--primary); color: var(--accent); font-size: 10px; text-align: center; padding: 4px; font-weight: bold; letter-spacing: 1px; }
+        
+        /* Layout Components */
+        .lbas-definition { background: #e2e8f0; padding: 10px; border-radius: 10px; margin-bottom: 20px; border-left: 4px solid var(--accent); }
+        .lbas-letter { font-weight: 800; color: var(--primary); margin-right: 5px; }
+
+        .filter-wrapper { display: flex; gap: 10px; overflow-x: auto; padding: 5px 0 15px 0; scrollbar-width: none; }
+        .cat-pill { white-space: nowrap; padding: 8px 16px; border-radius: 20px; background: white; border: 1px solid #cbd5e1; color: #64748b; font-size: 13px; font-weight: 600; cursor: pointer; transition: 0.2s; }
+        .cat-pill.active { background: var(--accent); color: white; border-color: var(--accent); box-shadow: 0 4px 10px rgba(56, 189, 248, 0.3); }
+        
+        /* Login & Registration */
+        #loginSection { height: 90vh; display: flex; align-items: center; justify-content: center; padding: 20px; flex-direction: column; }
+        .login-card { background: white; padding: 30px; border-radius: 24px; box-shadow: 0 15px 35px rgba(0,0,0,0.1); width: 100%; max-width: 380px; text-align: center; position: relative; overflow: hidden; }
+        .login-card::before { content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 6px; background: linear-gradient(90deg, var(--primary), var(--accent)); }
+        
+        .upload-circle { width: 90px; height: 90px; border-radius: 50%; background: #f1f5f9; border: 2px dashed #cbd5e1; margin: 0 auto 15px; display: flex; align-items: center; justify-content: center; cursor: pointer; overflow: hidden; position: relative; }
+        .upload-circle img { width: 100%; height: 100%; object-fit: cover; display: none; }
+        .upload-icon { font-size: 24px; color: #94a3b8; }
+        
+        /* Portal UI */
+        .mobile-nav { background: white; padding: 15px 20px; border-bottom: 2px solid var(--accent); position: sticky; top: 0; z-index: 1000; display: flex; justify-content: space-between; align-items: center; }
+        .book-item { background: white; border-radius: 18px; padding: 18px; margin-bottom: 15px; position: relative; border: 1px solid #e2e8f0; transition: transform 0.2s; }
+        .book-item:active { transform: scale(0.98); }
+        .status-tag { position: absolute; top: 15px; right: 15px; font-size: 10px; font-weight: 800; padding: 4px 10px; border-radius: 10px; text-transform: uppercase; }
+        .tag-available { background: #dcfce7; color: #166534; }
+        .tag-reserved { background: #fef3c7; color: #92400e; }
+        .tag-borrowed { background: #fee2e2; color: #991b1b; }
+        .btn-action { background: var(--primary); color: white; border: none; width: 100%; padding: 12px; border-radius: 12px; font-weight: bold; margin-top: 10px; }
+        #accountPanel { display: none; background: white; border-bottom: 1px solid #e2e8f0; padding: 25px; animation: slideDown 0.3s; }
+        
+        /* Modals & Overlays */
+        .rating-fab { position: fixed; bottom: 25px; right: 25px; background: var(--primary); color: var(--accent); width: 60px; height: 60px; border-radius: 50%; display: flex; align-items: center; justify-content: center; z-index: 2000; border: 2px solid var(--accent); font-size: 24px; display: none; box-shadow: 0 4px 15px rgba(0,0,0,0.3); transition: 0.3s; }
+        .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 3000; display: none; align-items: center; justify-content: center; padding: 20px; backdrop-filter: blur(5px); }
+        .custom-modal { background: white; width: 100%; max-width: 400px; border-radius: 25px; padding: 30px; text-align: center; position: relative; }
+        .star-container { font-size: 35px; color: #cbd5e1; margin: 15px 0; }
+        .star.selected { color: #f59e0b; }
+        
+        @keyframes slideDown { from { transform: translateY(-20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+    </style>
+</head>
+<body>
+
+<div class="network-banner">LBAS SECURE CROSS-DATABASE PROTOCOL V4.8</div>
+
+<div id="fabReview" class="rating-fab" onclick="toggleModal('ratingModal', true)">⭐</div>
+
+<div id="ratingModal" class="modal-overlay">
+    <div class="custom-modal">
+        <h4 class="fw-bold">Experience Rating</h4>
+        <p class="text-muted small">Help our developers improve the system.</p>
+        <div class="star-container">
+            <span class="star" onclick="setStars(1)">★</span>
+            <span class="star" onclick="setStars(2)">★</span>
+            <span class="star" onclick="setStars(3)">★</span>
+            <span class="star" onclick="setStars(4)">★</span>
+            <span class="star" onclick="setStars(5)">★</span>
+        </div>
+        <textarea id="ratingFeedback" class="form-control mb-3 bg-light border-0" placeholder="Additional feedback (optional)..." rows="3"></textarea>
+        <div class="d-flex gap-2">
+            <button class="btn btn-light w-100 rounded-pill fw-bold" onclick="toggleModal('ratingModal', false)">CLOSE</button>
+            <button class="btn btn-dark w-100 rounded-pill fw-bold" onclick="submitRating()">SUBMIT</button>
+        </div>
+    </div>
+</div>
+
+<div id="registerModal" class="modal-overlay">
+    <div class="custom-modal text-start">
+        <h4 class="fw-bold text-center mb-1">New Application</h4>
+        <p class="text-muted small text-center mb-4">Request access from the Librarian.</p>
+        
+        <div class="upload-circle" onclick="document.getElementById('regPhoto').click()">
+            <i class="fas fa-camera upload-icon" id="uploadIcon"></i>
+            <img id="previewImg">
+        </div>
+        <input type="file" id="regPhoto" accept="image/*" style="display: none;" onchange="previewPhoto(this)">
+        <p class="text-center small text-muted mb-3" style="font-size: 0.7rem;">Tap circle to add ID photo</p>
+
+        <div class="mb-3">
+            <label class="small fw-bold ms-2">Full Name</label>
+            <input type="text" id="regName" class="form-control rounded-pill bg-light border-0 px-3" placeholder="e.g. Juan Dela Cruz">
+        </div>
+        <div class="mb-3">
+            <label class="small fw-bold ms-2">School ID Number</label>
+            <input type="text" id="regID" class="form-control rounded-pill bg-light border-0 px-3" placeholder="e.g. 2023-0015">
+        </div>
+        <div class="mb-4">
+            <label class="small fw-bold ms-2">Create Password</label>
+            <input type="password" id="regPass" class="form-control rounded-pill bg-light border-0 px-3" placeholder="••••••••">
+        </div>
+
+        <button class="btn btn-primary w-100 rounded-pill fw-bold py-2 mb-2 shadow-sm" onclick="submitRegistration()">SUBMIT REQUEST</button>
+        <button class="btn btn-outline-secondary w-100 rounded-pill fw-bold py-2" onclick="toggleModal('registerModal', false)">CANCEL</button>
+    </div>
+</div>
+
+<div id="statusModal" class="modal-overlay">
+    <div class="custom-modal">
+        <div class="mb-3">
+            <i id="statusIcon" class="fas fa-check-circle text-success" style="font-size: 3rem;"></i>
+        </div>
+        <h4 id="statusTitle" class="fw-bold">Success</h4>
+        <p id="statusMsg" class="text-muted small">Operation completed.</p>
+        <button class="btn btn-dark w-100 rounded-pill fw-bold" onclick="toggleModal('statusModal', false)">UNDERSTOOD</button>
+    </div>
+</div>
+
+<div id="loginSection">
+    <div class="login-card">
+        <div class="mb-4">
+            <div class="bg-primary text-white rounded-circle d-inline-flex align-items-center justify-content-center shadow-lg" style="width: 60px; height: 60px;">
+                <i class="fas fa-book-reader fa-lg"></i>
+            </div>
+        </div>
+        <h3 class="fw-bold text-dark mb-1">LBAS PORTAL</h3>
+        <p class="text-muted small mb-4">Library Book Access System v4.8</p>
+        
+        <div class="mb-3">
+            <input type="text" id="school_id_input" class="form-control form-control-lg text-center bg-light border-0 rounded-pill" placeholder="School ID">
+        </div>
+        <div class="mb-4">
+            <input type="password" id="password_input" class="form-control form-control-lg text-center bg-light border-0 rounded-pill" placeholder="Password">
+        </div>
+        
+        <button id="loginBtn" class="btn btn-dark btn-lg w-100 rounded-pill fw-bold shadow-sm mb-3" onclick="handleLogin()">SECURE LOGIN</button>
+        
+        <div class="d-flex align-items-center my-3">
+            <hr class="flex-grow-1">
+            <span class="px-2 text-muted small">New Student?</span>
+            <hr class="flex-grow-1">
+        </div>
+
+        <button class="btn btn-outline-primary w-100 rounded-pill fw-bold" onclick="toggleModal('registerModal', true)">CREATE ACCOUNT</button>
+
+        <div id="loginError" class="alert alert-danger small mt-3 fw-bold rounded-3 border-0 py-2" style="display:none; font-size: 0.75rem;">
+            <i class="fas fa-exclamation-triangle me-1"></i> <span id="errorText">CREDENTIALS INVALID</span>
+        </div>
+    </div>
+    <div class="mt-4 text-muted small opacity-50">Authorized Access Only | V4.8-BETA</div>
+</div>
+
+<div id="portalSection" style="display: none;">
+    <nav class="mobile-nav shadow-sm">
+        <div>
+            <span class="badge bg-primary text-uppercase mb-1" id="user_type_label" style="font-size: 9px; letter-spacing: 0.5px;">USER</span>
+            <h6 class="fw-bold m-0" id="display_name" style="font-size: 0.95rem;">User Name</h6>
+        </div>
+        <button class="btn btn-sm btn-light rounded-pill border px-3 fw-bold" onclick="toggleAccount()"><i class="fas fa-user-circle me-1"></i> Profile</button>
+    </nav>
+
+    <div id="accountPanel">
+        <div class="d-flex align-items-center mb-3">
+            <img id="user_pic" src="" class="rounded-circle me-3 shadow-sm" style="width: 65px; height: 65px; object-fit: cover; border: 3px solid var(--accent);">
+            <div>
+                <strong id="full_name" class="d-block" style="font-size: 1.1rem;">Name</strong>
+                <code class="text-muted small fw-bold" id="id_val"></code><br>
+                <span class="badge bg-light text-dark border mt-1" id="database_source" style="font-size: 9px;"></span>
+            </div>
+        </div>
+        <hr>
+        <p class="fw-bold small mb-2 text-uppercase text-muted"><i class="fas fa-history me-1"></i> Active Leases (Max 5)</p>
+        <div id="activeHistory" class="mb-3"></div>
+        <button class="btn btn-danger btn-sm w-100 rounded-pill fw-bold py-2" onclick="logout()">TERMINATE SESSION</button>
+    </div>
+
+    <div class="container py-4">
+        <div id="lbasInfo" class="lbas-definition" style="display:none;">
+            <h6 class="fw-bold mb-2"><i class="fas fa-shield-alt me-1"></i> ADMIN OVERRIDE:</h6>
+            <div class="small text-muted">
+                You have Staff privileges. You can browse the catalog here, but management tools are located on the <b>Admin Dashboard</b>.
+            </div>
+        </div>
+
+        <div class="position-relative mb-4">
+            <input type="text" id="searchBar" class="form-control form-control-lg border-0 shadow-sm rounded-pill ps-5" placeholder="Find books..." onkeyup="loadData()">
+            <i class="fas fa-search position-absolute text-muted" style="left: 20px; top: 18px;"></i>
+        </div>
+        
+        <div class="filter-wrapper" id="catFilterList">
+            <div class="cat-pill active" onclick="setCategoryFilter('All')">All Collection</div>
+            <div class="cat-pill" onclick="setCategoryFilter('Science')">Science</div>
+            <div class="cat-pill" onclick="setCategoryFilter('Mathematics')">Mathematics</div>
+            <div class="cat-pill" onclick="setCategoryFilter('Literature')">Literature</div>
+            <div class="cat-pill" onclick="setCategoryFilter('General')">General</div>
+        </div>
+
+        <div id="bookContainer" class="pb-5"></div>
+    </div>
+</div>
+
+<script>
+    let currentID = null;
+    let currentToken = null;
+    let selectedCategory = 'All';
+    let selectedStars = 5;
+
+    // --- LOGIN LOGIC ---
+    async function handleLogin() {
+        const id = document.getElementById('school_id_input').value.trim();
+        const pwd = document.getElementById('password_input').value.trim();
+        if(!id) return;
+        
+        const btn = document.getElementById('loginBtn');
+        const err = document.getElementById('loginError');
+        const errTxt = document.getElementById('errorText');
+        
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> VERIFYING...';
+        btn.disabled = true;
+        err.style.display = 'none';
+        
+        try {
+            const res = await fetch('/api/login', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ school_id: id, password: pwd })
+            });
+            
+            const data = await res.json();
+            
+            if(data.success) {
+                // Success
+                currentID = id;
+                currentToken = data.token;
+                localStorage.setItem('lbas_id', id);
+                localStorage.setItem('lbas_token', currentToken);
+                initPortal(data.profile);
+            } else {
+                // Failed - check specific reasons
+                err.style.display = 'block';
+                if(res.status === 401 && data.message.includes('Pending')) {
+                    // PENDING POPUP logic
+                    showStatusPopup('warning', 'Approval Pending', 'Your account is waiting for Librarian review. Please check back later.');
+                    err.style.display = 'none'; // Hide the red error box if showing popup
+                } else if(res.status === 404) {
+                    // REJECTED / NOT FOUND logic
+                    errTxt.innerText = "ID NOT FOUND / REQUEST REJECTED";
+                    // Only show popup if they specifically asked for it, otherwise inline error is standard
+                    // showStatusPopup('error', 'Access Denied', 'ID not found. If you applied recently, your request may have been rejected.');
+                } else {
+                    errTxt.innerText = data.message || "AUTHENTICATION FAILED";
+                }
+            }
+        } catch (e) {
+            err.style.display = 'block';
+            errTxt.innerText = "SERVER UNREACHABLE";
+        } finally {
+            btn.innerText = "SECURE LOGIN";
+            btn.disabled = false;
+        }
+    }
+
+    // --- REGISTRATION LOGIC ---
+    function previewPhoto(input) {
+        if (input.files && input.files[0]) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                document.getElementById('previewImg').src = e.target.result;
+                document.getElementById('previewImg').style.display = 'block';
+                document.getElementById('uploadIcon').style.display = 'none';
+            }
+            reader.readAsDataURL(input.files[0]);
+        }
+    }
+
+    async function submitRegistration() {
+        const name = document.getElementById('regName').value;
+        const id = document.getElementById('regID').value;
+        const pwd = document.getElementById('regPass').value;
+        const file = document.getElementById('regPhoto').files[0];
+
+        if(!name || !id || !pwd) return alert("Please fill all fields.");
+
+        const fd = new FormData();
+        fd.append('name', name);
+        fd.append('school_id', id);
+        fd.append('password', pwd);
+        if(file) fd.append('photo', file);
+
+        // Close register modal immediately and show loading? 
+        // Or wait. Let's wait.
+        
+        try {
+            const res = await fetch('/api/register_student', { method: 'POST', body: fd });
+            const data = await res.json();
+
+            toggleModal('registerModal', false); // Close form
+
+            if(data.success) {
+                // SHOW "WAITING FOR APPROVAL" POPUP
+                showStatusPopup('success', 'Application Sent!', 'Your request has been forwarded to the Librarian. You cannot log in until approved.');
+                // Clear form
+                document.getElementById('regName').value = '';
+                document.getElementById('regID').value = '';
+                document.getElementById('regPass').value = '';
+                document.getElementById('previewImg').src = '';
+                document.getElementById('previewImg').style.display = 'none';
+                document.getElementById('uploadIcon').style.display = 'block';
+            } else {
+                showStatusPopup('error', 'Registration Failed', data.message || "ID already exists or invalid data.");
+            }
+        } catch (e) {
+            alert("Network Error during registration.");
+        }
+    }
+
+    function showStatusPopup(type, title, msg) {
+        const icon = document.getElementById('statusIcon');
+        const h4 = document.getElementById('statusTitle');
+        
+        document.getElementById('statusMsg').innerText = msg;
+        
+        if(type === 'success') {
+            icon.className = 'fas fa-check-circle text-success';
+            h4.className = 'fw-bold text-success';
+        } else if (type === 'warning') {
+            icon.className = 'fas fa-clock text-warning';
+            h4.className = 'fw-bold text-warning';
+        } else {
+            icon.className = 'fas fa-times-circle text-danger';
+            h4.className = 'fw-bold text-danger';
+        }
+        
+        h4.innerText = title;
+        toggleModal('statusModal', true);
+    }
+
+    // --- PORTAL LOGIC ---
+    function initPortal(profile) {
+        if(!profile) return logout();
+        
+        document.getElementById('loginSection').style.display = 'none';
+        document.getElementById('portalSection').style.display = 'block';
+        
+        const isLibrarian = profile.category === 'Staff';
+        
+        if(isLibrarian) {
+            document.getElementById('lbasInfo').style.display = 'block';
+        }
+
+        document.getElementById('user_type_label').innerText = isLibrarian ? "LIBRARIAN MODE" : "STUDENT ACCESS";
+        document.getElementById('user_type_label').className = isLibrarian ? "badge bg-danger text-uppercase mb-1" : "badge bg-primary text-uppercase mb-1";
+        document.getElementById('database_source').innerText = isLibrarian ? "CREDENTIAL: STAFF" : "CREDENTIAL: USER";
+
+        document.getElementById('display_name').innerText = profile.name ? profile.name.split(' ')[0] : "User";
+        document.getElementById('full_name').innerText = profile.name || "Unknown User";
+        document.getElementById('id_val').innerText = "ID: " + profile.school_id;
+        document.getElementById('user_pic').src = profile.photo ? "/Profile/" + profile.photo : "/Profile/default.png";
+        
+        loadData();
+        checkRatingStatus();
+        setInterval(loadData, 5000);
+        setInterval(updateTimers, 1000);
+    }
+
+    async function loadData() {
+        try {
+            const [bRes, tRes] = await Promise.all([fetch('/api/books'), fetch('/api/transactions')]);
+            const books = await bRes.json();
+            const trans = await tRes.json();
+            const search = document.getElementById('searchBar').value.toLowerCase();
+            
+            const filtered = books.filter(b => {
+                const matchesSearch = b.title.toLowerCase().includes(search) || b.book_no.toLowerCase().includes(search);
+                const matchesCategory = (selectedCategory === 'All') || (b.category === selectedCategory);
+                return matchesSearch && matchesCategory;
+            });
+
+            document.getElementById('bookContainer').innerHTML = filtered.map(b => `
+                <div class="book-item shadow-sm">
+                    <span class="status-tag tag-${b.status.toLowerCase()}">${b.status}</span>
+                    <span class="text-muted" style="font-size: 10px; font-weight:700;">${b.category.toUpperCase()}</span>
+                    <div class="fw-bold text-dark mt-1">${b.title}</div>
+                    <code class="small text-primary fw-bold">${b.book_no}</code>
+                    ${b.status === 'Available' ? `<button class="btn-action shadow-sm" onclick="reserveBook('${b.book_no}')">RESERVE BOOK</button>` : ''}
+                </div>`).join('') || '<div class="text-center text-muted mt-5"><i class="fas fa-book-open fa-2x mb-3 opacity-25"></i><br>No books found.</div>';
+
+            const myActive = trans.filter(t => String(t.school_id) === String(currentID) && (t.status === 'Reserved' || t.status === 'Borrowed')).reverse();
+            document.getElementById('activeHistory').innerHTML = myActive.map(t => `
+                <div class="p-3 border rounded-3 mb-2 bg-light d-flex justify-content-between align-items-center">
+                    <div>
+                        <b class="text-dark">${t.book_no}</b><br>
+                        <span class="badge ${t.status==='Reserved'?'bg-warning text-dark':'bg-success'}">${t.status}</span>
+                    </div>
+                    <div class="text-end">
+                        <span class="timer small fw-bold text-primary" data-expiry="${t.expiry}" data-status="${t.status}">Calculating...</span>
+                    </div>
+                </div>`).join('') || '<p class="text-muted small text-center mt-3 border p-3 rounded-3 dashed">No active reservations.</p>';
+        } catch (e) { console.error("Data Sync Error"); }
+    }
+
+    async function reserveBook(no) {
+        if(!confirm("Reserve this book? You have 30 minutes to claim it.")) return;
+        const res = await fetch('/api/reserve', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({ book_no: no, school_id: currentID, token: currentToken })
+        });
+        const result = await res.json();
+        if(result.success) {
+            showStatusPopup('success', 'Reservation Confirmed', 'Please proceed to the librarian desk to claim your book.');
+            loadData();
+        } else {
+            showStatusPopup('error', 'Action Failed', result.message);
+        }
+    }
+
+    function setCategoryFilter(cat) {
+        selectedCategory = cat;
+        document.querySelectorAll('.cat-pill').forEach(p => p.classList.toggle('active', p.innerText.includes(cat) || (cat==='All' && p.innerText.includes('All'))));
+        loadData();
+    }
+
+    function updateTimers() {
+        document.querySelectorAll('.timer').forEach(el => {
+            const diff = new Date(el.dataset.expiry) - new Date();
+            if (diff <= 0) {
+                el.innerText = "EXPIRED";
+                el.classList.add('text-danger');
+            } else {
+                const m = Math.floor(diff / 60000);
+                const s = Math.floor((diff % 60000) / 1000);
+                el.innerText = `${m}m ${s}s remaining`;
+            }
+        });
+    }
+
+    // --- RATING SYSTEM ---
+    async function checkRatingStatus() {
+        if(!currentID) return;
+        try {
+            const res = await fetch(`/api/rating_status/${currentID}`);
+            const data = await res.json();
+            document.getElementById('fabReview').style.display = data.show ? 'flex' : 'none';
+        } catch (e) { }
+    }
+
+    function toggleModal(id, show) {
+        document.getElementById(id).style.display = show ? 'flex' : 'none';
+        if(id === 'ratingModal' && show) setStars(5);
+    }
+
+    function setStars(count) {
+        selectedStars = count;
+        document.querySelectorAll('.star').forEach((s, i) => s.classList.toggle('selected', i < count));
+    }
+
+    async function submitRating() {
+        const feedback = document.getElementById('ratingFeedback').value;
+        const res = await fetch('/api/rate', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({ school_id: currentID, token: currentToken, stars: selectedStars, feedback: feedback })
+        });
+        const data = await res.json();
+        if(data.success) {
+            toggleModal('ratingModal', false);
+            checkRatingStatus();
+            showStatusPopup('success', 'Feedback Sent', 'Thank you for rating LBAS!');
+        }
+    }
+
+    function toggleAccount() { const p = document.getElementById('accountPanel'); p.style.display = p.style.display === 'block' ? 'none' : 'block'; }
+    function logout() { localStorage.clear(); location.reload(); }
+    
+    window.onload = () => {
+        const savedID = localStorage.getItem('lbas_id');
+        if(savedID) {
+            // Auto-login attempt logic could go here, but for security in v4.8 request system
+            // we usually prefer to re-verify or at least just fetch profile silently.
+            // But if pending status changed to approved, we need to know.
+            fetch('/api/user/' + savedID)
+                .then(r => r.json())
+                .then(d => {
+                    // Check status again just in case they were banned/rejected while logged in
+                    if(d.profile && d.profile.status !== 'pending') initPortal(d.profile);
+                    else logout();
+                })
+                .catch(logout);
+        }
+    }
+</script>
+</body>
+</html>

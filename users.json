@@ -1,0 +1,80 @@
+[
+    {
+        "name": "Null",
+        "password": "123",
+        "school_id": "54321",
+        "category": "Student",
+        "photo": "54321_images_1_4.jpeg",
+        "status": "approved"
+    },
+    {
+        "name": "Hulk",
+        "school_id": "101010",
+        "password": "12345",
+        "category": "Student",
+        "photo": "101010_1758232565072.jpg",
+        "status": "approved"
+    },
+    {
+        "name": "GUK GUK",
+        "school_id": "7777",
+        "password": "777",
+        "category": "Student",
+        "photo": "7777_images_1_6.jpeg",
+        "status": "approved"
+    },
+    {
+        "name": "Dell",
+        "school_id": "202020",
+        "password": "20",
+        "category": "Student",
+        "photo": "202020_17215391850221.jpg",
+        "created_at": "2026-01-30 18:26",
+        "status": "approved"
+    },
+    {
+        "name": "Jujitsu",
+        "school_id": "2026-001",
+        "password": "12345",
+        "category": "Student",
+        "photo": "2026-001_1725668056004.jpg",
+        "created_at": "2026-01-31 11:39",
+        "status": "approved"
+    },
+    {
+        "name": "GUGA",
+        "school_id": "2026-2027",
+        "password": "12345",
+        "category": "Student",
+        "photo": "2026-2027_1770535737.jpg",
+        "status": "approved",
+        "created_at": "2026-02-08 15:28"
+    },
+    {
+        "name": "Gud Gud Jr.",
+        "school_id": "8989",
+        "password": "12345",
+        "category": "Student",
+        "photo": "8989_1770547096.jpg",
+        "status": "approved",
+        "created_at": "2026-02-08 18:38"
+    },
+    {
+        "name": "DU",
+        "school_id": "1212",
+        "password": "12",
+        "category": "Student",
+        "photo": "1212_1770636258.jpg",
+        "status": "approved",
+        "created_at": "2026-02-09 19:24"
+    },
+    {
+        "name": "Sissy Baka",
+        "school_id": "67",
+        "password": "12345",
+        "category": "Student",
+        "photo": "67_1770720485.jpg",
+        "status": "approved",
+        "created_at": "2026-02-10 18:48"
+    }
+]

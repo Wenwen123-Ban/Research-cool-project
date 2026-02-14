@@ -1,0 +1,545 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LBAS | Integrated Tablet Kiosk v2.5 - System Sync</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/all.min.css">
+    
+    <style>
+        /* LBAS DESIGN SYSTEM - UNCHANGED & EXTENDED */
+        :root { 
+            --kiosk-primary: #0f172a; 
+            --kiosk-accent: #38bdf8; 
+            --kiosk-surface: #ffffff;
+            --kiosk-bg: #f1f5f9;
+            --kiosk-danger: #ef4444;
+            --kiosk-success: #22c55e;
+            --kiosk-warning: #f59e0b;
+            --kiosk-missing: #64748b; /* New Slate color for missing items */
+        }
+        
+        body { 
+            background-color: rgb(40, 152, 167); 
+            font-family: 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; 
+            overflow: hidden; 
+            height: 100vh; 
+            user-select: none;
+        }
+
+        #loginSection { 
+            height: 100vh; 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            background: radial-gradient(circle at center, #1e293b 0%, #0f172a 100%); 
+        }
+
+        .auth-container {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(25px);
+            padding: 60px;
+            border-radius: 50px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            width: 480px;
+            text-align: center;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+            animation: slideDown 0.6s cubic-bezier(0.23, 1, 0.32, 1);
+        }
+
+        @keyframes slideDown { 
+            from { transform: translateY(-30px); opacity: 0; } 
+            to { transform: translateY(0); opacity: 1; } 
+        }
+
+        .auth-logo { font-size: 4.5rem; color: var(--kiosk-accent); margin-bottom: 25px; }
+
+        .form-input-kiosk {
+            background: rgba(255, 255, 255, 0.1);
+            border: 2px solid rgba(255, 255, 255, 0.1);
+            color: white;
+            text-align: center;
+            border-radius: 20px;
+            padding: 20px;
+            margin-bottom: 20px;
+            width: 100%;
+            font-size: 1.2rem;
+        }
+
+        #marketSection { display: none; padding: 25px; height: 100vh; }
+        
+        .kiosk-wrapper { 
+            display: grid; 
+            grid-template-columns: 360px 1fr; 
+            gap: 25px; 
+            height: calc(100vh - 50px); 
+        }
+
+        .sidebar-panel { display: flex; flex-direction: column; gap: 20px; overflow: hidden; }
+
+        .user-card { 
+            background: var(--kiosk-surface); 
+            border-radius: 40px; 
+            padding: 40px; 
+            text-align: center; 
+            box-shadow: 0 15px 35px rgba(0,0,0,0.05);
+            position: relative;
+        }
+
+        .sync-pulse {
+            position: absolute; top: 20px; left: 20px; width: 10px; height: 10px;
+            background: var(--kiosk-success); border-radius: 50%;
+        }
+
+        .sync-pulse.syncing { animation: pulseAnim 1s infinite; }
+
+        @keyframes pulseAnim { 
+            0% { transform: scale(1); opacity: 1; } 
+            100% { transform: scale(2.5); opacity: 0; } 
+        }
+
+        .user-avatar { 
+            width: 140px; height: 140px; border-radius: 50%; object-fit: cover;
+            border: 6px solid #f1f5f9; margin-bottom: 20px;
+        }
+
+        .category-nav { 
+            background: var(--kiosk-surface); border-radius: 40px; padding: 25px; 
+            flex-grow: 1; overflow-y: auto;
+        }
+
+        .cat-link {
+            width: 100%; text-align: left; padding: 18px 25px; border-radius: 22px;
+            border: none; background: transparent; color: #475569; font-weight: 700;
+            display: flex; align-items: center; gap: 15px; margin-bottom: 8px;
+        }
+
+        .cat-link.active { background: #f0f9ff; color: var(--kiosk-accent); }
+
+        .content-panel { display: flex; flex-direction: column; gap: 20px; overflow: hidden; }
+
+        .search-container { 
+            background: white; border-radius: 35px; padding: 20px 40px; 
+            display: flex; align-items: center; gap: 20px;
+        }
+
+        .book-grid { 
+            display: grid; 
+            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); 
+            gap: 25px; 
+            overflow-y: auto; 
+            padding: 10px; 
+            padding-bottom: 100px;
+        }
+
+        .book-item {
+            background: white; border-radius: 35px; padding: 35px; position: relative;
+            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); transition: 0.3s;
+        }
+
+        .book-item:hover { transform: translateY(-5px); border: 1px solid var(--kiosk-accent); }
+
+        .status-badge { 
+            position: absolute; top: 25px; right: 25px; font-size: 0.7rem; 
+            font-weight: 900; padding: 8px 16px; border-radius: 50px;
+        }
+
+        /* Status Colors Mapping */
+        .badge-available { background: #dcfce7; color: #15803d; }
+        .badge-borrowed { background: #fee2e2; color: #b91c1c; }
+        .badge-reserved { background: #fef3c7; color: #b45309; }
+        .badge-missing { background: #f1f5f9; color: #475569; }
+        .badge-unreturned { background: #7f1d1d; color: #ffffff; }
+
+        .timer-ui { 
+            font-family: monospace; font-weight: 800; 
+            color: var(--kiosk-accent); font-size: 0.9rem; padding: 8px 15px;
+            background: #f8fafc; border-radius: 12px;
+        }
+
+        .history-list { max-height: 350px; overflow-y: auto; border-radius: 25px; }
+
+        .modal-content { border-radius: 50px; border: none; }
+    </style>
+</head>
+<body>
+
+<div id="loginSection">
+    <div class="auth-container">
+        <div class="auth-logo"><i class="fas fa-tablet-screen-button"></i></div>
+        <h1 class="text-white fw-bold mb-1">KIOSK TERMINAL</h1>
+        <p class="text-white-50 mb-5">LBAS Library Integrated System v2.5</p>
+        
+        <input type="text" id="schoolID" class="form-input-kiosk" placeholder="School ID Number">
+        <input type="password" id="schoolPWD" class="form-input-kiosk" placeholder="Access Password">
+        
+        <button id="loginBtn" class="btn btn-info btn-lg w-100 rounded-pill fw-bold mt-3 py-4 text-white" onclick="handleLogin()">
+            VERIFY & START SESSION
+        </button>
+
+        <div id="authError" class="alert alert-danger mt-4 border-0 rounded-4" style="display:none;">
+            Verification Failed: ID or Password Incorrect
+        </div>
+    </div>
+</div>
+
+<div id="marketSection">
+    <div class="kiosk-wrapper">
+        <div class="sidebar-panel">
+            <div class="user-card">
+                <div id="syncIndicator" class="sync-pulse"></div>
+                <img id="userImg" src="/Profile/default.png" class="user-avatar shadow-sm">
+                <h3 id="userDisplay" class="fw-bold mb-1 text-truncate">User Profile</h3>
+                <p id="userSub" class="text-muted small mb-4">VERIFIED MEMBER</p>
+                <div id="loanSummary" class="mb-4"></div>
+                <button class="btn btn-outline-secondary w-100 rounded-pill fw-bold py-2" onclick="handleLogout()">
+                    <i class="fas fa-right-from-bracket me-2"></i>LOG OUT
+                </button>
+            </div>
+
+            <div class="category-nav">
+                <h6 class="text-uppercase text-muted fw-black small px-3 mb-4">Categories</h6>
+                <button class="cat-link active" id="cat-all" onclick="setCategory('All', this)">
+                    <i class="fas fa-globe"></i> All Collections
+                </button>
+                <div id="dynamicCats"></div>
+            </div>
+        </div>
+
+        <div class="content-panel">
+            <div class="search-container">
+                <i class="fas fa-search text-muted fs-4"></i>
+                <input type="text" id="bookSearch" class="form-control border-0 p-0 fs-4" placeholder="Search Book title or number" onkeyup="syncUI()">
+            </div>
+            <div id="bookGrid" class="book-grid"></div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="actionModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered modal-xl">
+        <div class="modal-content">
+            <div class="modal-body p-0">
+                <div class="row g-0">
+                    <div class="col-lg-7 p-5 bg-light" style="border-radius: 50px 0 0 50px;">
+                        <span class="badge bg-primary px-3 py-2 rounded-pill mb-3" id="mCategory">Category</span>
+                        <h1 class="display-5 fw-bold mb-2" id="mTitle">Book Title</h1>
+                        <p class="text-muted mb-4 fs-5">Accession No: <span class="fw-bold text-dark" id="mCode">---</span></p>
+                        <h6 class="text-uppercase fw-bold text-muted small mb-3">Borrowing History</h6>
+                        <div id="mHistory" class="history-list bg-white border"></div>
+                    </div>
+                    <div class="col-lg-5 p-5 d-flex flex-column justify-content-center text-center">
+                        <div class="mb-5">
+                            <p class="text-muted mb-1">Current Status</p>
+                            <h2 class="fw-black" id="mStatus">...</h2>
+                            <div id="mTimer" class="mt-2"></div>
+                        </div>
+                        <div id="mActionArea" class="px-4"></div>
+                        <button class="btn btn-link text-muted mt-5" data-bs-dismiss="modal">Close Window</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+    /**
+     * LBAS SYSTEM LOGIC v2.5 (SYNCED WITH ADMIN)
+     */
+    let currentUser = null;
+    let books = [];
+    let transactions = [];
+    let activeCat = 'All';
+    let detailModal;
+    let syncInterval;
+    let timerInterval;
+
+    const MAX_DISPLAY = 20;
+
+    window.onload = () => {
+        detailModal = new bootstrap.Modal(document.getElementById('actionModal'));
+        const savedID = sessionStorage.getItem('kiosk_id');
+        if(savedID) autoLogin(savedID);
+    };
+
+    // --- AUTHENTICATION MODULE ---
+
+    async function handleLogin() {
+        const id = document.getElementById('schoolID').value.trim();
+        const pw = document.getElementById('schoolPWD').value.trim();
+        const btn = document.getElementById('loginBtn');
+        if(!id || !pw) return;
+
+        btn.disabled = true;
+        btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> VERIFYING...';
+
+        try {
+            const res = await fetch('/api/login', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ school_id: id, password: pw })
+            });
+            const data = await res.json();
+
+            if(data.success) {
+                currentUser = data.profile;
+                sessionStorage.setItem('kiosk_id', id);
+                sessionStorage.setItem('kiosk_token', data.token);
+                initPortal();
+            } else { throw new Error(data.message); }
+        } catch(e) {
+            showError(e.message);
+            btn.disabled = false;
+            btn.innerText = 'VERIFY & START SESSION';
+        }
+    }
+
+    function showError(msg) {
+        const err = document.getElementById('authError');
+        err.innerText = msg || "Verification Failed";
+        err.style.display = 'block';
+        setTimeout(() => err.style.display = 'none', 4000);
+    }
+
+    async function autoLogin(id) {
+        try {
+            const res = await fetch(`/api/user/${id}`);
+            const data = await res.json();
+            if(data.profile) {
+                currentUser = data.profile;
+                initPortal();
+            } else { handleLogout(); }
+        } catch(e) { handleLogout(); }
+    }
+
+    // --- CORE SYNC ENGINE ---
+
+    function initPortal() {
+        document.getElementById('loginSection').style.display = 'none';
+        document.getElementById('marketSection').style.display = 'block';
+        document.getElementById('userDisplay').innerText = currentUser.name;
+        document.getElementById('userImg').src = `/Profile/${currentUser.photo || 'default.png'}`;
+        document.getElementById('userSub').innerText = currentUser.is_staff ? "STAFF / LIBRARIAN" : "VERIFIED STUDENT";
+        
+        pullData();
+        syncInterval = setInterval(pullData, 4000); 
+        timerInterval = setInterval(updateTimers, 1000);
+    }
+
+    async function pullData() {
+        if(!currentUser) return;
+        const pulse = document.getElementById('syncIndicator');
+        pulse.classList.add('syncing');
+
+        try {
+            const [bRes, tRes] = await Promise.all([
+                fetch('/api/books'), 
+                fetch('/api/transactions')
+            ]);
+            
+            books = await bRes.json();
+            transactions = await tRes.json();
+            
+            renderCategories();
+            syncUI(); 
+            updateUserLoanCard();
+        } catch(e) { 
+            console.error("Sync Error"); 
+        } finally {
+            setTimeout(() => pulse.classList.remove('syncing'), 800);
+        }
+    }
+
+    function renderCategories() {
+        const rawCats = [...new Set(books.map(b => b.category))].filter(Boolean);
+        const container = document.getElementById('dynamicCats');
+        container.innerHTML = rawCats.map(c => `
+            <button class="cat-link ${activeCat === c ? 'active' : ''}" onclick="setCategory('${c}', this)">
+                <i class="fas fa-chevron-right small"></i> ${c}
+            </button>
+        `).join('');
+    }
+
+    function syncUI() {
+        const searchInput = document.getElementById('bookSearch');
+        const search = searchInput.value.toLowerCase();
+        const grid = document.getElementById('bookGrid');
+        
+        let filtered = books.filter(b => 
+            (activeCat === 'All' || b.category === activeCat) &&
+            (b.title.toLowerCase().includes(search) || b.book_no.toLowerCase().includes(search))
+        );
+
+        if(activeCat === 'All' && search === "") {
+            for (let i = filtered.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [filtered[i], filtered[j]] = [filtered[j], filtered[i]];
+            }
+        }
+
+        const displaySet = filtered.slice(0, MAX_DISPLAY);
+
+        grid.innerHTML = displaySet.map(b => {
+            const activeT = transactions.find(t => 
+                t.book_no === b.book_no && !['Returned', 'Cancelled', 'Expired'].includes(t.status)
+            );
+            
+            const statusClass = b.status.toLowerCase().replace(' ', '-');
+            
+            return `
+                <div class="book-item" onclick="showBookDetail('${b.book_no}')">
+                    <span class="status-badge badge-${statusClass}">${b.status}</span>
+                    <p class="text-primary small fw-black mb-1" style="font-size: 0.65rem;">${b.category || 'GENERAL'}</p>
+                    <h5 class="fw-bold mb-1 text-truncate">${b.title}</h5>
+                    <code class="text-muted">${b.book_no}</code>
+                    <div class="mt-3">
+                        ${activeT ? `<div class="timer-ui" data-exp="${activeT.expiry}" data-status="${activeT.status}" data-id="${b.book_no}">--:--</div>` : 
+                        (b.status === 'Available' ? '<div class="small text-success fw-bold"><i class="fas fa-check-circle"></i> Ready</div>' : '<div class="small text-muted fw-bold">N/A</div>')}
+                    </div>
+                </div>
+            `;
+        }).join('');
+
+        if (filtered.length > MAX_DISPLAY) {
+            grid.insertAdjacentHTML('beforeend', `
+                <div class="text-center w-100 p-5 text-muted">
+                    <i class="fas fa-info-circle me-2"></i> 
+                    Showing ${MAX_DISPLAY} of ${filtered.length} books.
+                </div>
+            `);
+        }
+    }
+
+    // --- MODAL & TRANSACTION FEATURES ---
+
+    function showBookDetail(bookNo) {
+        const b = books.find(x => x.book_no === bookNo);
+        if(!b) return;
+
+        const history = transactions.filter(t => t.book_no === bookNo).reverse().slice(0, 10);
+        const activeT = transactions.find(t => t.book_no === bookNo && !['Returned', 'Cancelled', 'Expired'].includes(t.status));
+
+        document.getElementById('mTitle').innerText = b.title;
+        document.getElementById('mCode').innerText = b.book_no;
+        document.getElementById('mCategory').innerText = b.category || 'General';
+        document.getElementById('mStatus').innerText = b.status;
+        
+        document.getElementById('mHistory').innerHTML = history.length ? history.map(h => `
+            <div class="history-item p-2 border-bottom d-flex justify-content-between align-items-center">
+                <div>
+                    <span class="fw-bold text-dark">${h.school_id}</span>
+                    <div class="text-muted small">${h.date}</div>
+                </div>
+                <span class="badge ${h.status === 'Returned' ? 'bg-success' : 'bg-info'} rounded-pill">${h.status}</span>
+            </div>
+        `).join('') : '<div class="p-5 text-center text-muted">No history found.</div>';
+
+        const area = document.getElementById('mActionArea');
+        const userLoansCount = transactions.filter(t => t.school_id === currentUser.school_id && ['Reserved', 'Borrowed'].includes(t.status)).length;
+
+        // Logical conditions for the new statuses
+        if(b.status === 'Available') {
+            area.innerHTML = userLoansCount >= 5 
+                ? `<div class="alert alert-danger rounded-4">Loan Limit Reached (5/5).</div>`
+                : `<button class="btn btn-success btn-lg w-100 rounded-pill fw-bold text-white py-3 shadow" onclick="executeTransaction('${bookNo}', 'borrow')">BORROW IMMEDIATELY</button>`;
+        } 
+        else if (b.status === 'Reserved' && activeT && activeT.school_id === currentUser.school_id) {
+            area.innerHTML = `
+                <button class="btn btn-info btn-lg w-100 rounded-pill fw-bold text-white py-3 mb-2" onclick="executeTransaction('${bookNo}', 'borrow')">COLLECT BOOK</button>
+                <button class="btn btn-outline-danger w-100 rounded-pill py-2 border-0" onclick="executeTransaction('${bookNo}', 'cancel')">CANCEL RESERVATION</button>`;
+        } 
+        else if (b.status === 'Missing' || b.status === 'Unreturned') {
+            area.innerHTML = `<div class="alert alert-dark rounded-4">ITEM UNDER AUDIT<br><small>Please see Librarian</small></div>`;
+        }
+        else {
+            area.innerHTML = `<button class="btn btn-secondary btn-lg w-100 rounded-pill py-3" disabled>BOOK UNAVAILABLE</button>`;
+        }
+
+        detailModal.show();
+    }
+
+    async function executeTransaction(bNo, action) {
+        const token = sessionStorage.getItem('kiosk_token');
+        const area = document.getElementById('mActionArea');
+        area.innerHTML = '<div class="spinner-border text-info"></div>';
+
+        try {
+            const res = await fetch('/api/process_transaction', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ 
+                    school_id: currentUser.school_id, 
+                    book_no: bNo, 
+                    action: action, 
+                    token: token 
+                })
+            });
+            const result = await res.json();
+            if(result.success) {
+                detailModal.hide();
+                pullData();
+            } else { 
+                alert("Security Handshake Failed: " + result.message); 
+                pullData(); 
+            }
+        } catch(e) { alert("Connectivity Error. Try again."); }
+    }
+
+    function updateTimers() {
+        const now = new Date().getTime();
+        document.querySelectorAll('[data-exp]').forEach(el => {
+            const exp = new Date(el.dataset.exp).getTime();
+            const diff = exp - now;
+
+            if(diff <= 0) {
+                el.innerText = "EXPIRED";
+                el.classList.add('text-danger');
+            } else {
+                const h = Math.floor(diff / 3600000);
+                const m = Math.floor((diff % 3600000) / 60000);
+                const s = Math.floor((diff % 60000) / 1000);
+                el.innerText = `${h > 0 ? h+':' : ''}${m < 10 ? '0'+m : m}:${s < 10 ? '0'+s : s}`;
+            }
+        });
+    }
+
+    function updateUserLoanCard() {
+        const userLoans = transactions.filter(t => t.school_id === currentUser.school_id && ['Reserved', 'Borrowed'].includes(t.status));
+        const box = document.getElementById('loanSummary');
+        
+        if(userLoans.length > 0) {
+            box.innerHTML = `
+                <div class="text-start p-3 bg-light rounded-4 border">
+                    <h6 class="fw-bold small mb-2">Number of Books borrowed (${userLoans.length}/5)</h6>
+                    ${userLoans.map(l => `
+                        <div class="d-flex justify-content-between mb-1">
+                            <span class="small fw-bold">${l.book_no}</span>
+                            <span class="badge ${l.status === 'Borrowed' ? 'bg-danger' : 'bg-warning text-dark'}">${l.status}</span>
+                        </div>
+                    `).join('')}
+                </div>`;
+        } else {
+            box.innerHTML = `<div class="p-3 border rounded-4 bg-light text-muted small">No active loans.</div>`;
+        }
+    }
+
+    function setCategory(c, btn) {
+        activeCat = c;
+        document.querySelectorAll('.cat-link').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        document.getElementById('bookSearch').value = ""; 
+        syncUI();
+    }
+    
+    function handleLogout() { 
+        clearInterval(syncInterval);
+        clearInterval(timerInterval);
+        sessionStorage.clear(); 
+        location.reload(); 
+    }
+</script>
+</body>
+</html>

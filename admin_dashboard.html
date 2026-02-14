@@ -1,0 +1,707 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Command Center | V4.8.2 DYNAMIC SYSTEM</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        :root { 
+            --admin-dark: #0f172a; 
+            --accent: #38bdf8; 
+            --sidebar-w: 270px; 
+            --lock-overlay: rgba(241, 245, 249, 0.96);
+            --card-shadow: 0 10px 30px rgba(0,0,0,0.08);
+            --danger: #ef4444;
+            --success: #22c55e;
+            --warning: #f59e0b;
+        }
+        body { background-color: #f1f5f9; font-family: 'Inter', system-ui, sans-serif; overflow-x: hidden; color: #334155; }
+        
+        /* Navigation & Sidebar */
+        .sidebar { height: 100vh; background: var(--admin-dark); color: white; position: fixed; width: var(--sidebar-w); padding: 25px; z-index: 1000; transition: 0.3s; display: flex; flex-direction: column; border-right: 1px solid #1e293b; }
+        .main-content { margin-left: var(--sidebar-w); padding: 40px; transition: 0.3s; }
+        
+        .nav-link { cursor: pointer; transition: 0.2s; border-radius: 12px !important; margin-bottom: 8px; padding: 12px 15px; font-weight: 500; display: flex; align-items: center; justify-content: space-between; }
+        .nav-link:hover { background: rgba(255,255,255,0.08); transform: translateX(5px); }
+        .nav-link.active { background: var(--accent) !important; color: var(--admin-dark) !important; font-weight: 800; box-shadow: 0 4px 15px rgba(56, 189, 248, 0.4); }
+        .nav-link.active i { color: var(--admin-dark) !important; }
+
+        /* Floating Admin Card */
+        .admin-profile-trigger { cursor: pointer; position: relative; }
+        .side-down-card { 
+            position: absolute; top: 120%; right: 0; width: 380px; 
+            background: white; border-radius: 24px; box-shadow: 0 25px 60px rgba(0,0,0,0.2); 
+            z-index: 3000; display: none; border: 1px solid #e2e8f0;
+            padding: 30px; animation: slideDown 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        .side-down-card.active { display: block; }
+        
+        /* Security Overlays */
+        .control-lock-overlay {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: var(--lock-overlay); border-radius: 18px;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            z-index: 10; backdrop-filter: blur(10px); transition: 0.5s;
+        }
+        .lock-icon { font-size: 3.5rem; color: #94a3b8; margin-bottom: 20px; animation: bounce 2s infinite; }
+        .is-unlocked .control-lock-overlay { opacity: 0; pointer-events: none; transform: scale(1.1); }
+        
+        /* Component Styling */
+        .card { border: none; border-radius: 24px; box-shadow: var(--card-shadow); margin-bottom: 30px; transition: 0.3s; overflow: hidden; background: white; }
+        .card:hover { transform: translateY(-3px); }
+        
+        .status-pill { padding: 6px 16px; border-radius: 50px; font-size: 0.7rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; }
+        .badge-borrowed { background: #fee2e2; color: #b91c1c; }
+        .badge-available { background: #dcfce7; color: #15803d; }
+        .badge-reserved { background: #fef3c7; color: #b45309; }
+        .badge-overdue { background: var(--danger); color: white; }
+        .badge-pending { background: var(--warning); color: white; animation: pulse 1.5s infinite; }
+        
+        .user-row-img { width: 45px; height: 45px; border-radius: 12px; object-fit: cover; border: 2px solid #f1f5f9; }
+        .cat-pill { white-space: nowrap; padding: 10px 24px; border-radius: 50px; background: #fff; border: 1px solid #e2e8f0; cursor: pointer; font-size: 0.85rem; font-weight: 700; transition: 0.2s; }
+        .cat-pill:hover { border-color: var(--accent); color: var(--accent); }
+        .cat-pill.active { background: var(--accent); color: white; border-color: var(--accent); box-shadow: 0 4px 12px rgba(56, 189, 248, 0.3); }
+        
+        .clock-display { font-size: 1.5rem; font-weight: 800; background: white; padding: 12px 30px; border-radius: 18px; border: 1px solid #e2e8f0; box-shadow: 0 4px 10px rgba(0,0,0,0.03); color: var(--admin-dark); }
+        .user-avatar { width: 52px; height: 52px; border-radius: 50%; object-fit: cover; border: 3px solid var(--accent); transition: 0.3s; }
+        .user-avatar:hover { transform: scale(1.1); border-color: var(--success); }
+        
+        .history-item { padding: 15px; border-left: 4px solid var(--accent); background: #f8fafc; margin-bottom: 12px; border-radius: 0 12px 12px 0; font-size: 0.85rem; transition: 0.2s; }
+        .history-item:hover { background: white; box-shadow: 0 2px 8px rgba(0,0,0,0.05); }
+        
+        @keyframes slideDown { from { opacity: 0; transform: translateY(-20px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes bounce { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
+        @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.7; } 100% { opacity: 1; } }
+        
+        /* Layout Toggling */
+        .view-section { display: none; }
+        .view-section.active { display: block; animation: slideDown 0.4s ease-out; }
+
+        /* Sync Utilities */
+        .sync-indicator { width: 12px; height: 12px; border-radius: 50%; display: inline-block; background: #94a3b8; margin-right: 8px; transition: 0.3s; }
+        .sync-online { background: var(--success); box-shadow: 0 0 15px var(--success); }
+    </style>
+</head>
+<body id="mainBody">
+
+<div class="sidebar">
+    <div class="text-center mb-5 mt-3">
+        <div class="bg-white rounded-4 d-inline-block p-3 mb-3 shadow-lg" style="opacity: 0.9;">
+            <i class="fas fa-server text-primary fa-2x"></i>
+        </div>
+        <h4 class="fw-black text-white mb-0 tracking-tight">LBAS CORE</h4>
+        <span class="badge bg-primary text-white small mt-2 px-3 py-1 rounded-pill">System V4.8.2</span>
+    </div>
+    
+    <nav class="nav flex-column gap-2">
+        <a class="nav-link text-white active" id="linkConsole" onclick="switchView('console')">
+            <span><i class="fas fa-laptop-code me-3"></i>Dashboard</span>
+        </a>
+        <a class="nav-link text-white-50" id="linkRequests" onclick="switchView('requests')">
+            <span><i class="fas fa-user-clock me-3"></i>Access Requests</span>
+            <span id="pendingBadge" class="badge bg-danger rounded-pill" style="display:none">0</span>
+        </a>
+        <a class="nav-link text-white-50" id="linkUsers" onclick="switchView('users')">
+            <span><i class="fas fa-users-cog me-3"></i>User Directory</span>
+        </a>
+        <a class="nav-link text-white-50" id="linkInventory" onclick="switchView('inventory')">
+            <span><i class="fas fa-book-reader me-3"></i>Inventory</span>
+        </a>
+    </nav>
+
+    <div class="mt-auto mb-4">
+        <div id="authStatusBadge" class="alert alert-dark border-0 small text-center fw-bold opacity-75 rounded-4">
+            <i class="fas fa-shield-alt me-2"></i>SECURE MODE
+        </div>
+        <small class="text-white-50 d-block text-center mt-2" style="font-size: 0.7rem;">IP: 10.34.153.190 (Plan A)</small>
+    </div>
+</div>
+
+<div class="main-content">
+    <header class="d-flex justify-content-between align-items-center mb-5">
+        <div>
+            <h2 class="fw-bold mb-1" id="viewTitle">Dashboard</h2>
+            <p class="text-muted mb-0 fw-medium"><span id="syncDot" class="sync-indicator"></span> System Status: <span id="systemStateText">Online</span></p>
+        </div>
+        <div class="d-flex align-items-center gap-4">
+            <div id="liveClock" class="clock-display font-monospace">00:00:00</div>
+            <div class="admin-profile-trigger" onclick="toggleAdminCard()">
+                <img id="headerAvatar" src="/Profile/default.png" class="user-avatar shadow-sm">
+                <div class="side-down-card shadow-lg" id="adminFloatCard" onclick="event.stopPropagation()">
+                    
+                    <div id="loginForm">
+                        <div class="text-center mb-4">
+                            <h5 class="fw-bold text-dark"><i class="fas fa-fingerprint text-primary me-2"></i>Staff Authorization</h5>
+                            <p class="small text-muted">Identify yourself to unlock controls</p>
+                        </div>
+                        <div class="mb-3">
+                            <div class="input-group">
+                                <span class="input-group-text bg-light border-0"><i class="fas fa-id-card text-muted"></i></span>
+                                <input type="text" id="loginUser" class="form-control bg-light border-0 py-2" placeholder="Admin ID">
+                            </div>
+                        </div>
+                        <div class="mb-4">
+                            <div class="input-group">
+                                <span class="input-group-text bg-light border-0"><i class="fas fa-key text-muted"></i></span>
+                                <input type="password" id="loginPass" class="form-control bg-light border-0 py-2" placeholder="Secure Phrase">
+                            </div>
+                        </div>
+                        <button class="btn btn-primary w-100 fw-bold py-3 rounded-3 shadow-sm transition-all" onclick="attemptLogin()">AUTHENTICATE SESSION</button>
+                        <div id="loginError" class="alert alert-danger mt-3 small py-2 fw-bold text-center" style="display:none;">
+                            <i class="fas fa-exclamation-triangle me-2"></i>Access Denied
+                        </div>
+                    </div>
+
+                    <div id="adminProfile" style="display: none;">
+                        <div class="text-center mb-4">
+                            <img id="activeAdminPhoto" src="/Profile/default.png" class="rounded-circle border border-4 border-primary mb-3 shadow-sm" style="width: 90px; height: 90px; object-fit: cover;">
+                            <h5 class="fw-bold mb-1 text-dark" id="activeAdminName">Librarian</h5>
+                            <span class="badge bg-primary-subtle text-primary border border-primary-subtle px-3 py-1 rounded-pill" id="activeAdminRole">HEAD LIBRARIAN</span>
+                        </div>
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <span class="small fw-bold text-uppercase text-muted"><i class="fas fa-history me-1"></i> Audit Log</span>
+                            <button class="btn btn-link btn-sm text-danger p-0 text-decoration-none fw-bold" onclick="clearHistory()">Clear All</button>
+                        </div>
+                        <div id="adminActionLog" class="mb-3" style="max-height: 180px; overflow-y: auto; padding-right: 5px;"></div>
+                        <button class="btn btn-outline-danger w-100 fw-bold py-2 rounded-3 mt-2" onclick="logout()">
+                            <i class="fas fa-sign-out-alt me-2"></i>Log Out
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <div id="consoleView" class="view-section active">
+        <div class="row g-4">
+            <div class="col-xl-4">
+                <div class="card p-4 h-100 border-top border-4 border-success position-relative" id="enrollCard">
+                    <div class="control-lock-overlay">
+                        <i class="fas fa-user-lock lock-icon"></i>
+                        <h5 class="fw-bold text-white">Manual Override</h5>
+                        <p class="text-white-50 small">Log in to create users manually</p>
+                    </div>
+                    <h5 class="fw-bold mb-4"><i class="fas fa-user-plus text-success me-2"></i>Quick Register</h5>
+                    <div class="btn-group w-100 mb-4 shadow-sm">
+                        <button class="btn btn-outline-success active fw-bold" id="btnStudent" onclick="setRole('student')">Student</button>
+                        <button class="btn btn-outline-success fw-bold" id="btnAdmin" onclick="setRole('admin')">Staff</button>
+                    </div>
+                    <div class="mb-3"><input type="text" id="regName" class="form-control bg-light" placeholder="Full Name"></div>
+                    <div class="mb-3"><input type="text" id="regID" class="form-control bg-light" placeholder="Unique ID Number"></div>
+                    <div class="mb-3"><input type="password" id="regPass" class="form-control bg-light" placeholder="Assign Password"></div>
+                    <div class="mb-4">
+                        <label class="small text-muted fw-bold ms-1">Identity Photo</label>
+                        <input type="file" id="regPhoto" class="form-control mt-1">
+                    </div>
+                    <button class="btn btn-success w-100 fw-bold py-2 shadow-sm" onclick="submitUser()">CREATE DATABASE ENTRY</button>
+                </div>
+            </div>
+
+            <div class="col-xl-8">
+                <div class="card p-4 h-100 border-top border-4 border-primary position-relative" id="bulkCard">
+                    <div class="control-lock-overlay"><i class="fas fa-database lock-icon"></i><p class="fw-bold text-white">Restricted Access</p></div>
+                    <div class="d-flex justify-content-between align-items-center mb-4">
+                        <h5 class="fw-bold mb-0"><i class="fas fa-file-import text-primary me-2"></i>Batch Asset Import</h5>
+                        <div class="form-check form-switch">
+                            <input class="form-check-input" type="checkbox" id="wipeCheck">
+                            <label class="form-check-label small text-danger fw-bold" for="wipeCheck">Wipe Existing Data</label>
+                        </div>
+                    </div>
+                    
+                    <div class="d-flex gap-2 mb-3">
+                        <select id="bulkCat" class="form-select fw-bold text-muted">
+                            <option value="General">Target: General Collection</option>
+                            <option value="Mathematics">Target: Mathematics</option>
+                            <option value="Science">Target: Science & Tech</option>
+                            <option value="Literature">Target: Literature</option>
+                        </select>
+                        <button class="btn btn-outline-secondary fw-bold" type="button" onclick="addCustomCategory()">
+                            <i class="fas fa-plus"></i> New
+                        </button>
+                    </div>
+                    
+                    <textarea id="bulkArea" class="form-control font-monospace mb-4 bg-light" rows="6" placeholder="Instructions:&#10;Paste book list here. The selected category above applies to ALL items unless specified.&#10;&#10;Supported Formats:&#10;CODE | Title&#10;CODE, Title&#10;CODE Title&#10;&#10;Examples:&#10;MAT101, Advanced Algebra&#10;SCI202 Biology Basics"></textarea>
+                    <button class="btn btn-primary w-100 fw-bold py-2 shadow-sm" onclick="submitBulk()">EXECUTE BATCH SYNC</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="card mt-4 border-0 shadow-sm">
+            <div class="card-header bg-dark text-white d-flex justify-content-between align-items-center p-3">
+                <span class="fw-bold small mt-1"><i class="fas fa-broadcast-tower text-danger me-2 animate-pulse"></i>ACTIVE TRAFFIC MONITOR</span>
+                <button class="btn btn-sm btn-outline-light rounded-pill px-3" onclick="loadData()">Refresh Stream</button>
+            </div>
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="bg-light text-muted">
+                        <tr class="small text-uppercase">
+                            <th class="ps-4">Status</th><th>Book Code</th><th>Borrowed By</th><th>Timer</th><th class="text-end pe-4">Control</th>
+                        </tr>
+                    </thead>
+                    <tbody id="monitorBody"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <div id="requestsView" class="view-section">
+        <div class="card p-4 border-top border-4 border-warning">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <h5 class="fw-bold mb-0 text-dark"><i class="fas fa-user-clock text-warning me-2"></i>Registration Queue</h5>
+                    <p class="small text-muted mb-0">Review and approve student access requests</p>
+                </div>
+                <button class="btn btn-outline-secondary btn-sm" onclick="loadData()"><i class="fas fa-sync-alt me-2"></i>Check Updates</button>
+            </div>
+            <div class="alert alert-warning border-0 d-flex align-items-center mb-4 rounded-3">
+                <i class="fas fa-info-circle fa-2x me-3 opacity-50"></i>
+                <div>
+                    <h6 class="fw-bold mb-0">Approval Required</h6>
+                    <small>Users in this list cannot log in to LBAS until you click "Approve".</small>
+                </div>
+            </div>
+            <div class="table-responsive">
+                <table class="table table-hover align-middle">
+                    <thead class="bg-light text-secondary">
+                        <tr class="small text-uppercase">
+                            <th class="ps-4">Identity</th>
+                            <th>School ID</th>
+                            <th>Full Name</th>
+                            <th>Status</th>
+                            <th class="text-end pe-4">Decision</th>
+                        </tr>
+                    </thead>
+                    <tbody id="requestsBody"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <div id="usersView" class="view-section">
+        <div class="card p-4">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <h5 class="fw-bold mb-0"><i class="fas fa-database text-primary me-2"></i>Master User Database</h5>
+                    <p class="small text-muted mb-0">Manage active student and staff accounts</p>
+                </div>
+                <div class="d-flex gap-2 w-50 justify-content-end">
+                    <select id="userTypeFilter" class="form-select w-25 bg-light border-0 fw-bold" onchange="renderUsersList()">
+                        <option value="all">All Active</option>
+                        <option value="student">Students</option>
+                        <option value="admin">Admins</option>
+                    </select>
+                    <input type="text" id="userSearch" class="form-control w-50 bg-light border-0" placeholder="Search database..." onkeyup="renderUsersList()">
+                </div>
+            </div>
+            <div class="table-responsive">
+                <table class="table table-hover align-middle">
+                    <thead class="bg-light text-muted">
+                        <tr class="small text-uppercase">
+                            <th class="ps-4">Profile</th>
+                            <th>ID Number</th>
+                            <th>Full Name</th>
+                            <th>Privileges</th>
+                            <th>Current State</th>
+                            <th class="text-end pe-4">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="usersListBody"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <div id="inventoryView" class="view-section">
+        <div class="card p-4">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h5 class="fw-bold"><i class="fas fa-boxes text-success me-2"></i>Inventory Control</h5>
+                <input type="text" id="inventorySearch" class="form-control w-25 bg-light border-0" placeholder="Scan or type code..." onkeyup="filterInventory()">
+            </div>
+            <div class="d-flex gap-2 mb-4 overflow-auto pb-2" id="categoryPillContainer">
+                <div class="cat-pill active" onclick="setCategoryFilter('All', this)">All Collections</div>
+                </div>
+            <div class="table-responsive" style="max-height: 600px; overflow-y: auto;">
+                <table class="table table-hover align-middle">
+                    <thead class="bg-light sticky-top">
+                        <tr class="small text-uppercase">
+                            <th class="ps-4">Book No.</th><th>Asset Details</th><th>Availability</th><th class="text-end pe-4">Modify</th>
+                        </tr>
+                    </thead>
+                    <tbody id="inventoryBody"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="editModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg" style="border-radius: 24px; overflow: hidden;">
+            <div class="modal-header border-0 pb-0 bg-light">
+                <h5 class="fw-bold p-3"><i class="fas fa-edit text-primary me-2"></i>Modify Record</h5>
+                <button type="button" class="btn-close m-3" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body p-4 bg-white">
+                <input type="hidden" id="editType">
+                <div class="mb-3">
+                    <label class="small fw-bold text-muted mb-1">Unique Identifier (Locked)</label>
+                    <input type="text" id="editID" class="form-control bg-light fw-bold text-dark" readonly>
+                </div>
+                <div class="mb-4">
+                    <label class="small fw-bold text-muted mb-1">Display Name / Title</label>
+                    <input type="text" id="editName" class="form-control fw-bold">
+                </div>
+                <div id="bookOnlyFields" style="display:none;">
+                    <div class="mb-3">
+                        <label class="small fw-bold text-muted mb-1">Collection Category</label>
+                        <select id="editCategory" class="form-select">
+                            <option value="General">General</option>
+                            <option value="Mathematics">Mathematics</option>
+                            <option value="Science">Science</option>
+                            <option value="Literature">Literature</option>
+                        </select>
+                    </div>
+                </div>
+                <button class="btn btn-primary w-100 fw-bold mt-2 py-2 rounded-3 shadow-sm" onclick="saveEdits()">SAVE CHANGES</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+    let currentRole = 'student', 
+        masterBooks = [], 
+        masterUsers = [],
+        masterAdmins = [],
+        masterTransactions = [],
+        pendingRequests = [],
+        adminHistory = JSON.parse(localStorage.getItem('adminHistory') || '[]'), 
+        isStaff = false, 
+        activeFilterCat = 'All';
+
+    const editModal = new bootstrap.Modal(document.getElementById('editModal'));
+
+    window.onload = () => {
+        if(localStorage.getItem('isStaffAuth') === 'true') {
+            executeUnlock(localStorage.getItem('adminName'), localStorage.getItem('adminPhoto'));
+        }
+        loadData();
+        setInterval(() => { document.getElementById('liveClock').innerText = new Date().toLocaleTimeString(); }, 1000);
+        setInterval(loadData, 10000);
+    };
+
+    async function loadData() {
+        try {
+            const [bRes, uRes, aRes, tRes] = await Promise.all([
+                fetch('/api/books'),
+                fetch('/api/users'), 
+                fetch('/api/admins'),
+                fetch('/api/transactions')
+            ]);
+            
+            masterBooks = await bRes.json();
+            const allUsers = await uRes.json();
+            masterAdmins = await aRes.json();
+            masterTransactions = await tRes.json();
+            
+            masterUsers = allUsers.filter(u => u.status !== 'pending');
+            pendingRequests = allUsers.filter(u => u.status === 'pending');
+
+            document.getElementById('syncDot').classList.add('sync-online');
+            document.getElementById('systemStateText').innerText = "Live & Synced";
+            
+            updatePendingBadge();
+            renderCategoryPills(); // NEW: Auto-generate category tabs
+            renderInventory(masterBooks);
+            syncMonitor();
+            renderUsersList();
+            renderRequestsList();
+            renderAdminHistory();
+            
+        } catch(e) { 
+            console.error("Data Sync Failed", e); 
+            document.getElementById('syncDot').classList.remove('sync-online');
+            document.getElementById('systemStateText').innerText = "Connection Lost";
+        }
+    }
+
+    // --- DYNAMIC CATEGORIES (NEW FEATURE) ---
+    function renderCategoryPills() {
+        // Extract unique categories from loaded books
+        const uniqueCats = [...new Set(masterBooks.map(b => b.category))].sort();
+        // Add default ones if missing to keep UI consistent
+        const defaults = ['General', 'Mathematics', 'Science', 'Literature'];
+        defaults.forEach(d => { if(!uniqueCats.includes(d)) uniqueCats.push(d); });
+        
+        const container = document.getElementById('categoryPillContainer');
+        // Preserve "All" pill
+        let html = `<div class="cat-pill ${activeFilterCat==='All'?'active':''}" onclick="setCategoryFilter('All', this)">All Collections</div>`;
+        
+        uniqueCats.forEach(cat => {
+            html += `<div class="cat-pill ${activeFilterCat===cat?'active':''}" onclick="setCategoryFilter('${cat}', this)">${cat}</div>`;
+        });
+        container.innerHTML = html;
+        
+        // Also update the dropdowns (Bulk & Edit)
+        updateDropdowns(uniqueCats);
+    }
+
+    function updateDropdowns(categories) {
+        const bulkSel = document.getElementById('bulkCat');
+        const editSel = document.getElementById('editCategory');
+        
+        // Only update if we have new categories to show (simple check)
+        if(bulkSel.options.length < categories.length) {
+            // Keep current selection
+            const currentBulk = bulkSel.value;
+            bulkSel.innerHTML = categories.map(c => `<option value="${c}">Target: ${c}</option>`).join('');
+            bulkSel.value = currentBulk;
+
+            const currentEdit = editSel.value;
+            editSel.innerHTML = categories.map(c => `<option value="${c}">${c}</option>`).join('');
+            editSel.value = currentEdit;
+        }
+    }
+
+    function addCustomCategory() {
+        const newCat = prompt("Enter Name for New Category:");
+        if(newCat && newCat.trim() !== "") {
+            const clean = newCat.trim();
+            // Add to dropdown immediately for use
+            const bulkSel = document.getElementById('bulkCat');
+            const opt = document.createElement("option");
+            opt.value = clean;
+            opt.text = "Target: " + clean;
+            bulkSel.add(opt);
+            bulkSel.value = clean; // Select it automatically
+            alert(`Category "${clean}" created. You can now import books into it.`);
+        }
+    }
+
+    // --- BULK REGISTER (FIXED) ---
+    async function submitBulk() {
+        const text = document.getElementById('bulkArea').value;
+        if(!text.trim()) return alert("Please enter book data.");
+
+        const res = await fetch('/api/bulk_register', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({
+                text: text,
+                category: document.getElementById('bulkCat').value,
+                clear_first: document.getElementById('wipeCheck').checked
+            })
+        });
+        const data = await res.json();
+        
+        if(data.success) {
+            // Handle both legacy and new backend keys
+            const count = data.items_added || data.added || 0;
+            addHistory(`Bulk Import: ${count} books added`);
+            alert(`Success! ${count} books registered.`);
+            loadData(); // Force refresh
+            document.getElementById('bulkArea').value = ''; // Clear input
+        } else {
+            alert("Error: " + (data.message || "Import failed. Check console."));
+        }
+    }
+
+    // --- STANDARD UI LOGIC (RETAINED) ---
+    function updatePendingBadge() {
+        const badge = document.getElementById('pendingBadge');
+        if(pendingRequests.length > 0) {
+            badge.innerText = pendingRequests.length;
+            badge.style.display = 'inline-block';
+            badge.classList.add('animate-pulse');
+        } else { badge.style.display = 'none'; }
+    }
+
+    function switchView(view) {
+        document.querySelectorAll('.view-section').forEach(s => s.classList.remove('active'));
+        document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active', 'text-white'));
+        document.querySelectorAll('.nav-link').forEach(l => l.classList.add('text-white-50'));
+
+        const linkMap = {
+            'console': { id: 'linkConsole', title: 'Command Dashboard' },
+            'requests': { id: 'linkRequests', title: 'Registration Queue' },
+            'users': { id: 'linkUsers', title: 'User Directory' },
+            'inventory': { id: 'linkInventory', title: 'Inventory Manager' }
+        };
+
+        const target = linkMap[view];
+        if(target) {
+            document.getElementById(view + 'View').classList.add('active');
+            const link = document.getElementById(target.id);
+            link.classList.add('active', 'text-white');
+            link.classList.remove('text-white-50');
+            document.getElementById('viewTitle').innerText = target.title;
+        }
+        if(view === 'requests') renderRequestsList();
+    }
+
+    function renderRequestsList() {
+        const tbody = document.getElementById('requestsBody');
+        tbody.innerHTML = pendingRequests.map(u => `
+            <tr>
+                <td class="ps-4"><img src="/Profile/${u.photo || 'default.png'}" class="user-row-img shadow-sm"></td>
+                <td><code class="fw-bold text-dark">${u.school_id}</code></td>
+                <td class="fw-bold">${u.name}</td>
+                <td><span class="badge badge-pending">PENDING</span></td>
+                <td class="text-end pe-4">
+                    <button class="btn btn-sm btn-success me-2 fw-bold px-3" onclick="decideRequest('${u.school_id}', 'approve')">Approve</button>
+                    <button class="btn btn-sm btn-outline-danger fw-bold px-3" onclick="decideRequest('${u.school_id}', 'reject')">Reject</button>
+                </td>
+            </tr>
+        `).join('') || '<tr><td colspan="5" class="text-center py-5 text-muted fw-bold">No pending registrations.</td></tr>';
+    }
+
+    async function decideRequest(id, action) {
+        if(!isStaff) return alert("Security Lock Active");
+        if(!confirm(`Confirm ${action.toUpperCase()}?`)) return;
+        // Note: Ensure /api/approve_user exists in backend, otherwise this will fail silently
+        const endpoint = action === 'approve' ? '/api/approve_user' : '/api/reject_user';
+        try {
+            const res = await fetch(endpoint, { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ school_id: id }) });
+            if((await res.json()).success) { loadData(); }
+        } catch(e) {}
+    }
+
+    function renderUsersList() {
+        const query = document.getElementById('userSearch').value.toLowerCase();
+        const typeFilter = document.getElementById('userTypeFilter').value;
+        const tbody = document.getElementById('usersListBody');
+        let combined = [...masterUsers.map(u => ({...u, type: 'student'})), ...masterAdmins.map(a => ({...a, type: 'admin'}))];
+        const filtered = combined.filter(u => (u.name.toLowerCase().includes(query) || u.school_id.includes(query)) && (typeFilter === 'all' || u.type === typeFilter));
+
+        tbody.innerHTML = filtered.map(u => `
+            <tr>
+                <td class="ps-4"><img src="/Profile/${u.photo || 'default.png'}" class="user-row-img shadow-sm"></td>
+                <td><code class="fw-bold text-dark">${u.school_id}</code></td>
+                <td class="fw-bold">${u.name}</td>
+                <td><span class="badge ${u.type === 'admin' ? 'bg-danger' : 'bg-primary'}">${u.type.toUpperCase()}</span></td>
+                <td><span class="status-pill badge-available">Active</span></td>
+                <td class="text-end pe-4">${isStaff ? `<button class="btn btn-sm btn-light border" onclick="deleteRecord('user', '${u.school_id}', '${u.type}')"><i class="fas fa-trash text-danger"></i></button>` : '<i class="fas fa-lock text-muted"></i>'}</td>
+            </tr>`).join('') || '<tr><td colspan="6" class="text-center py-5 text-muted">No records found.</td></tr>';
+    }
+
+    function renderInventory(data) {
+        const tbody = document.getElementById('inventoryBody');
+        tbody.innerHTML = data.map(b => `
+            <tr>
+                <td width="150" class="ps-4"><code class="text-primary fw-bold">${b.book_no}</code></td>
+                <td><div class="fw-bold text-dark">${b.title}</div><div class="small text-muted text-uppercase fw-bold" style="font-size:0.65rem">${b.category}</div></td>
+                <td><span class="status-pill badge-${b.status.toLowerCase()}">${b.status}</span></td>
+                <td class="text-end pe-4">${isStaff ? `<button class="btn btn-sm btn-light border me-1" onclick="openEdit('book', '${b.book_no}', '${b.title}', '${b.category}')"><i class="fas fa-pen text-primary"></i></button> <button class="btn btn-sm btn-light border" onclick="deleteRecord('book', '${b.book_no}')"><i class="fas fa-trash text-danger"></i></button>` : ''}</td>
+            </tr>`).join('');
+    }
+
+    function openEdit(type, id, name, extra) {
+        document.getElementById('editType').value = type;
+        document.getElementById('editID').value = id;
+        document.getElementById('editName').value = name;
+        const bookFields = document.getElementById('bookOnlyFields');
+        if(type === 'book') {
+            bookFields.style.display = 'block';
+            document.getElementById('editCategory').value = extra;
+        } else {
+            bookFields.style.display = 'none';
+            document.getElementById('editID').dataset.role = extra;
+        }
+        editModal.show();
+    }
+
+    async function saveEdits() {
+        const type = document.getElementById('editType').value;
+        const id = document.getElementById('editID').value;
+        const name = document.getElementById('editName').value;
+        let endpoint = type === 'book' ? '/api/update_book' : '/api/update_member';
+        let payload = type === 'book' ? { book_no: id, title: name, category: document.getElementById('editCategory').value } : { school_id: id, name: name, type: document.getElementById('editID').dataset.role };
+        const res = await fetch(endpoint, { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(payload) });
+        if((await res.json()).success) { editModal.hide(); addHistory(`Updated ${type}: ${id}`); loadData(); }
+    }
+
+    async function deleteRecord(type, id, role = '') {
+        if(!confirm(`Delete ${type} ${id}?`)) return;
+        let endpoint = type === 'book' ? '/api/delete_book' : '/api/delete_member';
+        let payload = type === 'book' ? { book_no: id } : { school_id: id, type: role };
+        const res = await fetch(endpoint, { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(payload) });
+        if((await res.json()).success) { addHistory(`Deleted ${type}: ${id}`); loadData(); }
+    }
+
+    async function attemptLogin() {
+        const u = document.getElementById('loginUser').value;
+        const p = document.getElementById('loginPass').value;
+        try {
+            const res = await fetch('/api/login', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ school_id: u, password: p }) });
+            const data = await res.json();
+            if(data.success && data.profile.is_staff) {
+                localStorage.setItem('isStaffAuth', 'true');
+                localStorage.setItem('adminName', data.profile.name);
+                localStorage.setItem('adminPhoto', data.profile.photo);
+                executeUnlock(data.profile.name, data.profile.photo);
+            } else { showLoginError(); }
+        } catch (e) { showLoginError(); }
+    }
+
+    function executeUnlock(name, photo) {
+        isStaff = true;
+        document.getElementById('mainBody').classList.add('is-unlocked');
+        document.getElementById('loginForm').style.display = 'none';
+        document.getElementById('adminProfile').style.display = 'block';
+        document.getElementById('activeAdminName').innerText = name;
+        document.getElementById('headerAvatar').src = `/Profile/${photo}`;
+        document.getElementById('activeAdminPhoto').src = `/Profile/${photo}`;
+        document.getElementById('authStatusBadge').className = "alert alert-success py-2 small fw-bold text-center border-0 shadow-sm rounded-4";
+        document.getElementById('authStatusBadge').innerHTML = '<i class="fas fa-check-circle me-2"></i>AUTHORIZED';
+        addHistory(`System Unlocked by: ${name}`);
+        loadData();
+    }
+
+    async function submitUser() {
+        if(!isStaff) return alert("System Locked");
+        const fd = new FormData();
+        fd.append('name', document.getElementById('regName').value);
+        fd.append('school_id', document.getElementById('regID').value);
+        fd.append('password', document.getElementById('regPass').value);
+        const photo = document.getElementById('regPhoto').files[0];
+        if(photo) fd.append('photo', photo);
+        const endpoint = (currentRole === 'admin') ? '/api/register_librarian' : '/api/register_student';
+        const res = await fetch(endpoint, { method: 'POST', body: fd });
+        if((await res.json()).success) { addHistory(`Manual Register: ${document.getElementById('regID').value}`); alert("User Added"); loadData(); }
+    }
+
+    async function syncMonitor() {
+        const active = masterTransactions.filter(t => t.status === 'Borrowed' || t.status === 'Reserved');
+        document.getElementById('monitorBody').innerHTML = active.map(t => `<tr><td class="ps-4"><span class="status-pill badge-${t.status.toLowerCase()}">${t.status}</span></td><td><code class="fw-bold text-dark">${t.book_no}</code></td><td class="small fw-bold">${t.school_id}</td><td class="timer font-monospace fw-bold text-primary" data-expiry="${t.expiry}">...</td><td class="text-end pe-4">${isStaff ? `<button class="btn btn-sm btn-danger px-3 rounded-pill fw-bold" onclick="releaseAsset('${t.book_no}')">RELEASE</button>` : `<i class="fas fa-lock text-muted"></i>`}</td></tr>`).join('') || '<tr><td colspan="5" class="text-center py-4 text-muted">No active transactions.</td></tr>';
+        updateTimers();
+    }
+
+    async function releaseAsset(b_no) {
+        if(!confirm("Return " + b_no + "?")) return;
+        const res = await fetch('/api/process_transaction', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ book_no: b_no, action: 'return' }) });
+        if((await res.json()).success) { addHistory(`Returned Book: ${b_no}`); loadData(); }
+    }
+
+    function updateTimers() {
+        document.querySelectorAll('.timer').forEach(el => {
+            const diff = new Date(el.dataset.expiry) - new Date();
+            el.innerText = diff <= 0 ? "OVERDUE" : `${Math.floor(diff / 60000)}m ${Math.floor((diff % 60000) / 1000)}s`;
+            if(diff <= 0) el.classList.add('text-danger', 'fw-black');
+        });
+    }
+
+    function showLoginError() { document.getElementById('loginError').style.display = 'block'; setTimeout(() => { document.getElementById('loginError').style.display = 'none'; }, 3000); }
+    function toggleAdminCard() { document.getElementById('adminFloatCard').classList.toggle('active'); }
+    function setRole(role) { currentRole = role; document.getElementById('btnStudent').classList.toggle('active', role === 'student'); document.getElementById('btnAdmin').classList.toggle('active', role === 'admin'); }
+    function logout() { localStorage.clear(); location.reload(); }
+    function addHistory(msg) { adminHistory.unshift({ msg, time: new Date().toLocaleTimeString() }); localStorage.setItem('adminHistory', JSON.stringify(adminHistory.slice(0, 20))); renderAdminHistory(); }
+    function renderAdminHistory() { const log = document.getElementById('adminActionLog'); if(log) log.innerHTML = adminHistory.map(h => `<div class="history-item"><div class="fw-bold">${h.msg}</div><div class="text-muted smaller">${h.time}</div></div>`).join(''); }
+    function clearHistory() { adminHistory = []; localStorage.removeItem('adminHistory'); renderAdminHistory(); }
+    function setCategoryFilter(cat, el) { activeFilterCat = cat; document.querySelectorAll('.cat-pill').forEach(p => p.classList.remove('active')); el.classList.add('active'); filterInventory(); }
+    function filterInventory() { const q = document.getElementById('inventorySearch').value.toLowerCase(); const filtered = masterBooks.filter(b => (b.title.toLowerCase().includes(q) || b.book_no.toLowerCase().includes(q)) && (activeFilterCat === 'All' || b.category === activeFilterCat)); renderInventory(filtered); }
+</script>
+</body>
+</html>

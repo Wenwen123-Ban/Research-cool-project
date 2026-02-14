@@ -1,0 +1,74 @@
+[
+    {
+        "rating_id": "884179d2-9",
+        "timestamp": "2026-02-04 19:51:59",
+        "school_id": "2026-001",
+        "stars": 5,
+        "feedback": "GUD",
+        "platform": "Tablet"
+    },
+    {
+        "rating_id": "2c06e5cc-2",
+        "timestamp": "2026-02-04 19:52:52",
+        "school_id": "101010",
+        "stars": 5,
+        "feedback": "GUD GUD GUD GUD GUD",
+        "platform": "Tablet"
+    },
+    {
+        "rating_id": "02387317-1",
+        "timestamp": "2026-02-08 15:31:00",
+        "school_id": "2026-2027",
+        "stars": 3,
+        "feedback": "It's gud",
+        "platform": "Mobile"
+    },
+    {
+        "rating_id": "8e4258f9-7",
+        "timestamp": "2026-02-08 18:33:45",
+        "school_id": "7777",
+        "stars": 5,
+        "feedback": "GUD",
+        "platform": "Mobile"
+    },
+    {
+        "rating_id": "5901f1a4-1",
+        "timestamp": "2026-02-08 18:39:59",
+        "school_id": "8989",
+        "stars": 5,
+        "feedback": "GUDGID ",
+        "platform": "Mobile"
+    },
+    {
+        "rating_id": "3a367418-6",
+        "timestamp": "2026-02-10 18:50:27",
+        "school_id": "67",
+        "stars": 2,
+        "feedback": "Not gud lot bugs",
+        "platform": "Mobile"
+    },
+    {
+        "rating_id": "2bf899c0-7",
+        "timestamp": "2026-02-10 18:51:11",
+        "school_id": "54321",
+        "stars": 1,
+        "feedback": "Not gud ",
+        "platform": "Mobile"
+    },
+    {
+        "rating_id": "01d25565-1",
+        "timestamp": "2026-02-10 18:52:14",
+        "school_id": "202020",
+        "stars": 3,
+        "feedback": "Not gud",
+        "platform": "Mobile"
+    },
+    {
+        "rating_id": "c2a3c650-c",
+        "timestamp": "2026-02-10 18:53:07",
+        "school_id": "1212",
+        "stars": 4,
+        "feedback": "Gud",
+        "platform": "Mobile"
+    }
+]
