@@ -856,7 +856,14 @@ All books inside will be deleted.`)) return;
     function addHistory(msg) { adminHistory.unshift({ msg, time: new Date().toLocaleTimeString() }); localStorage.setItem('adminHistory', JSON.stringify(adminHistory.slice(0, 20))); renderAdminHistory(); }
     function renderAdminHistory() { const log = document.getElementById('adminActionLog'); if(log) log.innerHTML = adminHistory.map(h => `<div class="history-item"><div class="fw-bold">${h.msg}</div><div class="text-muted smaller">${h.time}</div></div>`).join(''); }
     function clearHistory() { adminHistory = []; localStorage.removeItem('adminHistory'); renderAdminHistory(); }
-    function setCategoryFilter(cat) { activeFilterCat = cat; filterInventory(); }
+    function setCategoryFilter(cat, pillEl = null) {
+        activeFilterCat = cat;
+        if (pillEl) {
+            document.querySelectorAll('#categoryPillContainer .cat-pill').forEach(p => p.classList.remove('active'));
+            pillEl.classList.add('active');
+        }
+        filterInventory();
+    }
     function filterInventory() { const q = document.getElementById('inventorySearch').value.toLowerCase(); const filtered = masterBooks.filter(b => (b.title.toLowerCase().includes(q) || b.book_no.toLowerCase().includes(q)) && (activeFilterCat === 'All' || b.category === activeFilterCat)); renderInventory(filtered); }
 </script>
 </body>
