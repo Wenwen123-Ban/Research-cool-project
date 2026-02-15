@@ -412,7 +412,44 @@ def api_finalize_reset():
 
 @app.route("/api/register_student", methods=["POST"])
 def api_reg_student():
-    return perform_registration("users", "Student")
+    try:
+        name = request.form.get("name")
+        school_id = request.form.get("school_id")
+        password = request.form.get("password")
+        photo = request.files.get("photo")
+
+        s_id = str(school_id or "").strip().lower()
+        if not name or not s_id or not password:
+            return jsonify({"success": False, "message": "Missing required fields"}), 400
+
+        if find_any_user(s_id):
+            return jsonify({"success": False, "message": "ID Exists"}), 400
+
+        saved_photo = "default.png"
+        if photo and photo.filename:
+            _, ext = os.path.splitext(photo.filename)
+            ext = ext.lower()[:10] if ext else ".png"
+            filename = secure_filename(f"{s_id}_{int(datetime.now().timestamp())}{ext}")
+            if filename:
+                photo.save(os.path.join(app.config["UPLOAD_FOLDER"], filename))
+                saved_photo = filename
+
+        users = get_db("users")
+        users.append(
+            {
+                "name": name,
+                "school_id": s_id,
+                "password": password,
+                "category": "Student",
+                "photo": saved_photo,
+                "status": "pending",
+                "created_at": datetime.now().strftime("%Y-%m-%d %H:%M"),
+            }
+        )
+        save_db("users", users)
+        return jsonify({"success": True})
+    except Exception as e:
+        return jsonify({"success": False, "message": str(e)})
 
 
 @app.route("/api/register_librarian", methods=["POST"])
