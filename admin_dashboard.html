@@ -61,8 +61,6 @@
         
         .user-row-img { width: 45px; height: 45px; border-radius: 12px; object-fit: cover; border: 2px solid #f1f5f9; }
         .cat-pill-wrapper { display: inline-flex; align-items: center; position: relative; margin-right: 8px; }
-        .cat-delete-btn { margin-left: 6px; width: 28px; height: 28px; border: 1px solid #fecaca; background: #fff; color: #dc2626; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; cursor: pointer; z-index: 2; transition: 0.2s; }
-        .cat-delete-btn:hover { background: #fee2e2; border-color: #fca5a5; }
         .cat-pill { white-space: nowrap; padding: 10px 24px; border-radius: 50px; background: #fff; border: 1px solid #e2e8f0; cursor: pointer; font-size: 0.85rem; font-weight: 700; transition: 0.2s; z-index: 1; }
         .cat-pill:hover { border-color: var(--accent); color: var(--accent); }
         .cat-pill.active { background: var(--accent); color: white; border-color: var(--accent); box-shadow: 0 4px 12px rgba(56, 189, 248, 0.3); }
@@ -217,7 +215,7 @@
                     </div>
                     
                     <div class="d-flex gap-2 mb-3">
-                        <select id="bulkCat" class="form-select fw-bold text-muted">
+                        <select id="batchCategorySelect" class="form-select fw-bold text-muted">
                             <option value="General">Target: General Collection</option>
                             <option value="Mathematics">Target: Mathematics</option>
                             <option value="Science">Target: Science & Tech</option>
@@ -227,6 +225,9 @@
                             <i class="fas fa-plus"></i> New
                         </button>
                     </div>
+                    <button class="btn btn-sm btn-danger mt-2" type="button" onclick="confirmDeleteCategoryFromDropdown()">
+                        Delete Selected Category
+                    </button>
                     
                     <textarea id="bulkArea" class="form-control font-monospace mb-4 bg-light" rows="6" placeholder="Instructions:&#10;Paste book list here. The selected category above applies to ALL items unless specified.&#10;&#10;Supported Formats:&#10;CODE | Title&#10;CODE, Title&#10;CODE Title&#10;&#10;Examples:&#10;MAT101, Advanced Algebra&#10;SCI202 Biology Basics"></textarea>
                     <button class="btn btn-primary w-100 fw-bold py-2 shadow-sm" onclick="submitBulk()">EXECUTE BATCH SYNC</button>
@@ -429,7 +430,7 @@
             </div>
             <div class="modal-body pt-2">
                 <p class="mb-2">Are you sure you want to delete this category?</p>
-                <p class="small text-danger mb-0">This will permanently delete ALL books assigned to this category.</p>
+                <p class="small text-danger mb-0">This will permanently delete ALL books registered under this category.</p>
             </div>
             <div class="modal-footer border-0 pt-0">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
@@ -519,10 +520,7 @@
         
         uniqueCats.forEach(cat => {
             const categoryArg = JSON.stringify(cat);
-            const deleteControl = isStaff
-                ? `<button class="cat-delete-btn" onclick="event.stopPropagation(); confirmDeleteCategory(${categoryArg})"><i class="fas fa-times"></i></button>`
-                : '';
-            html += `<div class="cat-pill-wrapper"><div class="cat-pill ${activeFilterCat===cat?'active':''}" onclick="setCategoryFilter(${categoryArg}, this)">${cat}</div>${deleteControl}</div>`;
+            html += `<div class="cat-pill-wrapper"><div class="cat-pill ${activeFilterCat===cat?'active':''}" onclick="setCategoryFilter(${categoryArg}, this)">${cat}</div></div>`;
         });
         container.innerHTML = html;
         
@@ -531,20 +529,16 @@
     }
 
     function updateDropdowns(categories) {
-        const bulkSel = document.getElementById('bulkCat');
+        const bulkSel = document.getElementById('batchCategorySelect');
         const editSel = document.getElementById('editCategory');
-        
-        // Only update if we have new categories to show (simple check)
-        if(bulkSel.options.length < categories.length) {
-            // Keep current selection
-            const currentBulk = bulkSel.value;
-            bulkSel.innerHTML = categories.map(c => `<option value="${c}">Target: ${c}</option>`).join('');
-            bulkSel.value = currentBulk;
 
-            const currentEdit = editSel.value;
-            editSel.innerHTML = categories.map(c => `<option value="${c}">${c}</option>`).join('');
-            editSel.value = currentEdit;
-        }
+        const currentBulk = bulkSel.value;
+        bulkSel.innerHTML = categories.map(c => `<option value="${c}">Target: ${c}</option>`).join('');
+        bulkSel.value = categories.includes(currentBulk) ? currentBulk : (categories[0] || 'General');
+
+        const currentEdit = editSel.value;
+        editSel.innerHTML = categories.map(c => `<option value="${c}">${c}</option>`).join('');
+        editSel.value = categories.includes(currentEdit) ? currentEdit : (categories[0] || 'General');
     }
 
     function addCustomCategory() {
@@ -552,7 +546,7 @@
         if(newCat && newCat.trim() !== "") {
             const clean = newCat.trim();
             // Add to dropdown immediately for use
-            const bulkSel = document.getElementById('bulkCat');
+            const bulkSel = document.getElementById('batchCategorySelect');
             const opt = document.createElement("option");
             opt.value = clean;
             opt.text = "Target: " + clean;
@@ -562,13 +556,15 @@
         }
     }
 
-    function confirmDeleteCategory(cat) {
-        const cleanCategory = String(cat || '').trim();
-        if(!cleanCategory || cleanCategory === 'All' || cleanCategory === 'All Collections') {
+    function confirmDeleteCategoryFromDropdown() {
+        const select = document.getElementById('batchCategorySelect');
+        const selectedCategory = select ? String(select.value || '').trim() : '';
+
+        if(!selectedCategory || selectedCategory === 'All' || selectedCategory === 'All Collections') {
             return alert('This category cannot be deleted.');
         }
 
-        categoryToDelete = cleanCategory;
+        categoryToDelete = selectedCategory;
         new bootstrap.Modal(document.getElementById('deleteCategoryModal')).show();
     }
 
@@ -586,7 +582,7 @@
 
             if(data.success){
                 if (activeFilterCat === categoryToDelete) activeFilterCat = 'All';
-                loadData(true);
+                await loadData();
             } else {
                 alert('Delete failed.');
             }
@@ -609,7 +605,7 @@
             headers: {'Content-Type': 'application/json'},
             body: JSON.stringify({
                 text: text,
-                category: document.getElementById('bulkCat').value,
+                category: document.getElementById('batchCategorySelect').value,
                 clear_first: document.getElementById('wipeCheck').checked
             })
         });
