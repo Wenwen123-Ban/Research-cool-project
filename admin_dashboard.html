@@ -109,6 +109,9 @@
         <a class="nav-link text-white-50" id="linkInventory" onclick="switchView('inventory')">
             <span><i class="fas fa-book-reader me-3"></i>Inventory</span>
         </a>
+        <a class="nav-link text-white-50" id="linkLeaderboard" style="display:none;" onclick="switchView('leaderboard')">
+            <span><i class="fas fa-trophy me-3"></i>Leaderboard</span>
+        </a>
     </nav>
 
     <div class="mt-auto mb-4">
@@ -334,6 +337,28 @@
             </div>
         </div>
     </div>
+
+    <!-- NEW: Admin Leaderboard View -->
+    <div id="leaderboardView" class="view-section">
+        <div class="card p-4 mb-4">
+            <h5 class="fw-bold"><i class="fas fa-users text-primary me-2"></i>Top Borrowers This Month</h5>
+            <div class="table-responsive">
+                <table class="table table-hover align-middle">
+                    <thead class="bg-light"><tr class="small text-uppercase"><th class="ps-4">Rank</th><th>School ID</th><th>Total Borrowed</th></tr></thead>
+                    <tbody id="topBorrowersBody"></tbody>
+                </table>
+            </div>
+        </div>
+        <div class="card p-4">
+            <h5 class="fw-bold"><i class="fas fa-book text-success me-2"></i>Top Books This Month</h5>
+            <div class="table-responsive">
+                <table class="table table-hover align-middle">
+                    <thead class="bg-light"><tr class="small text-uppercase"><th class="ps-4">Rank</th><th>Book No.</th><th>Total Borrowed</th></tr></thead>
+                    <tbody id="topBooksBody"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
 </div>
 
 <div class="modal fade" id="editModal" tabindex="-1" aria-hidden="true">
@@ -380,13 +405,15 @@
         pendingRequests = [],
         adminHistory = JSON.parse(localStorage.getItem('adminHistory') || '[]'), 
         isStaff = false, 
-        activeFilterCat = 'All';
+        activeFilterCat = 'All',
+        staffSessionID = localStorage.getItem('adminSchoolId') || '',
+        staffSessionToken = localStorage.getItem('adminToken') || '';
 
     const editModal = new bootstrap.Modal(document.getElementById('editModal'));
 
     window.onload = () => {
         if(localStorage.getItem('isStaffAuth') === 'true') {
-            executeUnlock(localStorage.getItem('adminName'), localStorage.getItem('adminPhoto'));
+            executeUnlock(localStorage.getItem('adminName'), localStorage.getItem('adminPhoto'), localStorage.getItem('adminSchoolId'), localStorage.getItem('adminToken'));
         }
         loadData({ initialLoad: true });
         setInterval(() => { document.getElementById('liveClock').innerText = new Date().toLocaleTimeString(); }, 1000);
@@ -530,10 +557,15 @@
             'console': { id: 'linkConsole', title: 'Command Dashboard' },
             'requests': { id: 'linkRequests', title: 'Registration Queue' },
             'users': { id: 'linkUsers', title: 'User Directory' },
-            'inventory': { id: 'linkInventory', title: 'Inventory Manager' }
+            'inventory': { id: 'linkInventory', title: 'Inventory Manager' },
+            'leaderboard': { id: 'linkLeaderboard', title: 'Monthly Leaderboards' }
         };
 
         const target = linkMap[view];
+        if(view === 'leaderboard' && !isStaff) {
+            alert('Security Lock Active');
+            return;
+        }
         if(target) {
             document.getElementById(view + 'View').classList.add('active');
             const link = document.getElementById(target.id);
@@ -542,6 +574,7 @@
             document.getElementById('viewTitle').innerText = target.title;
         }
         if(view === 'requests') renderRequestsList();
+        if(view === 'leaderboard') loadAdminLeaderboards();
     }
 
     function renderRequestsList() {
@@ -643,13 +676,17 @@
                 localStorage.setItem('isStaffAuth', 'true');
                 localStorage.setItem('adminName', data.profile.name);
                 localStorage.setItem('adminPhoto', data.profile.photo);
-                executeUnlock(data.profile.name, data.profile.photo);
+                localStorage.setItem('adminSchoolId', data.profile.school_id || u);
+                localStorage.setItem('adminToken', data.token || '');
+                executeUnlock(data.profile.name, data.profile.photo, data.profile.school_id || u, data.token || '');
             } else { showLoginError(); }
         } catch (e) { showLoginError(); }
     }
 
-    function executeUnlock(name, photo) {
+    function executeUnlock(name, photo, schoolId = '', token = '') {
         isStaff = true;
+        staffSessionID = (schoolId || localStorage.getItem('adminSchoolId') || '').toLowerCase();
+        staffSessionToken = token || localStorage.getItem('adminToken') || '';
         document.getElementById('mainBody').classList.add('is-unlocked');
         document.getElementById('loginForm').style.display = 'none';
         document.getElementById('adminProfile').style.display = 'block';
@@ -658,6 +695,8 @@
         document.getElementById('activeAdminPhoto').src = `/Profile/${photo}`;
         document.getElementById('authStatusBadge').className = "alert alert-success py-2 small fw-bold text-center border-0 shadow-sm rounded-4";
         document.getElementById('authStatusBadge').innerHTML = '<i class="fas fa-check-circle me-2"></i>AUTHORIZED';
+        const link = document.getElementById('linkLeaderboard');
+        if (link) link.style.display = 'block';
         addHistory(`System Unlocked by: ${name}`);
         loadData();
     }
@@ -679,6 +718,31 @@
         const active = masterTransactions.filter(t => t.status === 'Borrowed' || t.status === 'Reserved');
         document.getElementById('monitorBody').innerHTML = active.map(t => `<tr><td class="ps-4"><span class="status-pill badge-${t.status.toLowerCase()}">${t.status}</span></td><td><code class="fw-bold text-dark">${t.book_no}</code></td><td class="small fw-bold">${t.school_id}</td><td class="timer font-monospace fw-bold text-primary" data-expiry="${t.expiry}">...</td><td class="text-end pe-4">${isStaff ? `<button class="btn btn-sm btn-danger px-3 rounded-pill fw-bold" onclick="releaseAsset('${t.book_no}')">RELEASE</button>` : `<i class="fas fa-lock text-muted"></i>`}</td></tr>`).join('') || '<tr><td colspan="5" class="text-center py-4 text-muted">No active transactions.</td></tr>';
         updateTimers();
+    }
+
+
+    // --- NEW: Leaderboard API rendering (independent from inventory refresh) ---
+    async function loadAdminLeaderboards() {
+        if (!isStaff) return;
+        try {
+            const [borrowersRes, booksRes] = await Promise.all([
+                fetch('/api/leaderboard/top-borrowers'),
+                fetch('/api/leaderboard/top-books', { headers: { 'X-School-Id': staffSessionID, 'X-Session-Token': staffSessionToken } })
+            ]);
+            const borrowers = await borrowersRes.json();
+            const books = booksRes.ok ? await booksRes.json() : [];
+
+            document.getElementById('topBorrowersBody').innerHTML = borrowers.map((r, i) => `
+                <tr><td class="ps-4 fw-bold">#${i + 1}</td><td><code>${r.school_id}</code></td><td>${r.total}</td></tr>
+            `).join('') || '<tr><td colspan="3" class="text-center text-muted py-4">No borrower data this month.</td></tr>';
+
+            document.getElementById('topBooksBody').innerHTML = books.map((r, i) => `
+                <tr><td class="ps-4 fw-bold">#${i + 1}</td><td><code>${r.book_no}</code></td><td>${r.total}</td></tr>
+            `).join('') || '<tr><td colspan="3" class="text-center text-muted py-4">No book data this month.</td></tr>';
+        } catch (e) {
+            document.getElementById('topBorrowersBody').innerHTML = '<tr><td colspan="3" class="text-center text-danger py-4">Failed to load borrowers leaderboard.</td></tr>';
+            document.getElementById('topBooksBody').innerHTML = '<tr><td colspan="3" class="text-center text-danger py-4">Failed to load books leaderboard.</td></tr>';
+        }
     }
 
     async function releaseAsset(b_no) {

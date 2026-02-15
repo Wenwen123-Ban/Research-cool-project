@@ -1086,6 +1086,78 @@ def api_get_ratings():
     """Data feed for the Developer Analysis dashboard."""
     return jsonify(get_db('ratings'))
 
+
+
+# ==============================================================================
+#   API REGION: MONTHLY LEADERBOARD (NEW)
+# ==============================================================================
+import sqlite3
+
+def _build_leaderboard_db():
+    """Builds an in-memory SQL table from JSON transactions for monthly leaderboard queries."""
+    conn = sqlite3.connect(':memory:')
+    conn.row_factory = sqlite3.Row
+    conn.execute('CREATE TABLE transactions (book_no TEXT, school_id TEXT, status TEXT, date TEXT)')
+
+    for t in get_db('transactions'):
+        conn.execute(
+            'INSERT INTO transactions (book_no, school_id, status, date) VALUES (?, ?, ?, ?)',
+            (
+                str(t.get('book_no', '')).strip(),
+                str(t.get('school_id', '')).strip(),
+                str(t.get('status', '')).strip(),
+                str(t.get('date', '')).strip(),
+            )
+        )
+    conn.commit()
+    return conn
+
+def _is_staff_session_valid():
+    """Checks active staff session for protected leaderboard APIs."""
+    staff_id = str(request.headers.get('X-School-Id', request.args.get('school_id', ''))).strip().lower()
+    token = str(request.headers.get('X-Session-Token', request.args.get('token', ''))).strip()
+    if not staff_id or ACTIVE_SESSIONS.get(staff_id) != token:
+        return False
+    user = find_any_user(staff_id)
+    return bool(user and user.get('is_staff'))
+
+@app.route('/api/leaderboard/top-borrowers')
+def api_leaderboard_top_borrowers():
+    """Top 10 borrowers for the current month (public endpoint)."""
+    conn = _build_leaderboard_db()
+    rows = conn.execute("""
+        SELECT school_id, COUNT(*) as total
+        FROM transactions
+        WHERE status='Borrowed'
+          AND strftime('%m', date)=strftime('%m','now')
+          AND strftime('%Y', date)=strftime('%Y','now')
+        GROUP BY school_id
+        ORDER BY total DESC
+        LIMIT 10
+    """).fetchall()
+    conn.close()
+    return jsonify([{'school_id': row['school_id'], 'total': row['total']} for row in rows])
+
+@app.route('/api/leaderboard/top-books')
+def api_leaderboard_top_books():
+    """Top 10 books for the current month (staff only endpoint)."""
+    if not _is_staff_session_valid():
+        return jsonify({'success': False, 'message': 'Unauthorized'}), 403
+
+    conn = _build_leaderboard_db()
+    rows = conn.execute("""
+        SELECT book_no, COUNT(*) as total
+        FROM transactions
+        WHERE status='Borrowed'
+          AND strftime('%m', date)=strftime('%m','now')
+          AND strftime('%Y', date)=strftime('%Y','now')
+        GROUP BY book_no
+        ORDER BY total DESC
+        LIMIT 10
+    """).fetchall()
+    conn.close()
+    return jsonify([{'book_no': row['book_no'], 'total': row['total']} for row in rows])
+
 @app.route('/Profile/<path:filename>')
 def serve_file(filename):
     try: return send_from_directory(app.config['UPLOAD_FOLDER'], filename)
