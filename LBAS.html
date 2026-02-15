@@ -181,6 +181,13 @@
             </div>
         </div>
 
+        <!-- NEW: Student navigation tabs including Leaderboard -->
+        <div class="btn-group w-100 mb-4 portal-view-switch" role="group">
+            <button class="btn btn-outline-secondary fw-bold active" id="catalogMenuBtn" onclick="switchPortalView('catalog')">Catalog</button>
+            <button class="btn btn-outline-secondary fw-bold" id="leaderboardMenuBtn" onclick="switchPortalView('leaderboard')">Leaderboard</button>
+        </div>
+
+        <div id="catalogSection">
         <div class="position-relative mb-4">
             <input type="text" id="searchBar" class="form-control form-control-lg border-0 shadow-sm rounded-pill ps-5" placeholder="Find books..." onkeyup="loadData()">
             <i class="fas fa-search position-absolute text-muted" style="left: 20px; top: 18px;"></i>
@@ -199,6 +206,15 @@
 >>>>>>> e4ac5b40fbb07dc4c1e46b648de77c897704caac
 
         <div id="bookContainer" class="pb-5"></div>
+        </div>
+
+        <!-- NEW: Monthly leaderboard section -->
+        <div id="leaderboardSection" style="display:none;">
+            <div class="card border-0 shadow-sm p-4">
+                <h5 class="fw-bold mb-3"><i class="fas fa-trophy text-warning me-2"></i>Top Borrowers This Month</h5>
+                <div id="leaderboardCards" class="d-grid gap-2"></div>
+            </div>
+        </div>
     </div>
 </div>
 
@@ -366,6 +382,38 @@
     }
 
 >>>>>>> e4ac5b40fbb07dc4c1e46b648de77c897704caac
+    // --- NEW: LEADERBOARD VIEW LOGIC ---
+    function switchPortalView(view) {
+        const isLeaderboard = view === 'leaderboard';
+        document.getElementById('catalogSection').style.display = isLeaderboard ? 'none' : 'block';
+        document.getElementById('leaderboardSection').style.display = isLeaderboard ? 'block' : 'none';
+        document.getElementById('catalogMenuBtn').classList.toggle('active', !isLeaderboard);
+        document.getElementById('leaderboardMenuBtn').classList.toggle('active', isLeaderboard);
+        if (isLeaderboard) loadLeaderboard();
+    }
+
+    async function loadLeaderboard() {
+        try {
+            const res = await fetch('/api/leaderboard/top-borrowers');
+            const rows = await res.json();
+            const medals = ['🥇', '🥈', '🥉'];
+            document.getElementById('leaderboardCards').innerHTML = rows.map((row, idx) => `
+                <div class="d-flex align-items-center justify-content-between border rounded-3 px-3 py-2 bg-light">
+                    <div class="d-flex align-items-center gap-3">
+                        <div class="leaderboard-rank">${medals[idx] ? `${medals[idx]} #${idx + 1}` : `#${idx + 1}`}</div>
+                        <div>
+                            <div class="fw-bold">${row.school_id}</div>
+                            <div class="small text-muted">Total borrowed this month</div>
+                        </div>
+                    </div>
+                    <span class="badge bg-primary rounded-pill px-3 py-2">${row.total}</span>
+                </div>
+            `).join('') || '<div class="text-muted text-center py-4">No borrow records yet for this month.</div>';
+        } catch (e) {
+            document.getElementById('leaderboardCards').innerHTML = '<div class="text-danger text-center py-4">Unable to load leaderboard.</div>';
+        }
+    }
+
     // --- PORTAL LOGIC ---
     function initPortal(profile) {
         if(!profile) return logout();
@@ -387,6 +435,7 @@
         document.getElementById('full_name').innerText = profile.name || "Unknown User";
         document.getElementById('id_val').innerText = "ID: " + profile.school_id;
         document.getElementById('user_pic').src = profile.photo ? "/Profile/" + profile.photo : "/Profile/default.png";
+        switchPortalView('catalog');
         
 <<<<<<< HEAD
         loadData();
