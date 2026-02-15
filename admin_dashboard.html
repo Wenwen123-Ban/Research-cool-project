@@ -748,13 +748,10 @@
     async function loadAdminLeaderboards() {
         if (!isStaff) return;
         try {
-            const [leaderboardRes, booksRes] = await Promise.all([
-                fetch('/api/monthly_leaderboard'),
-                fetch('/api/leaderboard/top-books', { headers: { 'X-School-Id': staffSessionID, 'X-Session-Token': staffSessionToken } })
-            ]);
+            const leaderboardRes = await fetch('/api/monthly_leaderboard');
             const leaderboard = await leaderboardRes.json();
             const borrowers = leaderboard.top_borrowers || [];
-            const books = booksRes.ok ? await booksRes.json() : [];
+            const books = leaderboard.top_books || [];
 
             document.getElementById('topBorrowersBody').innerHTML = borrowers.map((r, i) => `
                 <tr role="button" onclick="openLeaderboardProfile('${r.school_id}')">
@@ -772,9 +769,9 @@
                 </tr>
             `).join('') || '<tr><td colspan="3" class="text-center text-muted py-4">No borrower data this month.</td></tr>';
 
-            document.getElementById('topBooksBody').innerHTML = books.map((r, i) => `
-                <tr><td class="ps-4 fw-bold">#${i + 1}</td><td><code>${r.book_no}</code></td><td>${r.total}</td></tr>
-            `).join('') || '<tr><td colspan="3" class="text-center text-muted py-4">No book data this month.</td></tr>';
+            document.getElementById('topBooksBody').innerHTML = books.length > 0
+                ? books.map((r, i) => `<tr><td class="ps-4 fw-bold">#${r.rank || i + 1}</td><td><code>${r.book_no}</code></td><td>${r.total_borrowed}</td></tr>`).join('')
+                : '<tr><td colspan="3" class="text-center text-muted py-4">No book data this month.</td></tr>';
         } catch (e) {
             document.getElementById('topBorrowersBody').innerHTML = '<tr><td colspan="3" class="text-center text-danger py-4">Failed to load borrowers leaderboard.</td></tr>';
             document.getElementById('topBooksBody').innerHTML = '<tr><td colspan="3" class="text-center text-danger py-4">Failed to load books leaderboard.</td></tr>';
