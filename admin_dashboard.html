@@ -60,7 +60,9 @@
         .badge-pending { background: var(--warning); color: white; animation: pulse 1.5s infinite; }
         
         .user-row-img { width: 45px; height: 45px; border-radius: 12px; object-fit: cover; border: 2px solid #f1f5f9; }
-        .cat-pill { white-space: nowrap; padding: 10px 24px; border-radius: 50px; background: #fff; border: 1px solid #e2e8f0; cursor: pointer; font-size: 0.85rem; font-weight: 700; transition: 0.2s; }
+        .cat-pill-wrapper { display: inline-flex; align-items: center; position: relative; margin-right: 8px; }
+        .cat-delete { margin-left: 6px; cursor: pointer; z-index: 2; }
+        .cat-pill { white-space: nowrap; padding: 10px 24px; border-radius: 50px; background: #fff; border: 1px solid #e2e8f0; cursor: pointer; font-size: 0.85rem; font-weight: 700; transition: 0.2s; z-index: 1; }
         .cat-pill:hover { border-color: var(--accent); color: var(--accent); }
         .cat-pill.active { background: var(--accent); color: white; border-color: var(--accent); box-shadow: 0 4px 12px rgba(56, 189, 248, 0.3); }
         
@@ -490,14 +492,14 @@
         
         const container = document.getElementById('categoryPillContainer');
         // Preserve "All" pill
-        let html = `<div class="cat-pill ${activeFilterCat==='All'?'active':''}" onclick="setCategoryFilter('All', this)">All Collections</div>`;
+        let html = `<div class="cat-pill-wrapper"><div class="cat-pill ${activeFilterCat==='All'?'active':''}" onclick="setCategoryFilter('All', this)">All Collections</div></div>`;
         
         uniqueCats.forEach(cat => {
             const categoryArg = JSON.stringify(cat);
-            const deleteIcon = isStaff && cat !== 'All Collections'
-                ? `<i class="fas fa-trash text-danger ms-2" onclick="deleteCategory(${categoryArg}, event)"></i>`
+            const deleteControl = isStaff
+                ? `<span class="cat-delete" onclick="deleteCategory(${categoryArg}, event)"><i class="fas fa-times text-danger"></i></span>`
                 : '';
-            html += `<div class="cat-pill ${activeFilterCat===cat?'active':''}" onclick="setCategoryFilter(${categoryArg}, this)">${cat}${deleteIcon}</div>`;
+            html += `<div class="cat-pill-wrapper"><div class="cat-pill ${activeFilterCat===cat?'active':''}" onclick="setCategoryFilter(${categoryArg}, this)">${cat}</div>${deleteControl}</div>`;
         });
         container.innerHTML = html;
         
@@ -538,14 +540,15 @@
     }
 
     async function deleteCategory(category, event) {
-        event.stopPropagation();
+        if(event) event.stopPropagation();
 
         const cleanCategory = String(category || '').trim();
         if(!cleanCategory || cleanCategory === 'All Collections') {
             return alert('This category cannot be deleted.');
         }
 
-        if(!confirm(`Delete category "${cleanCategory}"?\n\nAll books under this category will be permanently deleted.`)) return;
+        if(!confirm(`Delete category "${cleanCategory}"?
+All books inside will be deleted.`)) return;
 
         try {
             const res = await fetch('/api/delete_category', {
@@ -560,10 +563,10 @@
                 if (activeFilterCat === cleanCategory) activeFilterCat = 'All';
                 loadData({ initialLoad: true });
             } else {
-                alert(data.message || 'Failed to delete category.');
+                alert('Delete failed.');
             }
         } catch (err) {
-            alert('Failed to delete category.');
+            alert('Delete failed.');
         }
     }
 
