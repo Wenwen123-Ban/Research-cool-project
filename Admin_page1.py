@@ -874,11 +874,16 @@ def _parse_transaction_date(raw_date):
     return None
 
 
+def _extract_transaction_date(tx):
+    """Supports legacy and new date keys used by transaction records."""
+    return _parse_transaction_date(tx.get("transaction_date") or tx.get("date"))
+
+
 def _current_month_borrowed_transactions():
     now = datetime.now()
     valid_rows = []
     for tx in get_db("transactions"):
-        tx_date = _parse_transaction_date(tx.get("date"))
+        tx_date = _extract_transaction_date(tx)
         if not tx_date:
             continue
         if tx_date.year == now.year and tx_date.month == now.month:
@@ -900,7 +905,6 @@ def _build_monthly_leaderboard_payload(limit=10):
 
     borrower_counter = Counter()
     borrower_books = {}
-    book_counter = Counter()
 
     for tx in monthly_transactions:
         sid = str(tx.get("school_id", "")).strip()
@@ -910,7 +914,6 @@ def _build_monthly_leaderboard_payload(limit=10):
 
         borrower_counter[sid] += 1
         borrower_books.setdefault(sid, []).append(book_no)
-        book_counter[book_no] += 1
 
     sorted_borrowers = sorted(
         borrower_counter.items(), key=lambda item: (-item[1], str(item[0]).lower())
@@ -937,20 +940,68 @@ def _build_monthly_leaderboard_payload(limit=10):
             }
         )
 
-    sorted_books = sorted(
-        book_counter.items(), key=lambda item: (-item[1], str(item[0]).lower())
-    )[:limit]
-    top_books = []
-    for idx, (book_no, total) in enumerate(sorted_books, start=1):
-        book_match = books_map.get(str(book_no).lower(), {})
-        top_books.append(
-            {
-                "rank": idx,
-                "book_no": book_no,
-                "title": book_match.get("title") or book_no,
-                "total_borrowed": total,
-            }
+    conn = sqlite3.connect(":memory:")
+    conn.row_factory = sqlite3.Row
+    conn.execute(
+        "CREATE TABLE monthly_transactions (book_no TEXT, status TEXT, transaction_date TEXT)"
+    )
+    conn.execute("CREATE TABLE books (book_no TEXT, title TEXT)")
+
+    for tx in monthly_transactions:
+        tx_date = _extract_transaction_date(tx)
+        if not tx_date:
+            continue
+        conn.execute(
+            "INSERT INTO monthly_transactions (book_no, status, transaction_date) VALUES (?, ?, ?)",
+            (
+                str(tx.get("book_no", "")).strip(),
+                str(tx.get("status", "")).strip().lower(),
+                tx_date.strftime("%Y-%m-%d %H:%M:%S"),
+            ),
         )
+
+    for book in get_db("books"):
+        conn.execute(
+            "INSERT INTO books (book_no, title) VALUES (?, ?)",
+            (
+                str(book.get("book_no", "")).strip(),
+                str(book.get("title", "")).strip(),
+            ),
+        )
+
+    now = datetime.now()
+    rows = conn.execute(
+        """
+        SELECT
+            mt.book_no,
+            COALESCE(NULLIF(b.title, ''), mt.book_no) AS title,
+            COUNT(*) AS total_borrowed
+        FROM monthly_transactions mt
+        LEFT JOIN books b ON LOWER(b.book_no) = LOWER(mt.book_no)
+        WHERE
+            mt.book_no IS NOT NULL
+            AND TRIM(mt.book_no) != ''
+            AND mt.status IN ('borrowed', 'returned')
+            AND CAST(strftime('%m', mt.transaction_date) AS INTEGER) = ?
+            AND CAST(strftime('%Y', mt.transaction_date) AS INTEGER) = ?
+        GROUP BY mt.book_no, title
+        ORDER BY total_borrowed DESC, LOWER(mt.book_no) ASC
+        LIMIT ?
+        """,
+        (now.month, now.year, int(limit)),
+    ).fetchall()
+
+    top_books = [
+        {
+            "rank": idx,
+            "book_no": row["book_no"],
+            "title": row["title"],
+            "total_borrowed": row["total_borrowed"],
+        }
+        for idx, row in enumerate(rows, start=1)
+    ]
+
+    conn.close()
 
     return {"top_borrowers": top_borrowers, "top_books": top_books}
 
