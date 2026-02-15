@@ -440,13 +440,16 @@
         if(localStorage.getItem('isStaffAuth') === 'true') {
             executeUnlock(localStorage.getItem('adminName'), localStorage.getItem('adminPhoto'), localStorage.getItem('adminSchoolId'), localStorage.getItem('adminToken'));
         }
-        loadData({ initialLoad: true });
+        loadData(true);
         setInterval(() => { document.getElementById('liveClock').innerText = new Date().toLocaleTimeString(); }, 1000);
-        setInterval(() => loadData({ initialLoad: false }), 10000);
+        setInterval(() => {
+            loadData(false);
+        }, 10000);
     };
 
-    async function loadData({ initialLoad = false } = {}) {
+    async function loadData(resetFilter = false) {
         try {
+            const preservedFilterCat = activeFilterCat;
             const [bRes, uRes, aRes, tRes] = await Promise.all([
                 fetch('/api/books'),
                 fetch('/api/users'), 
@@ -466,9 +469,8 @@
             document.getElementById('systemStateText').innerText = "Live & Synced";
             
             updatePendingBadge();
-            if (initialLoad) {
-                renderCategoryPills(); // Build category tabs once on first load only
-            }
+            activeFilterCat = resetFilter ? 'All' : preservedFilterCat;
+            renderCategoryPills();
             filterInventory(); // Re-apply active category/search filters to fresh data
             syncMonitor();
             renderUsersList();
@@ -561,7 +563,7 @@ All books inside will be deleted.`)) return;
 
             if(data.success){
                 if (activeFilterCat === cleanCategory) activeFilterCat = 'All';
-                loadData({ initialLoad: true });
+                loadData(true);
             } else {
                 alert('Delete failed.');
             }
@@ -758,7 +760,7 @@ All books inside will be deleted.`)) return;
         const link = document.getElementById('linkLeaderboard');
         if (link) link.style.display = 'block';
         addHistory(`System Unlocked by: ${name}`);
-        loadData({ initialLoad: true });
+        loadData(true);
     }
 
     async function submitUser() {
@@ -854,7 +856,7 @@ All books inside will be deleted.`)) return;
     function addHistory(msg) { adminHistory.unshift({ msg, time: new Date().toLocaleTimeString() }); localStorage.setItem('adminHistory', JSON.stringify(adminHistory.slice(0, 20))); renderAdminHistory(); }
     function renderAdminHistory() { const log = document.getElementById('adminActionLog'); if(log) log.innerHTML = adminHistory.map(h => `<div class="history-item"><div class="fw-bold">${h.msg}</div><div class="text-muted smaller">${h.time}</div></div>`).join(''); }
     function clearHistory() { adminHistory = []; localStorage.removeItem('adminHistory'); renderAdminHistory(); }
-    function setCategoryFilter(cat, el) { activeFilterCat = cat; document.querySelectorAll('.cat-pill').forEach(p => p.classList.remove('active')); el.classList.add('active'); filterInventory(); }
+    function setCategoryFilter(cat) { activeFilterCat = cat; filterInventory(); }
     function filterInventory() { const q = document.getElementById('inventorySearch').value.toLowerCase(); const filtered = masterBooks.filter(b => (b.title.toLowerCase().includes(q) || b.book_no.toLowerCase().includes(q)) && (activeFilterCat === 'All' || b.category === activeFilterCat)); renderInventory(filtered); }
 </script>
 </body>
