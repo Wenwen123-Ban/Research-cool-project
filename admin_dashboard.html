@@ -61,16 +61,18 @@
         
         .user-row-img { width: 45px; height: 45px; border-radius: 12px; object-fit: cover; border: 2px solid #f1f5f9; }
         .category-scroll-wrapper {
+            width: 100%;
             overflow-x: auto;
             overflow-y: hidden;
-            white-space: nowrap;
-            width: 100%;
-            padding-bottom: 6px;
+            -webkit-overflow-scrolling: touch;
             scroll-behavior: smooth;
+            padding-bottom: 6px;
         }
         .category-scroll-wrapper::-webkit-scrollbar { height: 6px; }
         .category-scroll-wrapper::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.2); border-radius: 10px; }
-        .category-container { display: inline-flex; gap: 10px; flex-wrap: nowrap; }
+        .category-pill-container { display: flex; flex-wrap: nowrap; gap: 10px; min-width: max-content; }
+        .category-pill-container button,
+        .category-pill-container .cat-pill { flex: 0 0 auto; }
         .cat-pill { white-space: nowrap; padding: 10px 24px; border-radius: 50px; background: #fff; border: 1px solid #e2e8f0; cursor: pointer; font-size: 0.85rem; font-weight: 700; transition: 0.2s; z-index: 1; flex: 0 0 auto; }
         .cat-pill:hover { border-color: var(--accent); color: var(--accent); }
         .cat-pill.active { background: var(--accent); color: white; border-color: var(--accent); box-shadow: 0 4px 12px rgba(56, 189, 248, 0.3); }
@@ -337,7 +339,7 @@
                 <input type="text" id="inventorySearch" class="form-control w-25 bg-light border-0" placeholder="Scan or type code..." onkeyup="filterInventory()">
             </div>
             <div class="category-scroll-wrapper mb-4">
-                <div class="category-container" id="categoryPillContainer">
+                <div class="category-pill-container" id="categoryPillContainer">
                     <div class="cat-pill active" onclick="setCategoryFilter('All', this)">All Collections</div>
                 </div>
             </div>
