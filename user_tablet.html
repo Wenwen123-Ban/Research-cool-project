@@ -153,43 +153,8 @@
         overflow-y: auto;
       }
 
-      .category-scroll-wrapper {
-        overflow-x: auto;
-        overflow-y: hidden;
-        white-space: nowrap;
-        width: 100%;
-        padding-bottom: 6px;
-        scroll-behavior: smooth;
-      }
-
-      .category-scroll-wrapper::-webkit-scrollbar {
-        height: 6px;
-      }
-
-      .category-scroll-wrapper::-webkit-scrollbar-thumb {
-        background: rgba(0, 0, 0, 0.2);
-        border-radius: 10px;
-      }
-
-      .category-container {
-        display: inline-flex;
-        gap: 10px;
-        flex-wrap: nowrap;
-      }
-
-      .cat-pill {
-        flex: 0 0 auto;
-      }
-
-      .category-scroll-wrapper .cat-link {
-        width: auto;
-        margin-bottom: 0;
-        flex: 0 0 auto;
-      }
-
       #dynamicCats {
-        display: inline-flex;
-        gap: 10px;
+        display: block;
       }
 
       .cat-link {
@@ -369,18 +334,14 @@
             <h6 class="text-uppercase text-muted fw-black small px-3 mb-4">
               Categories
             </h6>
-            <div class="category-scroll-wrapper">
-              <div class="category-container">
-                <button
-                  class="cat-link active"
-                  id="cat-all"
-                  onclick="setCategory('All', this)"
-                >
-                  <i class="fas fa-globe"></i> All Collections
-                </button>
-                <div id="dynamicCats"></div>
-              </div>
-            </div>
+            <button
+              class="cat-link active"
+              id="cat-all"
+              onclick="setCategory('All', this)"
+            >
+              <i class="fas fa-globe"></i> All Collections
+            </button>
+            <div id="dynamicCats"></div>
           </div>
         </div>
 
