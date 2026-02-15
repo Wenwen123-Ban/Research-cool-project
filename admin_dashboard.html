@@ -388,12 +388,12 @@
         if(localStorage.getItem('isStaffAuth') === 'true') {
             executeUnlock(localStorage.getItem('adminName'), localStorage.getItem('adminPhoto'));
         }
-        loadData();
+        loadData({ initialLoad: true });
         setInterval(() => { document.getElementById('liveClock').innerText = new Date().toLocaleTimeString(); }, 1000);
-        setInterval(loadData, 10000);
+        setInterval(() => loadData({ initialLoad: false }), 10000);
     };
 
-    async function loadData() {
+    async function loadData({ initialLoad = false } = {}) {
         try {
             const [bRes, uRes, aRes, tRes] = await Promise.all([
                 fetch('/api/books'),
@@ -414,8 +414,10 @@
             document.getElementById('systemStateText').innerText = "Live & Synced";
             
             updatePendingBadge();
-            renderCategoryPills(); // NEW: Auto-generate category tabs
-            renderInventory(masterBooks);
+            if (initialLoad) {
+                renderCategoryPills(); // Build category tabs once on first load only
+            }
+            filterInventory(); // Re-apply active category/search filters to fresh data
             syncMonitor();
             renderUsersList();
             renderRequestsList();
