@@ -568,18 +568,53 @@
               <i class="fas fa-trophy text-warning me-2"></i>Top Borrowers This
               Month
             </h5>
-            <div id="leaderboardCards" class="d-grid gap-2"></div>
+            <div class="table-responsive">
+              <table class="table table-hover align-middle mb-0">
+                <thead class="bg-light">
+                  <tr class="small text-uppercase">
+                    <th>Rank</th>
+                    <th>Borrower</th>
+                    <th>Total Borrowed</th>
+                  </tr>
+                </thead>
+                <tbody id="leaderboardBorrowersBody"></tbody>
+              </table>
+            </div>
           </div>
         </div>
       </div>
     </div>
 
+    <div class="modal fade" id="leaderboardProfileModal" tabindex="-1" aria-hidden="true">
+      <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg rounded-4">
+          <div class="modal-header border-0 pb-0">
+            <h5 class="fw-bold"><i class="fas fa-id-card text-primary me-2"></i>Borrower Profile</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+          </div>
+          <div class="modal-body p-4">
+            <div class="card border-0 bg-light rounded-4">
+              <div class="card-body text-center">
+                <img id="leaderboardProfilePhoto" src="/Profile/default.png" class="rounded-circle shadow-sm mb-3" style="width:90px;height:90px;object-fit:cover;" alt="Profile">
+                <h5 id="leaderboardProfileName" class="fw-bold mb-1">-</h5>
+                <div id="leaderboardProfileId" class="text-muted small mb-3">ID: -</div>
+                <div class="d-flex justify-content-between small"><span class="text-muted">Total borrowed this month</span><span id="leaderboardProfileTotal" class="fw-bold">0</span></div>
+                <div class="d-flex justify-content-between small mt-2"><span class="text-muted">Most borrowed book</span><span id="leaderboardProfileBook" class="fw-bold text-end">No records</span></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
       let currentID = null;
       let currentToken = null;
       let selectedCategory = "All";
       let selectedStars = 5;
       let availableCategories = [];
+      let leaderboardProfileModal = null;
 
       async function handleLogin() {
         const id = document.getElementById("school_id_input").value.trim();
@@ -757,30 +792,57 @@
 
       async function loadLeaderboard() {
         try {
-          const res = await fetch("/api/leaderboard/top-borrowers");
-          const rows = await res.json();
-          const medals = ["🥇", "🥈", "🥉"];
-          document.getElementById("leaderboardCards").innerHTML =
+          const res = await fetch("/api/monthly_leaderboard");
+          const data = await res.json();
+          const rows = data.top_borrowers || [];
+          document.getElementById("leaderboardBorrowersBody").innerHTML =
             rows
               .map(
                 (row, idx) => `
-                <div class="d-flex align-items-center justify-content-between border rounded-3 px-3 py-2 bg-light">
-                    <div class="d-flex align-items-center gap-3">
-                        <div class="leaderboard-rank">${medals[idx] ? `${medals[idx]} #${idx + 1}` : `#${idx + 1}`}</div>
+                  <tr role="button" onclick="openLeaderboardProfile('${row.school_id}')">
+                    <td class="fw-bold">#${row.rank || idx + 1}</td>
+                    <td>
+                      <div class="d-flex align-items-center gap-2">
+                        <img src="/Profile/${row.photo || "default.png"}" class="rounded-circle" style="width:36px;height:36px;object-fit:cover;" alt="${row.name}">
                         <div>
-                            <div class="fw-bold">${row.school_id}</div>
-                            <div class="small text-muted">Total borrowed this month</div>
+                          <div class="fw-bold">${row.name || row.school_id}</div>
+                          <div class="small text-muted">${row.school_id}</div>
                         </div>
-                    </div>
-                    <span class="badge bg-primary rounded-pill px-3 py-2">${row.total}</span>
-                </div>
+                      </div>
+                    </td>
+                    <td>${row.total_borrowed}</td>
+                  </tr>
             `,
               )
               .join("") ||
-            '<div class="text-muted text-center py-4">No borrow records yet for this month.</div>';
+            '<tr><td colspan="3" class="text-muted text-center py-4">No borrow records yet for this month.</td></tr>';
         } catch (e) {
-          document.getElementById("leaderboardCards").innerHTML =
-            '<div class="text-danger text-center py-4">Unable to load leaderboard.</div>';
+          document.getElementById("leaderboardBorrowersBody").innerHTML =
+            '<tr><td colspan="3" class="text-danger text-center py-4">Unable to load leaderboard.</td></tr>';
+        }
+      }
+
+      async function openLeaderboardProfile(id) {
+        try {
+          const res = await fetch(
+            "/api/leaderboard_profile/" + encodeURIComponent(id),
+          );
+          const data = await res.json();
+          if (!res.ok || !data.success) throw new Error();
+          const p = data.profile;
+          document.getElementById("leaderboardProfilePhoto").src =
+            `/Profile/${p.photo || "default.png"}`;
+          document.getElementById("leaderboardProfileName").innerText =
+            p.name || p.school_id;
+          document.getElementById("leaderboardProfileId").innerText =
+            `ID: ${p.school_id || "-"}`;
+          document.getElementById("leaderboardProfileTotal").innerText =
+            p.total_borrowed ?? 0;
+          document.getElementById("leaderboardProfileBook").innerText =
+            p.most_borrowed_book || "No records";
+          leaderboardProfileModal.show();
+        } catch (e) {
+          console.error("Unable to load leaderboard profile.");
         }
       }
 
@@ -995,6 +1057,9 @@
       }
 
       window.onload = () => {
+        leaderboardProfileModal = new bootstrap.Modal(
+          document.getElementById("leaderboardProfileModal"),
+        );
         fetchCategories();
         const savedID = localStorage.getItem("lbas_id");
         if (savedID) {

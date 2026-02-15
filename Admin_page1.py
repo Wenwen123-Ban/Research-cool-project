@@ -837,6 +837,7 @@ def api_get_ratings():
 
 
 import sqlite3
+from collections import Counter
 
 
 def _build_leaderboard_db():
@@ -861,6 +862,99 @@ def _build_leaderboard_db():
     return conn
 
 
+def _parse_transaction_date(raw_date):
+    value = str(raw_date or "").strip()
+    if not value:
+        return None
+    for fmt in ("%Y-%m-%d %H:%M", "%Y-%m-%d %H:%M:%S", "%Y-%m-%d"):
+        try:
+            return datetime.strptime(value, fmt)
+        except ValueError:
+            continue
+    return None
+
+
+def _current_month_borrowed_transactions():
+    now = datetime.now()
+    valid_rows = []
+    for tx in get_db("transactions"):
+        tx_date = _parse_transaction_date(tx.get("date"))
+        if not tx_date:
+            continue
+        if tx_date.year == now.year and tx_date.month == now.month:
+            if str(tx.get("status", "")).strip().lower() in {"borrowed", "returned"}:
+                valid_rows.append(tx)
+    return valid_rows
+
+
+def _build_monthly_leaderboard_payload(limit=10):
+    monthly_transactions = _current_month_borrowed_transactions()
+    books_map = {
+        str(b.get("book_no", "")).strip().lower(): b for b in get_db("books")
+    }
+    profile_map = {}
+    for user in get_db("users") + get_db("admins"):
+        sid = str(user.get("school_id", "")).strip().lower()
+        if sid and sid not in profile_map:
+            profile_map[sid] = user
+
+    borrower_counter = Counter()
+    borrower_books = {}
+    book_counter = Counter()
+
+    for tx in monthly_transactions:
+        sid = str(tx.get("school_id", "")).strip()
+        book_no = str(tx.get("book_no", "")).strip()
+        if not sid or not book_no:
+            continue
+
+        borrower_counter[sid] += 1
+        borrower_books.setdefault(sid, []).append(book_no)
+        book_counter[book_no] += 1
+
+    sorted_borrowers = sorted(
+        borrower_counter.items(), key=lambda item: (-item[1], str(item[0]).lower())
+    )[:limit]
+    top_borrowers = []
+    for idx, (sid, total) in enumerate(sorted_borrowers, start=1):
+        profile = profile_map.get(str(sid).lower(), {})
+        books_this_month = borrower_books.get(sid, [])
+        favorite_book_no = ""
+        favorite_book_title = "No records"
+        if books_this_month:
+            favorite_book_no, _ = Counter(books_this_month).most_common(1)[0]
+            book_match = books_map.get(favorite_book_no.lower(), {})
+            favorite_book_title = book_match.get("title") or favorite_book_no
+
+        top_borrowers.append(
+            {
+                "rank": idx,
+                "school_id": sid,
+                "name": profile.get("name") or sid,
+                "photo": profile.get("photo") or "default.png",
+                "total_borrowed": total,
+                "most_borrowed_book": f"{favorite_book_no} {favorite_book_title}".strip(),
+            }
+        )
+
+    sorted_books = sorted(
+        book_counter.items(), key=lambda item: (-item[1], str(item[0]).lower())
+    )[:limit]
+    top_books = []
+    for idx, (book_no, total) in enumerate(sorted_books, start=1):
+        book_match = books_map.get(str(book_no).lower(), {})
+        top_books.append(
+            {
+                "rank": idx,
+                "book_no": book_no,
+                "title": book_match.get("title") or book_no,
+                "total_borrowed": total,
+            }
+        )
+
+    return {"top_borrowers": top_borrowers, "top_books": top_books}
+
+
 def _is_staff_session_valid():
     """Checks active staff session for protected leaderboard APIs."""
     staff_id = (
@@ -880,22 +974,17 @@ def _is_staff_session_valid():
 @app.route("/api/leaderboard/top-borrowers")
 def api_leaderboard_top_borrowers():
     """Top 10 borrowers for the current month (public endpoint)."""
-    conn = _build_leaderboard_db()
-    rows = conn.execute(
-        """
-        SELECT school_id, COUNT(*) as total
-        FROM transactions
-        WHERE status='Borrowed'
-          AND strftime('%m', date)=strftime('%m','now')
-          AND strftime('%Y', date)=strftime('%Y','now')
-        GROUP BY school_id
-        ORDER BY total DESC
-        LIMIT 10
-    """
-    ).fetchall()
-    conn.close()
+    payload = _build_monthly_leaderboard_payload(limit=10)
     return jsonify(
-        [{"school_id": row["school_id"], "total": row["total"]} for row in rows]
+        [
+            {
+                "school_id": row["school_id"],
+                "total": row["total_borrowed"],
+                "name": row["name"],
+                "photo": row["photo"],
+            }
+            for row in payload["top_borrowers"]
+        ]
     )
 
 
@@ -905,21 +994,49 @@ def api_leaderboard_top_books():
     if not _is_staff_session_valid():
         return jsonify({"success": False, "message": "Unauthorized"}), 403
 
-    conn = _build_leaderboard_db()
-    rows = conn.execute(
-        """
-        SELECT book_no, COUNT(*) as total
-        FROM transactions
-        WHERE status='Borrowed'
-          AND strftime('%m', date)=strftime('%m','now')
-          AND strftime('%Y', date)=strftime('%Y','now')
-        GROUP BY book_no
-        ORDER BY total DESC
-        LIMIT 10
-    """
-    ).fetchall()
-    conn.close()
-    return jsonify([{"book_no": row["book_no"], "total": row["total"]} for row in rows])
+    payload = _build_monthly_leaderboard_payload(limit=10)
+    return jsonify(
+        [
+            {"book_no": row["book_no"], "total": row["total_borrowed"]}
+            for row in payload["top_books"]
+        ]
+    )
+
+
+@app.route("/api/monthly_leaderboard")
+def api_monthly_leaderboard():
+    return jsonify(_build_monthly_leaderboard_payload(limit=10))
+
+
+@app.route("/api/leaderboard_profile/<school_id>")
+def api_leaderboard_profile(school_id):
+    lookup_id = str(school_id or "").strip()
+    if not lookup_id:
+        return jsonify({"success": False, "message": "Missing school_id"}), 400
+
+    leaderboard = _build_monthly_leaderboard_payload(limit=1000)
+    match = next(
+        (
+            row
+            for row in leaderboard["top_borrowers"]
+            if str(row.get("school_id", "")).lower() == lookup_id.lower()
+        ),
+        None,
+    )
+
+    if not match:
+        user = find_any_user(lookup_id)
+        if not user:
+            return jsonify({"success": False, "message": "Profile not found"}), 404
+        match = {
+            "school_id": user.get("school_id") or lookup_id,
+            "name": user.get("name") or lookup_id,
+            "photo": user.get("photo") or "default.png",
+            "total_borrowed": 0,
+            "most_borrowed_book": "No records",
+        }
+
+    return jsonify({"success": True, "profile": match})
 
 
 @app.route("/Profile/<path:filename>")
