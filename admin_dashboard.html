@@ -60,7 +60,6 @@
         .badge-pending { background: var(--warning); color: white; animation: pulse 1.5s infinite; }
         
         .user-row-img { width: 45px; height: 45px; border-radius: 12px; object-fit: cover; border: 2px solid #f1f5f9; }
-        .cat-pill-wrapper { display: inline-flex; align-items: center; position: relative; margin-right: 8px; }
         .cat-pill { white-space: nowrap; padding: 10px 24px; border-radius: 50px; background: #fff; border: 1px solid #e2e8f0; cursor: pointer; font-size: 0.85rem; font-weight: 700; transition: 0.2s; z-index: 1; }
         .cat-pill:hover { border-color: var(--accent); color: var(--accent); }
         .cat-pill.active { background: var(--accent); color: white; border-color: var(--accent); box-shadow: 0 4px 12px rgba(56, 189, 248, 0.3); }
@@ -327,7 +326,7 @@
                 <input type="text" id="inventorySearch" class="form-control w-25 bg-light border-0" placeholder="Scan or type code..." onkeyup="filterInventory()">
             </div>
             <div class="d-flex gap-2 mb-4 overflow-auto pb-2" id="categoryPillContainer">
-                <div class="cat-pill-wrapper"><div class="cat-pill active" onclick="setCategoryFilter('All', this)">All Collections</div></div>
+                <div class="cat-pill active" onclick="setCategoryFilter('All', this)">All Collections</div>
             </div>
             <div class="table-responsive" style="max-height: 600px; overflow-y: auto;">
                 <table class="table table-hover align-middle">
@@ -516,11 +515,11 @@
         
         const container = document.getElementById('categoryPillContainer');
         // Preserve "All" pill
-        let html = `<div class="cat-pill-wrapper"><div class="cat-pill ${activeFilterCat==='All'?'active':''}" onclick="setCategoryFilter('All', this)">All Collections</div></div>`;
+        let html = `<div class="cat-pill ${activeFilterCat==='All'?'active':''}" onclick="setCategoryFilter('All', this)">All Collections</div>`;
         
         uniqueCats.forEach(cat => {
-            const categoryArg = JSON.stringify(cat);
-            html += `<div class="cat-pill-wrapper"><div class="cat-pill ${activeFilterCat===cat?'active':''}" onclick="setCategoryFilter(${categoryArg}, this)">${cat}</div></div>`;
+            const safeCat = String(cat).replace(/'/g, "\\'");
+            html += `<div class="cat-pill ${activeFilterCat===cat?'active':''}" onclick="setCategoryFilter('${safeCat}', this)">${cat}</div>`;
         });
         container.innerHTML = html;
         
@@ -556,43 +555,43 @@
         }
     }
 
-    function confirmDeleteCategoryFromDropdown() {
+    function confirmDeleteCategoryFromDropdown(){
         const select = document.getElementById('batchCategorySelect');
-        const selectedCategory = select ? String(select.value || '').trim() : '';
+        const selectedCategory = select.value;
 
-        if(!selectedCategory || selectedCategory === 'All' || selectedCategory === 'All Collections') {
-            return alert('This category cannot be deleted.');
+        if(!selectedCategory || selectedCategory === 'All'){
+            alert('This category cannot be deleted.');
+            return;
         }
 
         categoryToDelete = selectedCategory;
-        new bootstrap.Modal(document.getElementById('deleteCategoryModal')).show();
+        const modal = new bootstrap.Modal(
+            document.getElementById('deleteCategoryModal')
+        );
+        modal.show();
     }
 
-    async function executeCategoryDelete() {
+    async function executeCategoryDelete(){
         if(!categoryToDelete) return;
 
-        try {
-            const res = await fetch('/api/delete_category', {
-                method:'POST',
-                headers:{'Content-Type':'application/json'},
-                body: JSON.stringify({ category: categoryToDelete })
-            });
+        const res = await fetch('/api/delete_category',{
+            method:'POST',
+            headers:{'Content-Type':'application/json'},
+            body:JSON.stringify({category:categoryToDelete})
+        });
 
-            const data = await res.json();
+        const data = await res.json();
 
-            if(data.success){
-                if (activeFilterCat === categoryToDelete) activeFilterCat = 'All';
-                await loadData();
-            } else {
-                alert('Delete failed.');
-            }
-        } catch (err) {
+        if(data.success){
+            activeFilterCat = 'All';
+            loadData(true);
+        } else {
             alert('Delete failed.');
-        } finally {
-            categoryToDelete = null;
-            const modal = bootstrap.Modal.getInstance(document.getElementById('deleteCategoryModal'));
-            if (modal) modal.hide();
         }
+
+        const modal = bootstrap.Modal.getInstance(document.getElementById('deleteCategoryModal'));
+        if (modal) modal.hide();
+        categoryToDelete = null;
     }
 
     // --- BULK REGISTER (FIXED) ---
@@ -879,15 +878,22 @@
     function addHistory(msg) { adminHistory.unshift({ msg, time: new Date().toLocaleTimeString() }); localStorage.setItem('adminHistory', JSON.stringify(adminHistory.slice(0, 20))); renderAdminHistory(); }
     function renderAdminHistory() { const log = document.getElementById('adminActionLog'); if(log) log.innerHTML = adminHistory.map(h => `<div class="history-item"><div class="fw-bold">${h.msg}</div><div class="text-muted smaller">${h.time}</div></div>`).join(''); }
     function clearHistory() { adminHistory = []; localStorage.removeItem('adminHistory'); renderAdminHistory(); }
-    function setCategoryFilter(cat, pillEl = null) {
+    function setCategoryFilter(cat, el) {
         activeFilterCat = cat;
-        if (pillEl) {
-            document.querySelectorAll('#categoryPillContainer .cat-pill').forEach(p => p.classList.remove('active'));
-            pillEl.classList.add('active');
-        }
+        document.querySelectorAll('.cat-pill')
+            .forEach(p => p.classList.remove('active'));
+        el.classList.add('active');
         filterInventory();
     }
-    function filterInventory() { const q = document.getElementById('inventorySearch').value.toLowerCase(); const filtered = masterBooks.filter(b => (b.title.toLowerCase().includes(q) || b.book_no.toLowerCase().includes(q)) && (activeFilterCat === 'All' || b.category === activeFilterCat)); renderInventory(filtered); }
+    function filterInventory() {
+        const q = document.getElementById('inventorySearch').value.toLowerCase();
+        const filtered = masterBooks.filter(b =>
+            (b.title.toLowerCase().includes(q) ||
+             b.book_no.toLowerCase().includes(q)) &&
+            (activeFilterCat === 'All' || b.category === activeFilterCat)
+        );
+        renderInventory(filtered);
+    }
 </script>
 </body>
 </html>
