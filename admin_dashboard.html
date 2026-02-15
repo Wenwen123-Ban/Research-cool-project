@@ -60,7 +60,18 @@
         .badge-pending { background: var(--warning); color: white; animation: pulse 1.5s infinite; }
         
         .user-row-img { width: 45px; height: 45px; border-radius: 12px; object-fit: cover; border: 2px solid #f1f5f9; }
-        .cat-pill { white-space: nowrap; padding: 10px 24px; border-radius: 50px; background: #fff; border: 1px solid #e2e8f0; cursor: pointer; font-size: 0.85rem; font-weight: 700; transition: 0.2s; z-index: 1; }
+        .category-scroll-wrapper {
+            overflow-x: auto;
+            overflow-y: hidden;
+            white-space: nowrap;
+            width: 100%;
+            padding-bottom: 6px;
+            scroll-behavior: smooth;
+        }
+        .category-scroll-wrapper::-webkit-scrollbar { height: 6px; }
+        .category-scroll-wrapper::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.2); border-radius: 10px; }
+        .category-container { display: inline-flex; gap: 10px; flex-wrap: nowrap; }
+        .cat-pill { white-space: nowrap; padding: 10px 24px; border-radius: 50px; background: #fff; border: 1px solid #e2e8f0; cursor: pointer; font-size: 0.85rem; font-weight: 700; transition: 0.2s; z-index: 1; flex: 0 0 auto; }
         .cat-pill:hover { border-color: var(--accent); color: var(--accent); }
         .cat-pill.active { background: var(--accent); color: white; border-color: var(--accent); box-shadow: 0 4px 12px rgba(56, 189, 248, 0.3); }
         
@@ -325,8 +336,10 @@
                 <h5 class="fw-bold"><i class="fas fa-boxes text-success me-2"></i>Inventory Control</h5>
                 <input type="text" id="inventorySearch" class="form-control w-25 bg-light border-0" placeholder="Scan or type code..." onkeyup="filterInventory()">
             </div>
-            <div class="d-flex gap-2 mb-4 overflow-auto pb-2" id="categoryPillContainer">
-                <div class="cat-pill active" onclick="setCategoryFilter('All', this)">All Collections</div>
+            <div class="category-scroll-wrapper mb-4">
+                <div class="category-container" id="categoryPillContainer">
+                    <div class="cat-pill active" onclick="setCategoryFilter('All', this)">All Collections</div>
+                </div>
             </div>
             <div class="table-responsive" style="max-height: 600px; overflow-y: auto;">
                 <table class="table table-hover align-middle">
