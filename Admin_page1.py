@@ -1,32 +1,36 @@
-<<<<<<< HEAD
 import os
 import json
 import uuid
 import logging
 import sys
 import operator
-import random   # REQUIRED for Ticket Codes
-import string   # REQUIRED for Ticket Codes
-from flask import Flask, render_template, request, jsonify, send_from_directory, redirect, url_for, make_response
+import random  # REQUIRED for Ticket Codes
+import string  # REQUIRED for Ticket Codes
+from flask import (
+    Flask,
+    render_template,
+    request,
+    jsonify,
+    send_from_directory,
+    redirect,
+    url_for,
+    make_response,
+)
 from datetime import datetime, timedelta
 from werkzeug.utils import secure_filename
 
-# ==============================================================================
-#   SYSTEM INITIALIZATION & CONFIGURATION
-# ==============================================================================
-
-app = Flask(__name__, template_folder='.', static_folder='.')
+app = Flask(__name__, template_folder=".", static_folder=".")
 logging.basicConfig(
     level=logging.INFO,
-    format='%(asctime)s | %(levelname)s | %(message)s',
-    handlers=[logging.StreamHandler(sys.stdout)]
+    format="%(asctime)s | %(levelname)s | %(message)s",
+    handlers=[logging.StreamHandler(sys.stdout)],
 )
 logger = logging.getLogger("LBAS_Command_Center")
 
-PROFILE_FOLDER = 'Profile'
-app.config['UPLOAD_FOLDER'] = PROFILE_FOLDER
-app.config['MAX_CONTENT_LENGTH'] = 32 * 1024 * 1024 
-app.config['JSONIFY_PRETTYPRINT_REGULAR'] = True
+PROFILE_FOLDER = "Profile"
+app.config["UPLOAD_FOLDER"] = PROFILE_FOLDER
+app.config["MAX_CONTENT_LENGTH"] = 32 * 1024 * 1024
+app.config["JSONIFY_PRETTYPRINT_REGULAR"] = True
 
 if not os.path.exists(PROFILE_FOLDER):
     os.makedirs(PROFILE_FOLDER)
@@ -34,171 +38,92 @@ if not os.path.exists(PROFILE_FOLDER):
 
 # Database Map: Full restoration of all required DBs
 DB_FILES = {
-    'books': 'books.json',
-    'admins': 'admins.json',
-    'users': 'users.json',
-    'transactions': 'transactions.json',
-    'ratings': 'ratings.json',
-    'config': 'system_config.json',
-    'tickets': 'tickets.json',  # Password Recovery Registry
-    'categories': 'categories.json'
+    "books": "books.json",
+    "admins": "admins.json",
+    "users": "users.json",
+    "transactions": "transactions.json",
+    "ratings": "ratings.json",
+    "config": "system_config.json",
+    "tickets": "tickets.json",  # Password Recovery Registry
+    "categories": "categories.json",
 }
 
 ACTIVE_SESSIONS = {}
 
-# ==============================================================================
-#   DATABASE ENGINE & SYNC LOGIC
-# ==============================================================================
 
 def initialize_system():
     logger.info("SYSTEM INIT: verifying database integrity...")
     for key, file_path in DB_FILES.items():
-=======
-import os
-import json
-import uuid
-import logging
-import sys
-import operator
-import random   # REQUIRED for Ticket Codes
-import string   # REQUIRED for Ticket Codes
-from flask import Flask, render_template, request, jsonify, send_from_directory, redirect, url_for, make_response
-from datetime import datetime, timedelta
-from werkzeug.utils import secure_filename
-
-# ==============================================================================
-#   SYSTEM INITIALIZATION & CONFIGURATION
-# ==============================================================================
-
-app = Flask(__name__, template_folder='.', static_folder='.')
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s | %(levelname)s | %(message)s',
-    handlers=[logging.StreamHandler(sys.stdout)]
-)
-logger = logging.getLogger("LBAS_Command_Center")
-
-PROFILE_FOLDER = 'Profile'
-app.config['UPLOAD_FOLDER'] = PROFILE_FOLDER
-app.config['MAX_CONTENT_LENGTH'] = 32 * 1024 * 1024 
-app.config['JSONIFY_PRETTYPRINT_REGULAR'] = True
-
-if not os.path.exists(PROFILE_FOLDER):
-    os.makedirs(PROFILE_FOLDER)
-    logger.info(f"SYSTEM INIT: Created secure profile storage at ./{PROFILE_FOLDER}")
-
-# Database Map: Full restoration of all required DBs
-DB_FILES = {
-    'books': 'books.json',
-    'admins': 'admins.json',
-    'users': 'users.json',
-    'transactions': 'transactions.json',
-    'ratings': 'ratings.json',
-    'config': 'system_config.json',
-    'tickets': 'tickets.json',  # Password Recovery Registry
-    'categories': 'categories.json'
-}
-
-ACTIVE_SESSIONS = {}
-
-# ==============================================================================
-#   DATABASE ENGINE & SYNC LOGIC
-# ==============================================================================
-
-def initialize_system():
-    logger.info("SYSTEM INIT: verifying database integrity...")
-    for key, file_path in DB_FILES.items():
->>>>>>> e4ac5b40fbb07dc4c1e46b648de77c897704caac
         if not os.path.exists(file_path):
-            if key == 'config':
+            if key == "config":
                 initial_data = {
                     "system_version": "4.8.3",
                     "rating_enabled": True,
-                    "last_reboot": datetime.now().strftime("%Y-%m-%d %H:%M")
+                    "last_reboot": datetime.now().strftime("%Y-%m-%d %H:%M"),
                 }
-            elif key == 'categories':
+            elif key == "categories":
                 initial_data = ["General", "Mathematics", "Science", "Literature"]
             else:
                 initial_data = []
-            with open(file_path, 'w', encoding='utf-8') as f:
+            with open(file_path, "w", encoding="utf-8") as f:
                 json.dump(initial_data, f, indent=4)
 
     # Ensure categories are available and in sync with book data
     sync_categories_with_books()
-<<<<<<< HEAD
 
     # MIGRATION: Ensure status fields exist
-    users = get_db('users')
+    users = get_db("users")
     changed = False
     for u in users:
-        if 'status' not in u:
-            u['status'] = 'approved'; changed = True
-    if changed: save_db('users', users)
+        if "status" not in u:
+            u["status"] = "approved"
+            changed = True
+    if changed:
+        save_db("users", users)
 
     # Ensure Root Admin exists
-    admins = get_db('admins')
+    admins = get_db("admins")
     if not admins:
-        admins.append({
-            "name": "System Administrator", "school_id": "admin", "password": "admin",
-            "category": "Staff", "photo": "default.png", "status": "approved", "created_at": "SYSTEM_INIT"
-        })
-        save_db('admins', admins)
+        admins.append(
+            {
+                "name": "System Administrator",
+                "school_id": "admin",
+                "password": "admin",
+                "category": "Staff",
+                "photo": "default.png",
+                "status": "approved",
+                "created_at": "SYSTEM_INIT",
+            }
+        )
+        save_db("admins", admins)
+
 
 def get_db(key):
     try:
-        if not os.path.exists(DB_FILES[key]): return {} if key == 'config' else []
-        with open(DB_FILES[key], 'r', encoding='utf-8') as f:
+        if not os.path.exists(DB_FILES[key]):
+            return {} if key == "config" else []
+        with open(DB_FILES[key], "r", encoding="utf-8") as f:
             return json.load(f)
     except Exception as e:
         logger.error(f"DB READ ERROR ({key}): {e}")
-        return {} if key == 'config' else []
+        return {} if key == "config" else []
+
 
 def save_db(key, data):
     try:
-        with open(DB_FILES[key], 'w', encoding='utf-8') as f:
+        with open(DB_FILES[key], "w", encoding="utf-8") as f:
             json.dump(data, f, indent=4, ensure_ascii=False)
-=======
-
-    # MIGRATION: Ensure status fields exist
-    users = get_db('users')
-    changed = False
-    for u in users:
-        if 'status' not in u:
-            u['status'] = 'approved'; changed = True
-    if changed: save_db('users', users)
-
-    # Ensure Root Admin exists
-    admins = get_db('admins')
-    if not admins:
-        admins.append({
-            "name": "System Administrator", "school_id": "admin", "password": "admin",
-            "category": "Staff", "photo": "default.png", "status": "approved", "created_at": "SYSTEM_INIT"
-        })
-        save_db('admins', admins)
-
-def get_db(key):
-    try:
-        if not os.path.exists(DB_FILES[key]): return {} if key == 'config' else []
-        with open(DB_FILES[key], 'r', encoding='utf-8') as f:
-            return json.load(f)
-    except Exception as e:
-        logger.error(f"DB READ ERROR ({key}): {e}")
-        return {} if key == 'config' else []
-
-def save_db(key, data):
-    try:
-        with open(DB_FILES[key], 'w', encoding='utf-8') as f:
-            json.dump(data, f, indent=4, ensure_ascii=False)
->>>>>>> e4ac5b40fbb07dc4c1e46b648de77c897704caac
     except Exception as e:
         logger.error(f"DB WRITE ERROR ({key}): {e}")
 
+
 def sanitize_category_name(value):
-    clean = str(value or '').strip()
-    return clean[:80] if clean else ''
+    clean = str(value or "").strip()
+    return clean[:80] if clean else ""
+
 
 def get_categories():
-    categories = get_db('categories')
+    categories = get_db("categories")
     if not isinstance(categories, list):
         categories = []
 
@@ -213,46 +138,51 @@ def get_categories():
             clean.append(default)
     return clean
 
+
 def save_categories(categories):
     unique = []
     for c in categories:
         normalized = sanitize_category_name(c)
         if normalized and normalized not in unique:
             unique.append(normalized)
-    save_db('categories', unique)
+    save_db("categories", unique)
     return unique
+
 
 def sync_categories_with_books():
     categories = get_categories()
-    for b in get_db('books'):
-        cat = sanitize_category_name(b.get('category'))
+    for b in get_db("books"):
+        cat = sanitize_category_name(b.get("category"))
         if cat and cat not in categories:
             categories.append(cat)
     return save_categories(categories)
-<<<<<<< HEAD
 
-# ==============================================================================
-#   SECURITY & UTILITY FUNCTIONS
-# ==============================================================================
 
 def find_any_user(s_id):
     s_id = str(s_id).strip().lower()
-    if not s_id: return None
+    if not s_id:
+        return None
 
-    for admin in get_db('admins'):
-        if str(admin.get('school_id', '')).strip().lower() == s_id:
-            admin['registry_origin'] = 'admins.json'; admin['is_staff'] = True
+    for admin in get_db("admins"):
+        if str(admin.get("school_id", "")).strip().lower() == s_id:
+            admin["registry_origin"] = "admins.json"
+            admin["is_staff"] = True
             return admin
-            
-    for student in get_db('users'):
-        if str(student.get('school_id', '')).strip().lower() == s_id:
-            student['registry_origin'] = 'users.json'; student['is_staff'] = False
+
+    for student in get_db("users"):
+        if str(student.get("school_id", "")).strip().lower() == s_id:
+            student["registry_origin"] = "users.json"
+            student["is_staff"] = False
             return student
     return None
 
+
 def is_mobile_request():
-    ua = request.headers.get('User-Agent', '').lower()
-    return any(x in ua for x in ['mobile', 'android', 'iphone', 'ipad', 'windows phone'])
+    ua = request.headers.get("User-Agent", "").lower()
+    return any(
+        x in ua for x in ["mobile", "android", "iphone", "ipad", "windows phone"]
+    )
+
 
 def run_auto_sync_engine():
     """
@@ -261,67 +191,75 @@ def run_auto_sync_engine():
     2. Manages Ticket Requests (Deletes them after 5 mins).
     3. Manages Overdue Calculations.
     """
-    books = get_db('books')
-    transactions = get_db('transactions')
-    tickets = get_db('tickets')
+    books = get_db("books")
+    transactions = get_db("transactions")
+    tickets = get_db("tickets")
     now = datetime.now()
     changes_made = False
-    
+
     # 1. Sync Reservations (Expire if not claimed)
     for t in transactions:
-        if t['status'] == 'Reserved' and 'expiry' in t:
+        if t["status"] == "Reserved" and "expiry" in t:
             try:
-                if now > datetime.strptime(t['expiry'], "%Y-%m-%d %H:%M"):
-                    t['status'] = 'Expired'
+                if now > datetime.strptime(t["expiry"], "%Y-%m-%d %H:%M"):
+                    t["status"] = "Expired"
                     for b in books:
-                        if b['book_no'] == t['book_no']:
-                            b['status'] = 'Available'; changes_made = True
-            except: pass
-            
+                        if b["book_no"] == t["book_no"]:
+                            b["status"] = "Available"
+                            changes_made = True
+            except:
+                pass
+
     # 2. Sync Recovery Tickets (Cleanup expired)
     initial_tickets = len(tickets)
-    tickets = [t for t in tickets if datetime.strptime(t['expiry'], "%Y-%m-%d %H:%M:%S") > now]
+    tickets = [
+        t for t in tickets if datetime.strptime(t["expiry"], "%Y-%m-%d %H:%M:%S") > now
+    ]
     if len(tickets) != initial_tickets:
-        save_db('tickets', tickets)
+        save_db("tickets", tickets)
 
     if changes_made:
-        save_db('books', books)
-        save_db('transactions', transactions)
-        
+        save_db("books", books)
+        save_db("transactions", transactions)
+
     return books
 
-# ==============================================================================
-#   PAGE ROUTING (RESTORED TABLET ROUTE)
-# ==============================================================================
 
-@app.route('/')
+@app.route("/")
 def index_gateway():
-    if is_mobile_request(): return redirect(url_for('lbas_site'))
+    if is_mobile_request():
+        return redirect(url_for("lbas_site"))
     # Pre-load data for dashboard
-    return render_template('admin_dashboard.html', 
-                           books=run_auto_sync_engine(), 
-                           users=get_db('users'), 
-                           admins=get_db('admins'))
+    return render_template(
+        "admin_dashboard.html",
+        books=run_auto_sync_engine(),
+        users=get_db("users"),
+        admins=get_db("admins"),
+    )
 
-@app.route('/lbas')
-def lbas_site(): return render_template('LBAS.html')
 
-@app.route('/tablet')
-def tablet_kiosk(): 
+@app.route("/lbas")
+def lbas_site():
+    return render_template("LBAS.html")
+
+
+@app.route("/tablet")
+def tablet_kiosk():
     """Restored Kiosk Mode for Library Tablet"""
-    return render_template('user_tablet.html')
+    return render_template("user_tablet.html")
 
-@app.route('/audit_users')
-def audit_view(): return render_template('Admin_users_list.html')
 
-@app.route('/dev/analysis')
-def dev_analysis(): return render_template('Developers_rate_analysis.html')
+@app.route("/audit_users")
+def audit_view():
+    return render_template("Admin_users_list.html")
 
-# ==============================================================================
-#   API REGION: BULK IMPORT (FIXED & SMART)
-# ==============================================================================
 
-@app.route('/api/bulk_register', methods=['POST'])
+@app.route("/dev/analysis")
+def dev_analysis():
+    return render_template("Developers_rate_analysis.html")
+
+
+@app.route("/api/bulk_register", methods=["POST"])
 def bulk_register():
     """
     SMART BULK IMPORTER:
@@ -330,481 +268,233 @@ def bulk_register():
     """
     try:
         data = request.json
-        raw_text = data.get('text', '')
-        category = sanitize_category_name(data.get('category', 'General')) or 'General'
-        clear_first = data.get('clear_first', False)
-        
-        books = [] if clear_first else get_db('books')
+        raw_text = data.get("text", "")
+        category = sanitize_category_name(data.get("category", "General")) or "General"
+        clear_first = data.get("clear_first", False)
+
+        books = [] if clear_first else get_db("books")
         added = 0
-        
-        for line in raw_text.strip().split('\n'):
+
+        for line in raw_text.strip().split("\n"):
             line = line.strip()
-            if not line: continue
-            
+            if not line:
+                continue
+
             # DELIMITER DETECTION
-            if '|' in line:
-                parts = [p.strip() for p in line.split('|')]
-            elif ',' in line:
-                parts = [p.strip() for p in line.split(',', 1)]
+            if "|" in line:
+                parts = [p.strip() for p in line.split("|")]
+            elif "," in line:
+                parts = [p.strip() for p in line.split(",", 1)]
             else:
                 parts = line.split(maxsplit=1)
 
             if len(parts) >= 2:
-                b_no = parts[0].strip().upper().replace(',', '') # Clean ID
+                b_no = parts[0].strip().upper().replace(",", "")  # Clean ID
                 title = parts[1].strip()
-                
+
                 # Duplicate Check
-                if not any(b['book_no'] == b_no for b in books):
-                    books.append({
-                        "book_no": b_no, 
-                        "title": title, 
-                        "status": "Available",
-                        "category": category
-                    })
+                if not any(b["book_no"] == b_no for b in books):
+                    books.append(
+                        {
+                            "book_no": b_no,
+                            "title": title,
+                            "status": "Available",
+                            "category": category,
+                        }
+                    )
                     added += 1
-                    
-=======
 
-# ==============================================================================
-#   SECURITY & UTILITY FUNCTIONS
-# ==============================================================================
-
-def find_any_user(s_id):
-    s_id = str(s_id).strip().lower()
-    if not s_id: return None
-
-    for admin in get_db('admins'):
-        if str(admin.get('school_id', '')).strip().lower() == s_id:
-            admin['registry_origin'] = 'admins.json'; admin['is_staff'] = True
-            return admin
-            
-    for student in get_db('users'):
-        if str(student.get('school_id', '')).strip().lower() == s_id:
-            student['registry_origin'] = 'users.json'; student['is_staff'] = False
-            return student
-    return None
-
-def is_mobile_request():
-    ua = request.headers.get('User-Agent', '').lower()
-    return any(x in ua for x in ['mobile', 'android', 'iphone', 'ipad', 'windows phone'])
-
-def run_auto_sync_engine():
-    """
-    CRITICAL SYNC ENGINE (RESTORED):
-    1. Manages Book Reservations (Expires them after 30 mins).
-    2. Manages Ticket Requests (Deletes them after 5 mins).
-    3. Manages Overdue Calculations.
-    """
-    books = get_db('books')
-    transactions = get_db('transactions')
-    tickets = get_db('tickets')
-    now = datetime.now()
-    changes_made = False
-    
-    # 1. Sync Reservations (Expire if not claimed)
-    for t in transactions:
-        if t['status'] == 'Reserved' and 'expiry' in t:
-            try:
-                if now > datetime.strptime(t['expiry'], "%Y-%m-%d %H:%M"):
-                    t['status'] = 'Expired'
-                    for b in books:
-                        if b['book_no'] == t['book_no']:
-                            b['status'] = 'Available'; changes_made = True
-            except: pass
-            
-    # 2. Sync Recovery Tickets (Cleanup expired)
-    initial_tickets = len(tickets)
-    tickets = [t for t in tickets if datetime.strptime(t['expiry'], "%Y-%m-%d %H:%M:%S") > now]
-    if len(tickets) != initial_tickets:
-        save_db('tickets', tickets)
-
-    if changes_made:
-        save_db('books', books)
-        save_db('transactions', transactions)
-        
-    return books
-
-# ==============================================================================
-#   PAGE ROUTING (RESTORED TABLET ROUTE)
-# ==============================================================================
-
-@app.route('/')
-def index_gateway():
-    if is_mobile_request(): return redirect(url_for('lbas_site'))
-    # Pre-load data for dashboard
-    return render_template('admin_dashboard.html', 
-                           books=run_auto_sync_engine(), 
-                           users=get_db('users'), 
-                           admins=get_db('admins'))
-
-@app.route('/lbas')
-def lbas_site(): return render_template('LBAS.html')
-
-@app.route('/tablet')
-def tablet_kiosk(): 
-    """Restored Kiosk Mode for Library Tablet"""
-    return render_template('user_tablet.html')
-
-@app.route('/audit_users')
-def audit_view(): return render_template('Admin_users_list.html')
-
-@app.route('/dev/analysis')
-def dev_analysis(): return render_template('Developers_rate_analysis.html')
-
-# ==============================================================================
-#   API REGION: BULK IMPORT (FIXED & SMART)
-# ==============================================================================
-
-@app.route('/api/bulk_register', methods=['POST'])
-def bulk_register():
-    """
-    SMART BULK IMPORTER:
-    Handles '|', ',', or Space delimiters.
-    Fixes the issue where 'LIT-001, Title' was failing.
-    """
-    try:
-        data = request.json
-        raw_text = data.get('text', '')
-        category = sanitize_category_name(data.get('category', 'General')) or 'General'
-        clear_first = data.get('clear_first', False)
-        
-        books = [] if clear_first else get_db('books')
-        added = 0
-        
-        for line in raw_text.strip().split('\n'):
-            line = line.strip()
-            if not line: continue
-            
-            # DELIMITER DETECTION
-            if '|' in line:
-                parts = [p.strip() for p in line.split('|')]
-            elif ',' in line:
-                parts = [p.strip() for p in line.split(',', 1)]
-            else:
-                parts = line.split(maxsplit=1)
-
-            if len(parts) >= 2:
-                b_no = parts[0].strip().upper().replace(',', '') # Clean ID
-                title = parts[1].strip()
-                
-                # Duplicate Check
-                if not any(b['book_no'] == b_no for b in books):
-                    books.append({
-                        "book_no": b_no, 
-                        "title": title, 
-                        "status": "Available",
-                        "category": category
-                    })
-                    added += 1
-                    
->>>>>>> e4ac5b40fbb07dc4c1e46b648de77c897704caac
-        save_db('books', books)
+        save_db("books", books)
         categories = sync_categories_with_books()
         # Return keys for both legacy and new frontend versions
-        return jsonify({
-            "success": True, 
-            "added": added, 
-            "items_added": added, 
-            "total_in_db": len(books),
-            "categories": categories
-        })
-<<<<<<< HEAD
+        return jsonify(
+            {
+                "success": True,
+                "added": added,
+                "items_added": added,
+                "total_in_db": len(books),
+                "categories": categories,
+            }
+        )
     except Exception as e:
         logger.error(f"Bulk Import Failed: {e}")
         return jsonify({"success": False, "message": str(e)}), 500
 
-# ==============================================================================
-#   API REGION: TICKET SYSTEM (V4.8.2)
-# ==============================================================================
 
-@app.route('/api/request_reset', methods=['POST'])
+@app.route("/api/request_reset", methods=["POST"])
 def api_request_reset():
     """Step 1: Student requests ticket."""
-    s_id = str(request.json.get('school_id', '')).strip().lower()
-    if not find_any_user(s_id): return jsonify({"success": False, "message": "ID not found"}), 404
-    
-    tickets = get_db('tickets')
-    tickets = [t for t in tickets if t['school_id'] != s_id] # Clean old requests
-    
-    tickets.append({
-        "school_id": s_id, "status": "pending", "code": None,
-        "expiry": (datetime.now() + timedelta(minutes=5)).strftime("%Y-%m-%d %H:%M:%S")
-    })
-    save_db('tickets', tickets)
+    s_id = str(request.json.get("school_id", "")).strip().lower()
+    if not find_any_user(s_id):
+        return jsonify({"success": False, "message": "ID not found"}), 404
+
+    tickets = get_db("tickets")
+    tickets = [t for t in tickets if t["school_id"] != s_id]  # Clean old requests
+
+    tickets.append(
+        {
+            "school_id": s_id,
+            "status": "pending",
+            "code": None,
+            "expiry": (datetime.now() + timedelta(minutes=5)).strftime(
+                "%Y-%m-%d %H:%M:%S"
+            ),
+        }
+    )
+    save_db("tickets", tickets)
     return jsonify({"success": True})
 
-@app.route('/api/check_ticket_status', methods=['POST'])
+
+@app.route("/api/check_ticket_status", methods=["POST"])
 def api_check_ticket():
     """Step 2: Mobile checks if approved."""
-    s_id = str(request.json.get('school_id', '')).strip().lower()
-    tickets = get_db('tickets')
-    ticket = next((t for t in tickets if t['school_id'] == s_id), None)
-    
-    if ticket and ticket['status'] == 'approved':
-        return jsonify({"status": "approved", "code": ticket['code']})
+    s_id = str(request.json.get("school_id", "")).strip().lower()
+    tickets = get_db("tickets")
+    ticket = next((t for t in tickets if t["school_id"] == s_id), None)
+
+    if ticket and ticket["status"] == "approved":
+        return jsonify({"status": "approved", "code": ticket["code"]})
     return jsonify({"status": "pending"})
 
-@app.route('/api/admin/tickets')
+
+@app.route("/api/admin/tickets")
 def api_get_tickets():
     """Step 3: Dashboard gets list."""
-    return jsonify(get_db('tickets'))
+    return jsonify(get_db("tickets"))
 
-@app.route('/api/admin/approve_ticket', methods=['POST'])
+
+@app.route("/api/admin/approve_ticket", methods=["POST"])
 def api_approve_ticket():
     """Step 4: Admin approves & generates code."""
-    s_id = request.json.get('school_id')
-    tickets = get_db('tickets')
+    s_id = request.json.get("school_id")
+    tickets = get_db("tickets")
     for t in tickets:
-        if t['school_id'] == s_id:
-            t['status'] = 'approved'
-            t['code'] = ''.join(random.choices(string.ascii_uppercase + string.digits, k=6))
-            save_db('tickets', tickets)
-            return jsonify({"success": True, "code": t['code']})
+        if t["school_id"] == s_id:
+            t["status"] = "approved"
+            t["code"] = "".join(
+                random.choices(string.ascii_uppercase + string.digits, k=6)
+            )
+            save_db("tickets", tickets)
+            return jsonify({"success": True, "code": t["code"]})
     return jsonify({"success": False}), 404
 
-@app.route('/api/finalize_reset', methods=['POST'])
+
+@app.route("/api/finalize_reset", methods=["POST"])
 def api_finalize_reset():
     """Step 5: Apply new password."""
     data = request.json
-    s_id = str(data.get('school_id', '')).strip().lower()
-    new_pwd = data.get('new_password')
-    code = data.get('code')
-    
-    tickets = get_db('tickets')
-    ticket = next((t for t in tickets if t['school_id'] == s_id and t['code'] == code), None)
-    
+    s_id = str(data.get("school_id", "")).strip().lower()
+    new_pwd = data.get("new_password")
+    code = data.get("code")
+
+    tickets = get_db("tickets")
+    ticket = next(
+        (t for t in tickets if t["school_id"] == s_id and t["code"] == code), None
+    )
+
     if ticket:
         # Update user registry
-        for db in ['users', 'admins']:
+        for db in ["users", "admins"]:
             registry = get_db(db)
             updated = False
             for u in registry:
-                if u['school_id'] == s_id:
-                    u['password'] = new_pwd
+                if u["school_id"] == s_id:
+                    u["password"] = new_pwd
                     updated = True
-            if updated: save_db(db, registry)
-            
+            if updated:
+                save_db(db, registry)
+
         # Consume ticket
-        save_db('tickets', [t for t in tickets if t['school_id'] != s_id])
+        save_db("tickets", [t for t in tickets if t["school_id"] != s_id])
         return jsonify({"success": True})
     return jsonify({"success": False}), 401
 
-# ==============================================================================
-#   API REGION: USER REGISTRATION & AUTH
-# ==============================================================================
 
-@app.route('/api/register_student', methods=['POST'])
-def api_reg_student(): return perform_registration('users', 'Student')
+@app.route("/api/register_student", methods=["POST"])
+def api_reg_student():
+    return perform_registration("users", "Student")
 
-@app.route('/api/register_librarian', methods=['POST'])
-def api_reg_staff(): return perform_registration('admins', 'Staff')
+
+@app.route("/api/register_librarian", methods=["POST"])
+def api_reg_staff():
+    return perform_registration("admins", "Staff")
+
 
 def perform_registration(target_db_key, category_name):
     if request.is_json:
         data = request.json
-        name = data.get('name'); s_id = str(data.get('school_id')).strip().lower(); pwd = data.get('password')
+        name = data.get("name")
+        s_id = str(data.get("school_id")).strip().lower()
+        pwd = data.get("password")
     else:
-        name = request.form.get('name'); s_id = str(request.form.get('school_id')).strip().lower(); pwd = request.form.get('password')
+        name = request.form.get("name")
+        s_id = str(request.form.get("school_id")).strip().lower()
+        pwd = request.form.get("password")
 
-    if find_any_user(s_id): return jsonify({"success": False, "message": "ID Exists"}), 400
+    if find_any_user(s_id):
+        return jsonify({"success": False, "message": "ID Exists"}), 400
 
     photo = "default.png"
-    if 'photo' in request.files:
-        f = request.files['photo']
-        if f.filename != '':
-            ext = f.filename.split('.')[-1]
+    if "photo" in request.files:
+        f = request.files["photo"]
+        if f.filename != "":
+            ext = f.filename.split(".")[-1]
             photo = secure_filename(f"{s_id}_{int(datetime.now().timestamp())}.{ext}")
-            f.save(os.path.join(app.config['UPLOAD_FOLDER'], photo))
-    
+            f.save(os.path.join(app.config["UPLOAD_FOLDER"], photo))
+
     # Students = Pending, Staff = Approved
-    status = 'approved' if category_name == 'Staff' else 'pending'
-    
+    status = "approved" if category_name == "Staff" else "pending"
+
     registry = get_db(target_db_key)
-    registry.append({
-        "name": name, "school_id": s_id, "password": pwd,
-        "category": category_name, "photo": photo, "status": status,
-        "created_at": datetime.now().strftime("%Y-%m-%d %H:%M")
-    })
+    registry.append(
+        {
+            "name": name,
+            "school_id": s_id,
+            "password": pwd,
+            "category": category_name,
+            "photo": photo,
+            "status": status,
+            "created_at": datetime.now().strftime("%Y-%m-%d %H:%M"),
+        }
+    )
     save_db(target_db_key, registry)
     return jsonify({"success": True})
 
-@app.route('/api/login', methods=['POST'])
+
+@app.route("/api/login", methods=["POST"])
 def api_login():
     data = request.json
-    s_id = str(data.get('school_id', '')).strip().lower()
-    pwd = data.get('password')
-    
+    s_id = str(data.get("school_id", "")).strip().lower()
+    pwd = data.get("password")
+
     user = find_any_user(s_id)
-    if not user: return jsonify({"success": False, "message": "ID not found"}), 404
-    
-    if user['status'] == 'pending':
+    if not user:
+        return jsonify({"success": False, "message": "ID not found"}), 404
+
+    if user["status"] == "pending":
         return jsonify({"success": False, "message": "Account Pending Approval"}), 401
-        
-    if user.get('password') == pwd:
+
+    if user.get("password") == pwd:
         token = str(uuid.uuid4())
         ACTIVE_SESSIONS[s_id] = token
         return jsonify({"success": True, "token": token, "profile": user})
-        
+
     return jsonify({"success": False, "message": "Invalid Password"}), 401
 
-# ==============================================================================
-#   API REGION: ASSET CRUD & TRANSACTIONS (RESTORED KIOSK LOGIC)
-# ==============================================================================
 
-=======
-    except Exception as e:
-        logger.error(f"Bulk Import Failed: {e}")
-        return jsonify({"success": False, "message": str(e)}), 500
+@app.route("/api/books")
+def api_get_books():
+    return jsonify(run_auto_sync_engine())
 
-# ==============================================================================
-#   API REGION: TICKET SYSTEM (V4.8.2)
-# ==============================================================================
 
-@app.route('/api/request_reset', methods=['POST'])
-def api_request_reset():
-    """Step 1: Student requests ticket."""
-    s_id = str(request.json.get('school_id', '')).strip().lower()
-    if not find_any_user(s_id): return jsonify({"success": False, "message": "ID not found"}), 404
-    
-    tickets = get_db('tickets')
-    tickets = [t for t in tickets if t['school_id'] != s_id] # Clean old requests
-    
-    tickets.append({
-        "school_id": s_id, "status": "pending", "code": None,
-        "expiry": (datetime.now() + timedelta(minutes=5)).strftime("%Y-%m-%d %H:%M:%S")
-    })
-    save_db('tickets', tickets)
-    return jsonify({"success": True})
-
-@app.route('/api/check_ticket_status', methods=['POST'])
-def api_check_ticket():
-    """Step 2: Mobile checks if approved."""
-    s_id = str(request.json.get('school_id', '')).strip().lower()
-    tickets = get_db('tickets')
-    ticket = next((t for t in tickets if t['school_id'] == s_id), None)
-    
-    if ticket and ticket['status'] == 'approved':
-        return jsonify({"status": "approved", "code": ticket['code']})
-    return jsonify({"status": "pending"})
-
-@app.route('/api/admin/tickets')
-def api_get_tickets():
-    """Step 3: Dashboard gets list."""
-    return jsonify(get_db('tickets'))
-
-@app.route('/api/admin/approve_ticket', methods=['POST'])
-def api_approve_ticket():
-    """Step 4: Admin approves & generates code."""
-    s_id = request.json.get('school_id')
-    tickets = get_db('tickets')
-    for t in tickets:
-        if t['school_id'] == s_id:
-            t['status'] = 'approved'
-            t['code'] = ''.join(random.choices(string.ascii_uppercase + string.digits, k=6))
-            save_db('tickets', tickets)
-            return jsonify({"success": True, "code": t['code']})
-    return jsonify({"success": False}), 404
-
-@app.route('/api/finalize_reset', methods=['POST'])
-def api_finalize_reset():
-    """Step 5: Apply new password."""
-    data = request.json
-    s_id = str(data.get('school_id', '')).strip().lower()
-    new_pwd = data.get('new_password')
-    code = data.get('code')
-    
-    tickets = get_db('tickets')
-    ticket = next((t for t in tickets if t['school_id'] == s_id and t['code'] == code), None)
-    
-    if ticket:
-        # Update user registry
-        for db in ['users', 'admins']:
-            registry = get_db(db)
-            updated = False
-            for u in registry:
-                if u['school_id'] == s_id:
-                    u['password'] = new_pwd
-                    updated = True
-            if updated: save_db(db, registry)
-            
-        # Consume ticket
-        save_db('tickets', [t for t in tickets if t['school_id'] != s_id])
-        return jsonify({"success": True})
-    return jsonify({"success": False}), 401
-
-# ==============================================================================
-#   API REGION: USER REGISTRATION & AUTH
-# ==============================================================================
-
-@app.route('/api/register_student', methods=['POST'])
-def api_reg_student(): return perform_registration('users', 'Student')
-
-@app.route('/api/register_librarian', methods=['POST'])
-def api_reg_staff(): return perform_registration('admins', 'Staff')
-
-def perform_registration(target_db_key, category_name):
-    if request.is_json:
-        data = request.json
-        name = data.get('name'); s_id = str(data.get('school_id')).strip().lower(); pwd = data.get('password')
-    else:
-        name = request.form.get('name'); s_id = str(request.form.get('school_id')).strip().lower(); pwd = request.form.get('password')
-
-    if find_any_user(s_id): return jsonify({"success": False, "message": "ID Exists"}), 400
-
-    photo = "default.png"
-    if 'photo' in request.files:
-        f = request.files['photo']
-        if f.filename != '':
-            ext = f.filename.split('.')[-1]
-            photo = secure_filename(f"{s_id}_{int(datetime.now().timestamp())}.{ext}")
-            f.save(os.path.join(app.config['UPLOAD_FOLDER'], photo))
-    
-    # Students = Pending, Staff = Approved
-    status = 'approved' if category_name == 'Staff' else 'pending'
-    
-    registry = get_db(target_db_key)
-    registry.append({
-        "name": name, "school_id": s_id, "password": pwd,
-        "category": category_name, "photo": photo, "status": status,
-        "created_at": datetime.now().strftime("%Y-%m-%d %H:%M")
-    })
-    save_db(target_db_key, registry)
-    return jsonify({"success": True})
-
-@app.route('/api/login', methods=['POST'])
-def api_login():
-    data = request.json
-    s_id = str(data.get('school_id', '')).strip().lower()
-    pwd = data.get('password')
-    
-    user = find_any_user(s_id)
-    if not user: return jsonify({"success": False, "message": "ID not found"}), 404
-    
-    if user['status'] == 'pending':
-        return jsonify({"success": False, "message": "Account Pending Approval"}), 401
-        
-    if user.get('password') == pwd:
-        token = str(uuid.uuid4())
-        ACTIVE_SESSIONS[s_id] = token
-        return jsonify({"success": True, "token": token, "profile": user})
-        
-    return jsonify({"success": False, "message": "Invalid Password"}), 401
-
-# ==============================================================================
-#   API REGION: ASSET CRUD & TRANSACTIONS (RESTORED KIOSK LOGIC)
-# ==============================================================================
-
->>>>>>> e4ac5b40fbb07dc4c1e46b648de77c897704caac
-@app.route('/api/books')
-def api_get_books(): return jsonify(run_auto_sync_engine())
-
-@app.route('/api/categories')
+@app.route("/api/categories")
 def api_get_categories():
     return jsonify(sync_categories_with_books())
 
-@app.route('/api/categories', methods=['POST'])
+
+@app.route("/api/categories", methods=["POST"])
 def api_add_category():
-    category = sanitize_category_name(request.json.get('category'))
+    category = sanitize_category_name(request.json.get("category"))
     if not category:
         return jsonify({"success": False, "message": "Invalid category name"}), 400
 
@@ -816,316 +506,346 @@ def api_add_category():
     categories = save_categories(categories)
     return jsonify({"success": True, "categories": categories, "created": True})
 
-@app.route('/api/categories/delete', methods=['POST'])
+
+@app.route("/api/categories/delete", methods=["POST"])
 def api_delete_category():
-    category = sanitize_category_name(request.json.get('category'))
+    category = sanitize_category_name(request.json.get("category"))
     if not category:
         return jsonify({"success": False, "message": "Invalid category name"}), 400
 
-    books_using = [b for b in get_db('books') if sanitize_category_name(b.get('category')) == category]
+    books_using = [
+        b
+        for b in get_db("books")
+        if sanitize_category_name(b.get("category")) == category
+    ]
     if books_using:
-        return jsonify({"success": False, "message": "Category is in use by existing books"}), 400
+        return (
+            jsonify(
+                {"success": False, "message": "Category is in use by existing books"}
+            ),
+            400,
+        )
 
     categories = [c for c in get_categories() if c != category]
     save_categories(categories)
     return jsonify({"success": True, "categories": categories})
-<<<<<<< HEAD
 
-@app.route('/api/users')
-def api_get_users(): return jsonify(get_db('users'))
 
-@app.route('/api/admins')
-def api_get_admins(): return jsonify(get_db('admins'))
+@app.route("/api/users")
+def api_get_users():
+    return jsonify(get_db("users"))
 
-@app.route('/api/transactions')
-def api_get_transactions(): return jsonify(get_db('transactions'))
 
-@app.route('/api/user/<s_id>')
+@app.route("/api/admins")
+def api_get_admins():
+    return jsonify(get_db("admins"))
+
+
+@app.route("/api/transactions")
+def api_get_transactions():
+    return jsonify(get_db("transactions"))
+
+
+@app.route("/api/user/<s_id>")
 def api_get_specific_user(s_id):
     """Restored: Required for Tablet Kiosk to Scan User"""
     user = find_any_user(s_id)
-    if user: return jsonify({"success": True, "profile": user})
+    if user:
+        return jsonify({"success": True, "profile": user})
     return jsonify({"success": False}), 404
 
-@app.route('/api/update_book', methods=['POST'])
-=======
 
-@app.route('/api/users')
-def api_get_users(): return jsonify(get_db('users'))
-
-@app.route('/api/admins')
-def api_get_admins(): return jsonify(get_db('admins'))
-
-@app.route('/api/transactions')
-def api_get_transactions(): return jsonify(get_db('transactions'))
-
-@app.route('/api/user/<s_id>')
-def api_get_specific_user(s_id):
-    """Restored: Required for Tablet Kiosk to Scan User"""
-    user = find_any_user(s_id)
-    if user: return jsonify({"success": True, "profile": user})
-    return jsonify({"success": False}), 404
-
-@app.route('/api/update_book', methods=['POST'])
->>>>>>> e4ac5b40fbb07dc4c1e46b648de77c897704caac
+@app.route("/api/update_book", methods=["POST"])
 def api_update_book():
     data = request.json
-    books = get_db('books')
+    books = get_db("books")
     for b in books:
-        if b['book_no'] == data['book_no']:
-            if 'category' in data:
-                data['category'] = sanitize_category_name(data['category']) or 'General'
-            b.update({k:v for k,v in data.items() if k in b})
-            save_db('books', books)
+        if b["book_no"] == data["book_no"]:
+            if "category" in data:
+                data["category"] = sanitize_category_name(data["category"]) or "General"
+            b.update({k: v for k, v in data.items() if k in b})
+            save_db("books", books)
             sync_categories_with_books()
             return jsonify({"success": True})
     return jsonify({"success": False}), 404
-<<<<<<< HEAD
 
-@app.route('/api/delete_book', methods=['POST'])
-=======
 
-@app.route('/api/delete_book', methods=['POST'])
->>>>>>> e4ac5b40fbb07dc4c1e46b648de77c897704caac
+@app.route("/api/delete_book", methods=["POST"])
 def api_del_book():
     data = request.json
-    books = [b for b in get_db('books') if b['book_no'] != data['book_no']]
-    save_db('books', books)
+    books = [b for b in get_db("books") if b["book_no"] != data["book_no"]]
+    save_db("books", books)
     sync_categories_with_books()
     return jsonify({"success": True})
 
-@app.route('/api/update_member', methods=['POST'])
+
+@app.route("/api/update_member", methods=["POST"])
 def api_update_member():
     data = request.json
-    school_id = str(data.get('school_id', '')).strip().lower()
-    name = str(data.get('name', '')).strip()
-    target_type = str(data.get('type', 'student')).strip().lower()
+    school_id = str(data.get("school_id", "")).strip().lower()
+    name = str(data.get("name", "")).strip()
+    target_type = str(data.get("type", "student")).strip().lower()
 
     if not school_id or not name:
         return jsonify({"success": False, "message": "Missing required fields"}), 400
 
-    db_key = 'admins' if target_type == 'admin' else 'users'
+    db_key = "admins" if target_type == "admin" else "users"
     records = get_db(db_key)
     for row in records:
-        if str(row.get('school_id', '')).strip().lower() == school_id:
-            row['name'] = name
+        if str(row.get("school_id", "")).strip().lower() == school_id:
+            row["name"] = name
             save_db(db_key, records)
             return jsonify({"success": True})
     return jsonify({"success": False, "message": "Member not found"}), 404
 
-@app.route('/api/delete_member', methods=['POST'])
+
+@app.route("/api/delete_member", methods=["POST"])
 def api_delete_member():
     data = request.json
-    school_id = str(data.get('school_id', '')).strip().lower()
-    target_type = str(data.get('type', 'student')).strip().lower()
+    school_id = str(data.get("school_id", "")).strip().lower()
+    target_type = str(data.get("type", "student")).strip().lower()
 
     if not school_id:
         return jsonify({"success": False, "message": "Missing school_id"}), 400
 
-    db_key = 'admins' if target_type == 'admin' else 'users'
+    db_key = "admins" if target_type == "admin" else "users"
     records = get_db(db_key)
-    filtered = [r for r in records if str(r.get('school_id', '')).strip().lower() != school_id]
+    filtered = [
+        r for r in records if str(r.get("school_id", "")).strip().lower() != school_id
+    ]
     if len(filtered) == len(records):
         return jsonify({"success": False, "message": "Member not found"}), 404
 
     save_db(db_key, filtered)
     return jsonify({"success": True})
-<<<<<<< HEAD
 
-@app.route('/api/approve_user', methods=['POST'])
+
+@app.route("/api/approve_user", methods=["POST"])
 def api_approve_user():
     data = request.json
-    users = get_db('users')
+    users = get_db("users")
     for u in users:
-        if u['school_id'] == data['school_id']:
-            u['status'] = 'approved'
-            save_db('users', users)
+        if u["school_id"] == data["school_id"]:
+            u["status"] = "approved"
+            save_db("users", users)
             return jsonify({"success": True})
     return jsonify({"success": False}), 404
 
-@app.route('/api/reject_user', methods=['POST'])
+
+@app.route("/api/reject_user", methods=["POST"])
 def api_reject_user():
     data = request.json
-    users = [u for u in get_db('users') if u['school_id'] != data['school_id']]
-    save_db('users', users)
+    users = [u for u in get_db("users") if u["school_id"] != data["school_id"]]
+    save_db("users", users)
     return jsonify({"success": True})
 
-@app.route('/api/process_transaction', methods=['POST'])
+
+@app.route("/api/process_transaction", methods=["POST"])
 def api_process_trans():
     """
     MASTER TRANSACTION HANDLER
     Restored: Now handles 'borrow' logic for Kiosk/Tablet.
     """
     data = request.json
-    b_no = data.get('book_no')
-    action = data.get('action') # 'borrow' or 'return'
-    s_id = str(data.get('school_id', '')).strip().lower()
-    
-    books = get_db('books')
-    transactions = get_db('transactions')
-    
+    b_no = data.get("book_no")
+    action = data.get("action")  # 'borrow' or 'return'
+    s_id = str(data.get("school_id", "")).strip().lower()
+
+    books = get_db("books")
+    transactions = get_db("transactions")
+
     # LOGIC 1: RETURN
-    if action == 'return':
+    if action == "return":
         for b in books:
-            if b['book_no'] == b_no: b['status'] = 'Available'
+            if b["book_no"] == b_no:
+                b["status"] = "Available"
         # Close all open transactions for this book
         for t in transactions:
-            if t['book_no'] == b_no and t['status'] in ['Reserved', 'Borrowed']:
-                t['status'] = 'Returned'
-                t['return_date'] = datetime.now().strftime("%Y-%m-%d %H:%M")
-                
+            if t["book_no"] == b_no and t["status"] in ["Reserved", "Borrowed"]:
+                t["status"] = "Returned"
+                t["return_date"] = datetime.now().strftime("%Y-%m-%d %H:%M")
+
     # LOGIC 2: BORROW (Restored for Tablet)
-    elif action == 'borrow':
-        target_book = next((b for b in books if b['book_no'] == b_no), None)
-        
+    elif action == "borrow":
+        target_book = next((b for b in books if b["book_no"] == b_no), None)
+
         # Validation: Is it available or reserved by THIS user?
-        user_reserved = any(t['book_no'] == b_no and t['school_id'] == s_id and t['status'] == 'Reserved' for t in transactions)
-        
-        if target_book and (target_book['status'] == 'Available' or user_reserved):
-            target_book['status'] = 'Borrowed'
-            
+        user_reserved = any(
+            t["book_no"] == b_no
+            and t["school_id"] == s_id
+            and t["status"] == "Reserved"
+            for t in transactions
+        )
+
+        if target_book and (target_book["status"] == "Available" or user_reserved):
+            target_book["status"] = "Borrowed"
+
             # Close reservation if exists
             for t in transactions:
-                if t['book_no'] == b_no and t['status'] == 'Reserved':
-                    t['status'] = 'Converted' # Mark old reservation as done
-            
+                if t["book_no"] == b_no and t["status"] == "Reserved":
+                    t["status"] = "Converted"  # Mark old reservation as done
+
             # Create Borrow Record
-            transactions.append({
-                "book_no": b_no, "school_id": s_id, "status": "Borrowed",
-                "date": datetime.now().strftime("%Y-%m-%d %H:%M"),
-                "expiry": (datetime.now() + timedelta(days=7)).strftime("%Y-%m-%d %H:%M") # 7 Day Loan
-            })
+            transactions.append(
+                {
+                    "book_no": b_no,
+                    "school_id": s_id,
+                    "status": "Borrowed",
+                    "date": datetime.now().strftime("%Y-%m-%d %H:%M"),
+                    "expiry": (datetime.now() + timedelta(days=7)).strftime(
+                        "%Y-%m-%d %H:%M"
+                    ),  # 7 Day Loan
+                }
+            )
         else:
             return jsonify({"success": False, "message": "Book Unavailable"}), 400
-                
-    save_db('books', books)
-    save_db('transactions', transactions)
+
+    save_db("books", books)
+    save_db("transactions", transactions)
     return jsonify({"success": True})
 
-@app.route('/api/reserve', methods=['POST'])
+
+@app.route("/api/reserve", methods=["POST"])
 def api_reserve():
     data = request.json
-    b_no = data.get('book_no')
-    s_id = str(data.get('school_id', '')).strip().lower()
-    
-    books = get_db('books')
-    transactions = get_db('transactions')
-    
+    b_no = data.get("book_no")
+    s_id = str(data.get("school_id", "")).strip().lower()
+
+    books = get_db("books")
+    transactions = get_db("transactions")
+
     for b in books:
-        if b['book_no'] == b_no and b['status'] == 'Available':
-            b['status'] = 'Reserved'
-            transactions.append({
-                "book_no": b_no, "school_id": s_id, "status": "Reserved",
-                "date": datetime.now().strftime("%Y-%m-%d %H:%M"),
-                "expiry": (datetime.now() + timedelta(minutes=30)).strftime("%Y-%m-%d %H:%M")
-            })
-            save_db('books', books)
-            save_db('transactions', transactions)
+        if b["book_no"] == b_no and b["status"] == "Available":
+            b["status"] = "Reserved"
+            transactions.append(
+                {
+                    "book_no": b_no,
+                    "school_id": s_id,
+                    "status": "Reserved",
+                    "date": datetime.now().strftime("%Y-%m-%d %H:%M"),
+                    "expiry": (datetime.now() + timedelta(minutes=30)).strftime(
+                        "%Y-%m-%d %H:%M"
+                    ),
+                }
+            )
+            save_db("books", books)
+            save_db("transactions", transactions)
             return jsonify({"success": True})
-            
+
     return jsonify({"success": False, "message": "Unavailable"})
 
-# ==============================================================================
-#   API REGION: DEVELOPER RATINGS (ENHANCED SYNC)
-# ==============================================================================
 
-@app.route('/dev/analysis')
+@app.route("/dev/analysis")
 def dev_analysis_portal():
     """Admin-only portal for rating metrics and database health."""
     if is_mobile_request():
         return "Access Forbidden: Desktop Analysis only.", 403
-    return render_template('Developers_rate_analysis.html')
+    return render_template("Developers_rate_analysis.html")
 
-# --- RATING & FEEDBACK ENGINE ---
 
-@app.route('/api/toggle_rating', methods=['POST'])
+@app.route("/api/toggle_rating", methods=["POST"])
 def api_toggle_rating():
     """Global switch to enable/disable the rating prompt on Tablet/LBAS."""
-    config = get_db('config')
-    current = config.get('rating_enabled', False)
-    config['rating_enabled'] = not current
-    config['last_modified'] = datetime.now().strftime("%Y-%m-%d %H:%M")
-    save_db('config', config)
-    return jsonify({"success": True, "new_state": config['rating_enabled']})
+    config = get_db("config")
+    current = config.get("rating_enabled", False)
+    config["rating_enabled"] = not current
+    config["last_modified"] = datetime.now().strftime("%Y-%m-%d %H:%M")
+    save_db("config", config)
+    return jsonify({"success": True, "new_state": config["rating_enabled"]})
 
-@app.route('/api/rating_status/<school_id>')
+
+@app.route("/api/rating_status/<school_id>")
 def api_rating_eligibility(school_id):
     """Checks if a user has already rated to prevent spam."""
-    config = get_db('config')
-    if not config.get('rating_enabled', False):
+    config = get_db("config")
+    if not config.get("rating_enabled", False):
         return jsonify({"show": False, "reason": "System Closed"})
 
-    ratings = get_db('ratings')
+    ratings = get_db("ratings")
     search_id = str(school_id).strip().lower()
-    already_done = any(str(r.get('school_id')).strip().lower() == search_id for r in ratings)
+    already_done = any(
+        str(r.get("school_id")).strip().lower() == search_id for r in ratings
+    )
     return jsonify({"show": not already_done})
 
-@app.route('/api/rate', methods=['POST'])
+
+@app.route("/api/rate", methods=["POST"])
 def api_submit_rating():
     """Saves student feedback with session token validation."""
     data = request.json
-    s_id = str(data.get('school_id', '')).strip().lower()
-    
-    if ACTIVE_SESSIONS.get(s_id) != data.get('token'):
+    s_id = str(data.get("school_id", "")).strip().lower()
+
+    if ACTIVE_SESSIONS.get(s_id) != data.get("token"):
         return jsonify({"success": False, "message": "Security Handshake Failed"}), 401
 
-    ratings = get_db('ratings')
-    ratings.append({
-        "rating_id": str(uuid.uuid4())[:10],
-        "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-        "school_id": s_id,
-        "stars": int(data.get('stars', 5)),
-        "feedback": data.get('feedback', 'N/A'),
-        "platform": "Mobile" if is_mobile_request() else "Tablet"
-    })
-    save_db('ratings', ratings)
+    ratings = get_db("ratings")
+    ratings.append(
+        {
+            "rating_id": str(uuid.uuid4())[:10],
+            "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+            "school_id": s_id,
+            "stars": int(data.get("stars", 5)),
+            "feedback": data.get("feedback", "N/A"),
+            "platform": "Mobile" if is_mobile_request() else "Tablet",
+        }
+    )
+    save_db("ratings", ratings)
     return jsonify({"success": True})
 
-@app.route('/api/ratings_summary')
+
+@app.route("/api/ratings_summary")
 def api_get_ratings():
     """Data feed for the Developer Analysis dashboard."""
-    return jsonify(get_db('ratings'))
+    return jsonify(get_db("ratings"))
 
 
-
-# ==============================================================================
-#   API REGION: MONTHLY LEADERBOARD (NEW)
-# ==============================================================================
 import sqlite3
+
 
 def _build_leaderboard_db():
     """Builds an in-memory SQL table from JSON transactions for monthly leaderboard queries."""
-    conn = sqlite3.connect(':memory:')
+    conn = sqlite3.connect(":memory:")
     conn.row_factory = sqlite3.Row
-    conn.execute('CREATE TABLE transactions (book_no TEXT, school_id TEXT, status TEXT, date TEXT)')
+    conn.execute(
+        "CREATE TABLE transactions (book_no TEXT, school_id TEXT, status TEXT, date TEXT)"
+    )
 
-    for t in get_db('transactions'):
+    for t in get_db("transactions"):
         conn.execute(
-            'INSERT INTO transactions (book_no, school_id, status, date) VALUES (?, ?, ?, ?)',
+            "INSERT INTO transactions (book_no, school_id, status, date) VALUES (?, ?, ?, ?)",
             (
-                str(t.get('book_no', '')).strip(),
-                str(t.get('school_id', '')).strip(),
-                str(t.get('status', '')).strip(),
-                str(t.get('date', '')).strip(),
-            )
+                str(t.get("book_no", "")).strip(),
+                str(t.get("school_id", "")).strip(),
+                str(t.get("status", "")).strip(),
+                str(t.get("date", "")).strip(),
+            ),
         )
     conn.commit()
     return conn
 
+
 def _is_staff_session_valid():
     """Checks active staff session for protected leaderboard APIs."""
-    staff_id = str(request.headers.get('X-School-Id', request.args.get('school_id', ''))).strip().lower()
-    token = str(request.headers.get('X-Session-Token', request.args.get('token', ''))).strip()
+    staff_id = (
+        str(request.headers.get("X-School-Id", request.args.get("school_id", "")))
+        .strip()
+        .lower()
+    )
+    token = str(
+        request.headers.get("X-Session-Token", request.args.get("token", ""))
+    ).strip()
     if not staff_id or ACTIVE_SESSIONS.get(staff_id) != token:
         return False
     user = find_any_user(staff_id)
-    return bool(user and user.get('is_staff'))
+    return bool(user and user.get("is_staff"))
 
-@app.route('/api/leaderboard/top-borrowers')
+
+@app.route("/api/leaderboard/top-borrowers")
 def api_leaderboard_top_borrowers():
     """Top 10 borrowers for the current month (public endpoint)."""
     conn = _build_leaderboard_db()
-    rows = conn.execute("""
+    rows = conn.execute(
+        """
         SELECT school_id, COUNT(*) as total
         FROM transactions
         WHERE status='Borrowed'
@@ -1134,18 +854,23 @@ def api_leaderboard_top_borrowers():
         GROUP BY school_id
         ORDER BY total DESC
         LIMIT 10
-    """).fetchall()
+    """
+    ).fetchall()
     conn.close()
-    return jsonify([{'school_id': row['school_id'], 'total': row['total']} for row in rows])
+    return jsonify(
+        [{"school_id": row["school_id"], "total": row["total"]} for row in rows]
+    )
 
-@app.route('/api/leaderboard/top-books')
+
+@app.route("/api/leaderboard/top-books")
 def api_leaderboard_top_books():
     """Top 10 books for the current month (staff only endpoint)."""
     if not _is_staff_session_valid():
-        return jsonify({'success': False, 'message': 'Unauthorized'}), 403
+        return jsonify({"success": False, "message": "Unauthorized"}), 403
 
     conn = _build_leaderboard_db()
-    rows = conn.execute("""
+    rows = conn.execute(
+        """
         SELECT book_no, COUNT(*) as total
         FROM transactions
         WHERE status='Borrowed'
@@ -1154,180 +879,20 @@ def api_leaderboard_top_books():
         GROUP BY book_no
         ORDER BY total DESC
         LIMIT 10
-    """).fetchall()
+    """
+    ).fetchall()
     conn.close()
-    return jsonify([{'book_no': row['book_no'], 'total': row['total']} for row in rows])
+    return jsonify([{"book_no": row["book_no"], "total": row["total"]} for row in rows])
 
-@app.route('/Profile/<path:filename>')
+
+@app.route("/Profile/<path:filename>")
 def serve_file(filename):
-    try: return send_from_directory(app.config['UPLOAD_FOLDER'], filename)
-    except: return send_from_directory(app.config['UPLOAD_FOLDER'], 'default.png')
+    try:
+        return send_from_directory(app.config["UPLOAD_FOLDER"], filename)
+    except:
+        return send_from_directory(app.config["UPLOAD_FOLDER"], "default.png")
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     initialize_system()
-    app.run(host='0.0.0.0', port=80, debug=True)
-=======
-
-@app.route('/api/approve_user', methods=['POST'])
-def api_approve_user():
-    data = request.json
-    users = get_db('users')
-    for u in users:
-        if u['school_id'] == data['school_id']:
-            u['status'] = 'approved'
-            save_db('users', users)
-            return jsonify({"success": True})
-    return jsonify({"success": False}), 404
-
-@app.route('/api/reject_user', methods=['POST'])
-def api_reject_user():
-    data = request.json
-    users = [u for u in get_db('users') if u['school_id'] != data['school_id']]
-    save_db('users', users)
-    return jsonify({"success": True})
-
-@app.route('/api/process_transaction', methods=['POST'])
-def api_process_trans():
-    """
-    MASTER TRANSACTION HANDLER
-    Restored: Now handles 'borrow' logic for Kiosk/Tablet.
-    """
-    data = request.json
-    b_no = data.get('book_no')
-    action = data.get('action') # 'borrow' or 'return'
-    s_id = str(data.get('school_id', '')).strip().lower()
-    
-    books = get_db('books')
-    transactions = get_db('transactions')
-    
-    # LOGIC 1: RETURN
-    if action == 'return':
-        for b in books:
-            if b['book_no'] == b_no: b['status'] = 'Available'
-        # Close all open transactions for this book
-        for t in transactions:
-            if t['book_no'] == b_no and t['status'] in ['Reserved', 'Borrowed']:
-                t['status'] = 'Returned'
-                t['return_date'] = datetime.now().strftime("%Y-%m-%d %H:%M")
-                
-    # LOGIC 2: BORROW (Restored for Tablet)
-    elif action == 'borrow':
-        target_book = next((b for b in books if b['book_no'] == b_no), None)
-        
-        # Validation: Is it available or reserved by THIS user?
-        user_reserved = any(t['book_no'] == b_no and t['school_id'] == s_id and t['status'] == 'Reserved' for t in transactions)
-        
-        if target_book and (target_book['status'] == 'Available' or user_reserved):
-            target_book['status'] = 'Borrowed'
-            
-            # Close reservation if exists
-            for t in transactions:
-                if t['book_no'] == b_no and t['status'] == 'Reserved':
-                    t['status'] = 'Converted' # Mark old reservation as done
-            
-            # Create Borrow Record
-            transactions.append({
-                "book_no": b_no, "school_id": s_id, "status": "Borrowed",
-                "date": datetime.now().strftime("%Y-%m-%d %H:%M"),
-                "expiry": (datetime.now() + timedelta(days=7)).strftime("%Y-%m-%d %H:%M") # 7 Day Loan
-            })
-        else:
-            return jsonify({"success": False, "message": "Book Unavailable"}), 400
-                
-    save_db('books', books)
-    save_db('transactions', transactions)
-    return jsonify({"success": True})
-
-@app.route('/api/reserve', methods=['POST'])
-def api_reserve():
-    data = request.json
-    b_no = data.get('book_no')
-    s_id = str(data.get('school_id', '')).strip().lower()
-    
-    books = get_db('books')
-    transactions = get_db('transactions')
-    
-    for b in books:
-        if b['book_no'] == b_no and b['status'] == 'Available':
-            b['status'] = 'Reserved'
-            transactions.append({
-                "book_no": b_no, "school_id": s_id, "status": "Reserved",
-                "date": datetime.now().strftime("%Y-%m-%d %H:%M"),
-                "expiry": (datetime.now() + timedelta(minutes=30)).strftime("%Y-%m-%d %H:%M")
-            })
-            save_db('books', books)
-            save_db('transactions', transactions)
-            return jsonify({"success": True})
-            
-    return jsonify({"success": False, "message": "Unavailable"})
-
-# ==============================================================================
-#   API REGION: DEVELOPER RATINGS (ENHANCED SYNC)
-# ==============================================================================
-
-@app.route('/dev/analysis')
-def dev_analysis_portal():
-    """Admin-only portal for rating metrics and database health."""
-    if is_mobile_request():
-        return "Access Forbidden: Desktop Analysis only.", 403
-    return render_template('Developers_rate_analysis.html')
-
-# --- RATING & FEEDBACK ENGINE ---
-
-@app.route('/api/toggle_rating', methods=['POST'])
-def api_toggle_rating():
-    """Global switch to enable/disable the rating prompt on Tablet/LBAS."""
-    config = get_db('config')
-    current = config.get('rating_enabled', False)
-    config['rating_enabled'] = not current
-    config['last_modified'] = datetime.now().strftime("%Y-%m-%d %H:%M")
-    save_db('config', config)
-    return jsonify({"success": True, "new_state": config['rating_enabled']})
-
-@app.route('/api/rating_status/<school_id>')
-def api_rating_eligibility(school_id):
-    """Checks if a user has already rated to prevent spam."""
-    config = get_db('config')
-    if not config.get('rating_enabled', False):
-        return jsonify({"show": False, "reason": "System Closed"})
-
-    ratings = get_db('ratings')
-    search_id = str(school_id).strip().lower()
-    already_done = any(str(r.get('school_id')).strip().lower() == search_id for r in ratings)
-    return jsonify({"show": not already_done})
-
-@app.route('/api/rate', methods=['POST'])
-def api_submit_rating():
-    """Saves student feedback with session token validation."""
-    data = request.json
-    s_id = str(data.get('school_id', '')).strip().lower()
-    
-    if ACTIVE_SESSIONS.get(s_id) != data.get('token'):
-        return jsonify({"success": False, "message": "Security Handshake Failed"}), 401
-
-    ratings = get_db('ratings')
-    ratings.append({
-        "rating_id": str(uuid.uuid4())[:10],
-        "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-        "school_id": s_id,
-        "stars": int(data.get('stars', 5)),
-        "feedback": data.get('feedback', 'N/A'),
-        "platform": "Mobile" if is_mobile_request() else "Tablet"
-    })
-    save_db('ratings', ratings)
-    return jsonify({"success": True})
-
-@app.route('/api/ratings_summary')
-def api_get_ratings():
-    """Data feed for the Developer Analysis dashboard."""
-    return jsonify(get_db('ratings'))
-
-@app.route('/Profile/<path:filename>')
-def serve_file(filename):
-    try: return send_from_directory(app.config['UPLOAD_FOLDER'], filename)
-    except: return send_from_directory(app.config['UPLOAD_FOLDER'], 'default.png')
-
-if __name__ == '__main__':
-    initialize_system()
-    app.run(host='0.0.0.0', port=80, debug=True)
->>>>>>> e4ac5b40fbb07dc4c1e46b648de77c897704caac
+    app.run(host="0.0.0.0", port=80, debug=True)
