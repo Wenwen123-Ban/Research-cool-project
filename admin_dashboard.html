@@ -493,7 +493,11 @@
         let html = `<div class="cat-pill ${activeFilterCat==='All'?'active':''}" onclick="setCategoryFilter('All', this)">All Collections</div>`;
         
         uniqueCats.forEach(cat => {
-            html += `<div class="cat-pill ${activeFilterCat===cat?'active':''}" onclick="setCategoryFilter('${cat}', this)">${cat}</div>`;
+            const categoryArg = JSON.stringify(cat);
+            const deleteIcon = isStaff && cat !== 'All Collections'
+                ? `<i class="fas fa-trash text-danger ms-2" onclick="deleteCategory(${categoryArg}, event)"></i>`
+                : '';
+            html += `<div class="cat-pill ${activeFilterCat===cat?'active':''}" onclick="setCategoryFilter(${categoryArg}, this)">${cat}${deleteIcon}</div>`;
         });
         container.innerHTML = html;
         
@@ -530,6 +534,36 @@
             bulkSel.add(opt);
             bulkSel.value = clean; // Select it automatically
             alert(`Category "${clean}" created. You can now import books into it.`);
+        }
+    }
+
+    async function deleteCategory(category, event) {
+        event.stopPropagation();
+
+        const cleanCategory = String(category || '').trim();
+        if(!cleanCategory || cleanCategory === 'All Collections') {
+            return alert('This category cannot be deleted.');
+        }
+
+        if(!confirm(`Delete category "${cleanCategory}"?\n\nAll books under this category will be permanently deleted.`)) return;
+
+        try {
+            const res = await fetch('/api/delete_category', {
+                method:'POST',
+                headers:{'Content-Type':'application/json'},
+                body: JSON.stringify({ category: cleanCategory })
+            });
+
+            const data = await res.json();
+
+            if(data.success){
+                if (activeFilterCat === cleanCategory) activeFilterCat = 'All';
+                loadData({ initialLoad: true });
+            } else {
+                alert(data.message || 'Failed to delete category.');
+            }
+        } catch (err) {
+            alert('Failed to delete category.');
         }
     }
 
@@ -721,7 +755,7 @@
         const link = document.getElementById('linkLeaderboard');
         if (link) link.style.display = 'block';
         addHistory(`System Unlocked by: ${name}`);
-        loadData();
+        loadData({ initialLoad: true });
     }
 
     async function submitUser() {

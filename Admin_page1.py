@@ -568,6 +568,45 @@ def api_delete_category():
     return jsonify({"success": True, "categories": categories})
 
 
+@app.route("/api/delete_category", methods=["POST"])
+def api_delete_category_cascade():
+    books_snapshot = get_db("books")
+    transactions_snapshot = get_db("transactions")
+    categories_snapshot = get_categories()
+
+    category = sanitize_category_name((request.json or {}).get("category"))
+    if not category or category == "All Collections":
+        return jsonify({"success": False, "message": "Invalid category name"}), 400
+
+    try:
+        books_to_delete = {
+            b.get("book_no")
+            for b in books_snapshot
+            if sanitize_category_name(b.get("category")) == category
+        }
+
+        filtered_transactions = [
+            t for t in transactions_snapshot if t.get("book_no") not in books_to_delete
+        ]
+        filtered_books = [
+            b
+            for b in books_snapshot
+            if sanitize_category_name(b.get("category")) != category
+        ]
+
+        save_db("transactions", filtered_transactions)
+        save_db("books", filtered_books)
+        save_categories([c for c in categories_snapshot if c != category])
+
+        return jsonify({"success": True})
+    except Exception as e:
+        logger.error(f"DELETE CATEGORY ERROR: {e}")
+        save_db("transactions", transactions_snapshot)
+        save_db("books", books_snapshot)
+        save_categories(categories_snapshot)
+        return jsonify({"success": False}), 500
+
+
 @app.route("/api/users")
 def api_get_users():
     return jsonify(get_db("users"))
