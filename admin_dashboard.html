@@ -17,11 +17,25 @@
             --success: #22c55e;
             --warning: #f59e0b;
         }
-        body { background-color: #f1f5f9; font-family: 'Inter', system-ui, sans-serif; overflow-x: hidden; color: #334155; }
+        body {
+            background-color: #f1f5f9;
+            font-family: 'Inter', system-ui, sans-serif;
+            overflow-x: hidden;
+            color: #334155;
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+        }
+
+        .main-wrapper {
+            display: flex;
+            flex: 1;
+            align-items: stretch;
+        }
         
         /* Navigation & Sidebar */
-        .sidebar { height: 100vh; background: var(--admin-dark); color: white; position: fixed; width: var(--sidebar-w); padding: 25px; z-index: 1000; transition: 0.3s; display: flex; flex-direction: column; border-right: 1px solid #1e293b; }
-        .main-content { margin-left: var(--sidebar-w); padding: 40px; transition: 0.3s; }
+        .sidebar { background: var(--admin-dark); color: white; position: relative; width: var(--sidebar-w); padding: 25px; transition: 0.3s; display: flex; flex-direction: column; border-right: 1px solid #1e293b; }
+        .main-content { flex: 1; padding: 40px; transition: 0.3s; }
         
         .nav-link { cursor: pointer; transition: 0.2s; border-radius: 12px !important; margin-bottom: 8px; padding: 12px 15px; font-weight: 500; display: flex; align-items: center; justify-content: space-between; }
         .nav-link:hover { background: rgba(255,255,255,0.08); transform: translateX(5px); }
@@ -209,7 +223,7 @@
       </div>
     </header>
 
-
+<div class="main-wrapper">
 <div class="sidebar">
     <div class="text-center mb-5 mt-3">
         <div class="bg-white rounded-4 d-inline-block p-3 mb-3 shadow-lg" style="opacity: 0.9;">
@@ -510,6 +524,8 @@
             </div>
         </div>
     </div>
+</div>
+
 </div>
 
 <div class="modal fade" id="editModal" tabindex="-1" aria-hidden="true">
