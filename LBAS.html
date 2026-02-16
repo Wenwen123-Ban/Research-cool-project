@@ -27,6 +27,9 @@
         background-color: #f1f5f9;
         font-family: "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
         overflow-x: hidden;
+        min-height: 100vh;
+        display: flex;
+        flex-direction: column;
       }
       .network-banner {
         background: var(--primary);
@@ -78,12 +81,23 @@
       }
 
       #loginSection {
-        height: 90vh;
+        min-height: 90vh;
         display: flex;
         align-items: center;
         justify-content: center;
         padding: 20px;
         flex-direction: column;
+      }
+
+      #portalSection,
+      #loginSection {
+        flex: 1 0 auto;
+      }
+
+      #bookContainer {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+        gap: 12px;
       }
       .login-card {
         background: white;
@@ -308,6 +322,7 @@
         margin-top: 60px;
         text-align: center;
         animation: fadeUp 0.8s ease;
+        flex-shrink: 0;
       }
 
       .main-footer::before {
@@ -350,6 +365,50 @@
         to {
           opacity: 1;
           transform: translateY(0);
+        }
+      }
+
+      @media (max-width: 768px) {
+        .header-content {
+          padding: 14px 16px;
+        }
+
+        .school-logo {
+          height: 52px;
+        }
+
+        .system-title h1 {
+          font-size: 1rem;
+          line-height: 1.25;
+        }
+
+        .mobile-nav {
+          padding: 12px 14px;
+        }
+
+        .main-footer {
+          margin-top: 30px;
+          padding: 16px;
+        }
+
+        #portalSection .container {
+          padding-left: 12px;
+          padding-right: 12px;
+        }
+
+        .book-item {
+          padding: 14px;
+          margin-bottom: 0;
+        }
+      }
+
+      @media (max-width: 576px) {
+        #bookContainer {
+          grid-template-columns: 1fr;
+        }
+
+        .system-title h1 {
+          font-size: 0.92rem;
         }
       }
 
@@ -727,6 +786,40 @@
       let selectedStars = 5;
       let availableCategories = [];
       let leaderboardProfileModal = null;
+      const ALL_COLLECTION_LIMIT = 20;
+      const CATEGORY_LIMIT = 10;
+
+      function shuffleBooks(books) {
+        const shuffled = [...books];
+        for (let i = shuffled.length - 1; i > 0; i--) {
+          const j = Math.floor(Math.random() * (i + 1));
+          [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+        }
+        return shuffled;
+      }
+
+      function getRandomizedAllCollection(books, limit) {
+        const grouped = books.reduce((acc, book) => {
+          const key = book.category || "General";
+          if (!acc[key]) acc[key] = [];
+          acc[key].push(book);
+          return acc;
+        }, {});
+
+        const pools = Object.values(grouped)
+          .map((group) => shuffleBooks(group))
+          .filter((group) => group.length > 0);
+
+        const mixed = [];
+        while (mixed.length < limit && pools.some((pool) => pool.length > 0)) {
+          pools.forEach((pool) => {
+            if (pool.length > 0 && mixed.length < limit) {
+              mixed.push(pool.pop());
+            }
+          });
+        }
+        return shuffleBooks(mixed);
+      }
 
       async function handleLogin() {
         const id = document.getElementById("school_id_input").value.trim();
@@ -1011,18 +1104,27 @@
           const search = document
             .getElementById("searchBar")
             .value.toLowerCase();
+          const isSearching = search.length > 0;
 
           const filtered = books.filter((b) => {
             const matchesSearch =
               b.title.toLowerCase().includes(search) ||
               b.book_no.toLowerCase().includes(search);
             const matchesCategory =
-              selectedCategory === "All" || b.category === selectedCategory;
+              isSearching ||
+              selectedCategory === "All" ||
+              b.category === selectedCategory;
             return matchesSearch && matchesCategory;
           });
 
+          const displayBooks = isSearching
+            ? filtered
+            : selectedCategory === "All"
+              ? getRandomizedAllCollection(filtered, ALL_COLLECTION_LIMIT)
+              : shuffleBooks(filtered).slice(0, CATEGORY_LIMIT);
+
           document.getElementById("bookContainer").innerHTML =
-            filtered
+            displayBooks
               .map(
                 (b) => `
                 <div class="book-item shadow-sm">
