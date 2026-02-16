@@ -97,53 +97,89 @@
         .sync-online { background: var(--success); box-shadow: 0 0 15px var(--success); }
 
         /* ===== HEADER STYLE ===== */
-        .main-header {
-          width: 100%;
-          background: #ffffff;
-          padding: 10px 20px;
-          border-bottom: 1px solid #ddd;
-        }
+      .main-header {
+        position: relative;
+        width: 100%;
+        background: #0d47a1;
+        overflow: hidden;
+      }
 
-        .header-content {
-          display: flex;
-          align-items: center;
-        }
+      .main-header::before {
+        content: "";
+        position: absolute;
+        top: 0;
+        right: 0;
+        width: 60%;
+        height: 100%;
+        background: linear-gradient(135deg, #42a5f5, #1e88e5);
+        clip-path: polygon(30% 0, 100% 0, 100% 100%, 0% 100%);
+        z-index: 0;
+      }
 
-        .logo-section {
-          display: flex;
-          align-items: center;
-          gap: 15px;
-        }
+      .header-content {
+        position: relative;
+        z-index: 1;
+        padding: 20px 40px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+      }
 
-        .school-logo {
-          height: 70px;
-          width: auto;
-          transition: transform 0.3s ease;
-        }
+      .logo-section {
+        display: flex;
+        align-items: center;
+        gap: 15px;
+      }
 
-        .school-logo:hover {
-          transform: scale(1.08);
-        }
+      .school-logo {
+        height: 70px;
+        width: auto;
+        transition: transform 0.3s ease;
+      }
 
-        .system-title h1 {
-          margin: 0;
-          font-weight: 600;
-        }
+      .school-logo:hover {
+        transform: scale(1.08);
+      }
 
-        /* ===== FOOTER STYLE ===== */
-        .main-footer {
-          background: linear-gradient(135deg, #1b5e20, #2e7d32, #43a047);
-          color: white;
-          padding: 20px;
-          margin-top: 60px;
-          text-align: center;
-          animation: fadeUp 0.8s ease;
-        }
+      .system-title h1 {
+        margin: 0;
+        font-weight: 600;
+        color: #ffffff;
+      }
 
-        .footer-content p {
-          margin: 5px 0;
-          font-size: 14px;
-        }
+      /* ===== FOOTER STYLE ===== */
+      .main-footer {
+        position: relative;
+        background: #1b5e20;
+        overflow: hidden;
+        color: white;
+        padding: 25px;
+        margin-top: 60px;
+        text-align: center;
+        animation: fadeUp 0.8s ease;
+      }
+
+      .main-footer::before {
+        content: "";
+        position: absolute;
+        top: 0;
+        right: 0;
+        width: 50%;
+        height: 100%;
+        background: linear-gradient(135deg, #66bb6a, #a5d6a7);
+        clip-path: polygon(40% 0, 100% 0, 100% 100%, 0% 100%);
+        z-index: 0;
+      }
+
+      .footer-content {
+        position: relative;
+        z-index: 1;
+      }
+
+      .footer-content p {
+        margin: 5px 0;
+        font-size: 14px;
+      }
 
         @keyframes fadeUp {
           from {
