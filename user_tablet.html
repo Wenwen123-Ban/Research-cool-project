@@ -28,8 +28,8 @@
       body {
         background-color: rgb(40, 152, 167);
         font-family: "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-        overflow: hidden;
-        height: 100vh;
+        overflow-x: hidden;
+        min-height: 100vh;
         user-select: none;
       }
 
@@ -263,6 +263,47 @@
         border-radius: 25px;
       }
 
+
+
+      /* ===== HEADER STYLE ===== */
+      .main-header {
+        width: 100%;
+        background: #ffffff;
+        padding: 10px 20px;
+        border-bottom: 1px solid #ddd;
+      }
+
+      .header-inner {
+        display: flex;
+        align-items: center;
+        gap: 15px;
+      }
+
+      .school-logo {
+        height: 50px;
+        width: auto;
+      }
+
+      .system-title h4 {
+        margin: 0;
+        font-weight: 600;
+      }
+
+      /* ===== FOOTER STYLE ===== */
+      .main-footer {
+        width: 100%;
+        background: #f8f9fa;
+        padding: 20px;
+        text-align: center;
+        border-top: 1px solid #ddd;
+        margin-top: 50px;
+      }
+
+      .footer-content p {
+        margin: 5px 0;
+        font-size: 14px;
+      }
+
       .modal-content {
         border-radius: 50px;
         border: none;
@@ -270,6 +311,16 @@
     </style>
   </head>
   <body>
+    <!-- ===== HEADER SECTION ===== -->
+    <header class="main-header">
+      <div class="header-inner">
+        <img src="https://imgs.search.brave.com/lE2FOyg38YT4Tx9h9DIlUO9PQOqYIO9j6qKQ_0QDacg/rs:fit:500:0:1:0/g:ce/aHR0cHM6Ly93d3cu/bm1zYy5lZHUucGgv/YXBwbGljYXRpb24v/dGhlbWVzL25tc2Mv/bm1zY3N0LnBuZw" alt="School Logo" class="school-logo" />
+        <div class="system-title">
+          <h4>Library Borrowing and Archive System</h4>
+        </div>
+      </div>
+    </header>
+
     <div id="loginSection">
       <div class="auth-container">
         <div class="auth-logo"><i class="fas fa-tablet-screen-button"></i></div>
@@ -758,5 +809,14 @@
         location.reload();
       }
     </script>
+
+    <!-- ===== FOOTER SECTION ===== -->
+    <footer class="main-footer">
+      <div class="footer-content">
+        <p>Library Borrowing and Archive System (LBAS)</p>
+        <p>Developed by: [Your Group Name Here]</p>
+        <p>Completed: 2026</p>
+      </div>
+    </footer>
   </body>
 </html>
