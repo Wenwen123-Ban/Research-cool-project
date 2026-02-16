@@ -788,6 +788,9 @@
       let leaderboardProfileModal = null;
       const ALL_COLLECTION_LIMIT = 20;
       const CATEGORY_LIMIT = 10;
+      const MAX_ACTIVE_RESERVATIONS = 5;
+      const RESERVATION_DURATION_MS = 30 * 60 * 1000;
+      const userReservations = {};
 
       function shuffleBooks(books) {
         const shuffled = [...books];
@@ -819,6 +822,50 @@
           });
         }
         return shuffleBooks(mixed);
+      }
+
+      function normalizeReservation(transaction) {
+        const expiryDate = transaction.expiry
+          ? new Date(transaction.expiry)
+          : transaction.date
+            ? new Date(new Date(transaction.date).getTime() + RESERVATION_DURATION_MS)
+            : new Date(Date.now() + RESERVATION_DURATION_MS);
+
+        return {
+          book_no: transaction.book_no,
+          expiry: expiryDate.toISOString(),
+        };
+      }
+
+      function cleanupExpiredReservationsForUser(schoolID) {
+        const key = String(schoolID);
+        const now = Date.now();
+
+        if (!Array.isArray(userReservations[key])) {
+          userReservations[key] = [];
+        }
+
+        userReservations[key] = userReservations[key].filter((reservation) => {
+          const expiryTime = new Date(reservation.expiry).getTime();
+          return Number.isFinite(expiryTime) && expiryTime > now;
+        });
+
+        return userReservations[key];
+      }
+
+      function syncUserReservations(transactions, schoolID) {
+        if (!schoolID) return [];
+
+        const reservations = transactions
+          .filter(
+            (transaction) =>
+              String(transaction.school_id) === String(schoolID) &&
+              transaction.status === "Reserved",
+          )
+          .map(normalizeReservation);
+
+        userReservations[String(schoolID)] = reservations;
+        return cleanupExpiredReservationsForUser(schoolID);
       }
 
       async function handleLogin() {
@@ -1101,6 +1148,7 @@
           ]);
           const books = await bRes.json();
           const trans = await tRes.json();
+          syncUserReservations(trans, currentID);
           const search = document
             .getElementById("searchBar")
             .value.toLowerCase();
@@ -1167,6 +1215,34 @@
       }
 
       async function reserveBook(no) {
+        const schoolID = String(currentID);
+        if (!schoolID) return;
+
+        try {
+          const txRes = await fetch("/api/transactions");
+          const transactions = await txRes.json();
+          syncUserReservations(transactions, schoolID);
+
+          const activeReservations = cleanupExpiredReservationsForUser(schoolID);
+
+          if (activeReservations.some((reservation) => reservation.book_no === no)) {
+            alert("You have already reserved this book.");
+            return;
+          }
+
+          if (activeReservations.length >= MAX_ACTIVE_RESERVATIONS) {
+            alert("You can only reserve up to 5 books at a time.");
+            return;
+          }
+        } catch (e) {
+          showStatusPopup(
+            "error",
+            "Action Failed",
+            "Unable to validate your reservation right now. Please try again.",
+          );
+          return;
+        }
+
         if (!confirm("Reserve this book? You have 30 minutes to claim it."))
           return;
         const res = await fetch("/api/reserve", {
@@ -1180,6 +1256,13 @@
         });
         const result = await res.json();
         if (result.success) {
+          const key = String(currentID);
+          if (!Array.isArray(userReservations[key])) userReservations[key] = [];
+          userReservations[key].push({
+            book_no: no,
+            expiry: new Date(Date.now() + RESERVATION_DURATION_MS).toISOString(),
+          });
+
           showStatusPopup(
             "success",
             "Reservation Confirmed",
