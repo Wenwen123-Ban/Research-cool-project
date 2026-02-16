@@ -104,30 +104,40 @@
           border-bottom: 1px solid #ddd;
         }
 
-        .header-inner {
+        .header-content {
+          display: flex;
+          align-items: center;
+        }
+
+        .logo-section {
           display: flex;
           align-items: center;
           gap: 15px;
         }
 
         .school-logo {
-          height: 50px;
+          height: 70px;
           width: auto;
+          transition: transform 0.3s ease;
         }
 
-        .system-title h4 {
+        .school-logo:hover {
+          transform: scale(1.08);
+        }
+
+        .system-title h1 {
           margin: 0;
           font-weight: 600;
         }
 
         /* ===== FOOTER STYLE ===== */
         .main-footer {
-          width: 100%;
-          background: #f8f9fa;
+          background: linear-gradient(135deg, #1b5e20, #2e7d32, #43a047);
+          color: white;
           padding: 20px;
+          margin-top: 60px;
           text-align: center;
-          border-top: 1px solid #ddd;
-          margin-top: 50px;
+          animation: fadeUp 0.8s ease;
         }
 
         .footer-content p {
@@ -135,15 +145,28 @@
           font-size: 14px;
         }
 
+        @keyframes fadeUp {
+          from {
+            opacity: 0;
+            transform: translateY(15px);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
+        }
+
     </style>
 </head>
 <body id="mainBody">
 <!-- ===== HEADER SECTION ===== -->
     <header class="main-header">
-      <div class="header-inner">
-        <img src="https://imgs.search.brave.com/lE2FOyg38YT4Tx9h9DIlUO9PQOqYIO9j6qKQ_0QDacg/rs:fit:500:0:1:0/g:ce/aHR0cHM6Ly93d3cu/bm1zYy5lZHUucGgv/YXBwbGljYXRpb24v/dGhlbWVzL25tc2Mv/bm1zY3N0LnBuZw" alt="School Logo" class="school-logo" />
-        <div class="system-title">
-          <h4>Library Borrowing and Archive System</h4>
+      <div class="header-content">
+        <div class="logo-section">
+            <img src="Logo/School_logo.png" class="school-logo" alt="School Logo">
+            <div class="system-title">
+          <h1>Library Borrowing and Assistance System</h1>
+            </div>
         </div>
       </div>
     </header>
@@ -964,9 +987,9 @@
     <!-- ===== FOOTER SECTION ===== -->
     <footer class="main-footer">
       <div class="footer-content">
-        <p>Library Borrowing and Archive System (LBAS)</p>
-        <p>Developed by: [Your Group Name Here]</p>
-        <p>Completed: 2026</p>
+        <p>© 2025 Library Borrowing and Assistance System</p>
+        <p>Developed by: [Your Group Names Here]</p>
+        <p>Northwestern Mindanao State College of Science and Technology</p>
       </div>
     </footer>
 </body>
