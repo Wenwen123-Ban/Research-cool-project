@@ -25,6 +25,8 @@
         --text-primary-contrast: #ffffff;
         --text-highlight: #ffd54f;
         --text-muted-contrast: rgba(255, 255, 255, 0.75);
+        --glass-strong: rgba(0, 0, 0, 0.65);
+        --glass-border: rgba(255, 255, 255, 0.3);
       }
       body {
         background-color: #f1f5f9;
@@ -75,13 +77,13 @@
       }
 
       .lbas-definition {
-        background: rgba(0, 0, 0, 0.55);
-        backdrop-filter: blur(10px);
-        -webkit-backdrop-filter: blur(10px);
+        background: var(--glass-strong);
+        backdrop-filter: blur(15px);
+        -webkit-backdrop-filter: blur(15px);
         padding: 10px;
         border-radius: 10px;
         margin-bottom: 20px;
-        border: 1px solid rgba(255, 255, 255, 0.2);
+        border: 1px solid var(--glass-border);
         border-left: 4px solid var(--text-highlight);
         color: var(--text-primary-contrast);
       }
@@ -97,13 +99,14 @@
         overflow-x: auto;
         padding: 5px 0 15px 0;
         scrollbar-width: none;
+        margin-bottom: 8px;
       }
       .cat-pill {
         white-space: nowrap;
         padding: 8px 16px;
         border-radius: 20px;
-        background: rgba(0, 0, 0, 0.45);
-        border: 1px solid rgba(255, 255, 255, 0.3);
+        background: rgba(0, 0, 0, 0.55);
+        border: 1px solid var(--glass-border);
         color: var(--text-primary-contrast);
         font-size: 13px;
         font-weight: 600;
@@ -111,10 +114,10 @@
         transition: 0.2s;
       }
       .cat-pill.active {
-        background: rgba(255, 213, 79, 0.2);
-        color: var(--text-highlight);
-        border-color: rgba(255, 213, 79, 0.9);
-        box-shadow: 0 4px 10px rgba(255, 213, 79, 0.35);
+        background: #ffd54f;
+        color: #000;
+        border-color: #ffd54f;
+        box-shadow: 0 4px 10px rgba(255, 213, 79, 0.45);
       }
 
       #loginSection {
@@ -134,15 +137,17 @@
       #bookContainer {
         display: grid;
         grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-        gap: 12px;
+        gap: 20px;
+        padding: 20px;
+        scrollbar-gutter: stable;
       }
       .login-card {
-        background: rgba(0, 0, 0, 0.55);
-        backdrop-filter: blur(10px);
-        -webkit-backdrop-filter: blur(10px);
+        background: var(--glass-strong);
+        backdrop-filter: blur(15px);
+        -webkit-backdrop-filter: blur(15px);
         padding: 30px;
         border-radius: 24px;
-        border: 1px solid rgba(255, 255, 255, 0.2);
+        border: 1px solid var(--glass-border);
         box-shadow: 0 15px 35px rgba(0, 0, 0, 0.25);
         width: 100%;
         max-width: 380px;
@@ -186,11 +191,11 @@
       }
 
       .mobile-nav {
-        background: rgba(0, 0, 0, 0.55);
-        backdrop-filter: blur(10px);
-        -webkit-backdrop-filter: blur(10px);
+        background: var(--glass-strong);
+        backdrop-filter: blur(15px);
+        -webkit-backdrop-filter: blur(15px);
         padding: 15px 20px;
-        border: 1px solid rgba(255, 255, 255, 0.2);
+        border: 1px solid var(--glass-border);
         position: sticky;
         top: 0;
         z-index: 1000;
@@ -199,15 +204,18 @@
         align-items: center;
       }
       .book-item {
-        background: rgba(0, 0, 0, 0.55);
-        backdrop-filter: blur(10px);
-        -webkit-backdrop-filter: blur(10px);
+        background: var(--glass-strong);
+        backdrop-filter: blur(15px);
+        -webkit-backdrop-filter: blur(15px);
         border-radius: 18px;
         padding: 18px;
         margin-bottom: 15px;
         position: relative;
-        border: 1px solid rgba(255, 255, 255, 0.2);
-        transition: transform 0.2s;
+        border: 1px solid var(--glass-border);
+        transition: transform 0.2s, box-shadow 0.2s;
+      }
+      .book-item:hover {
+        box-shadow: 0 8px 18px rgba(0, 0, 0, 0.35);
       }
       .book-item:active {
         transform: scale(0.98);
@@ -223,12 +231,12 @@
         text-transform: uppercase;
       }
       .tag-available {
-        background: #dcfce7;
-        color: #166534;
+        background: #4caf50;
+        color: #ffffff;
       }
       .tag-reserved {
-        background: #fef3c7;
-        color: #92400e;
+        background: #ffb300;
+        color: #000000;
       }
       .tag-borrowed {
         background: #fee2e2;
@@ -243,13 +251,18 @@
         border-radius: 12px;
         font-weight: bold;
         margin-top: 10px;
+        transition: transform 0.2s, box-shadow 0.2s;
+      }
+      .btn-action:hover {
+        transform: scale(1.03);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
       }
       #accountPanel {
         display: none;
-        background: rgba(0, 0, 0, 0.55);
-        backdrop-filter: blur(10px);
-        -webkit-backdrop-filter: blur(10px);
-        border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+        background: var(--glass-strong);
+        backdrop-filter: blur(15px);
+        -webkit-backdrop-filter: blur(15px);
+        border-bottom: 1px solid var(--glass-border);
         padding: 25px;
         animation: slideDown 0.3s;
       }
@@ -288,16 +301,16 @@
         backdrop-filter: blur(5px);
       }
       .custom-modal {
-        background: rgba(0, 0, 0, 0.55);
-        backdrop-filter: blur(10px);
-        -webkit-backdrop-filter: blur(10px);
+        background: var(--glass-strong);
+        backdrop-filter: blur(15px);
+        -webkit-backdrop-filter: blur(15px);
         width: 100%;
         max-width: 400px;
         border-radius: 25px;
         padding: 30px;
         text-align: center;
         position: relative;
-        border: 1px solid rgba(255, 255, 255, 0.2);
+        border: 1px solid var(--glass-border);
         color: var(--text-primary-contrast);
       }
       .star-container {
@@ -312,11 +325,11 @@
       #portalSection .container,
       #portalSection .card,
       #portalSection .modal-content {
-        background: rgba(0, 0, 0, 0.55);
-        backdrop-filter: blur(10px);
-        -webkit-backdrop-filter: blur(10px);
+        background: var(--glass-strong);
+        backdrop-filter: blur(15px);
+        -webkit-backdrop-filter: blur(15px);
         border-radius: 12px;
-        border: 1px solid rgba(255, 255, 255, 0.2);
+        border: 1px solid var(--glass-border);
       }
 
       #loginSection h1,
@@ -346,6 +359,14 @@
       #portalSection span,
       #portalSection li {
         color: var(--text-muted-contrast) !important;
+      }
+
+      #display_name,
+      #full_name,
+      #activeLeaseLabel,
+      #user_type_label {
+        color: #fff !important;
+        font-weight: 600;
       }
 
       #portalSection .text-primary,
@@ -381,6 +402,7 @@
         color: #000 !important;
         border-color: #ffd54f !important;
         font-weight: 700;
+        transition: transform 0.2s, box-shadow 0.2s;
       }
 
       .btn-danger,
@@ -397,6 +419,44 @@
         background: rgba(255, 255, 255, 0.14) !important;
         color: #fff !important;
         border: 1px solid rgba(255, 255, 255, 0.35) !important;
+        transition: transform 0.2s, box-shadow 0.2s;
+      }
+
+      .btn-primary:hover,
+      #portalSection .btn.btn-dark:hover,
+      #loginSection #loginBtn:hover,
+      .btn-outline-secondary:hover,
+      .btn-light:hover,
+      .btn-outline-primary:hover,
+      #portalSection .btn-secondary:hover {
+        transform: scale(1.03);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+      }
+
+      .portal-view-switch {
+        border-bottom: 2px solid #ffd54f;
+      }
+
+      .portal-view-switch .btn {
+        background: var(--glass-strong);
+        color: #fff;
+        border: 1px solid var(--glass-border);
+      }
+
+      .portal-view-switch .btn.active {
+        background: #ffd54f;
+        color: #000;
+        border-color: #ffd54f;
+      }
+
+      #searchBar {
+        background: rgba(0, 0, 0, 0.75) !important;
+        color: #fff !important;
+        border: 1px solid #ffd54f !important;
+      }
+
+      #searchBar::placeholder {
+        color: rgba(255, 255, 255, 0.7) !important;
       }
 
 
