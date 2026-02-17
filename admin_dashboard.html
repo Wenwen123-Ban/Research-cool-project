@@ -38,7 +38,12 @@
         }
         
         /* Navigation & Sidebar */
-        .sidebar { background: var(--admin-dark); color: white; position: relative; width: var(--sidebar-w); padding: 25px; transition: 0.3s; display: flex; flex-direction: column; border-right: 1px solid #1e293b; }
+        .sidebar { background: var(--admin-dark); color: white; position: relative; z-index: 100; width: var(--sidebar-w); padding: 25px; transition: 0.3s; display: flex; flex-direction: column; border-right: 1px solid #1e293b; }
+
+        header {
+            position: relative;
+            z-index: 1000;
+        }
         .main-content,
         .dashboard-main {
             flex: 1;
@@ -83,10 +88,11 @@
 
         /* Floating Admin Card */
         .admin-profile-trigger { cursor: pointer; position: relative; }
-        .side-down-card { 
+        .side-down-card,
+        .account-dropdown {
             position: absolute; top: 120%; right: 0; width: 380px; 
             background: white; border-radius: 24px; box-shadow: 0 25px 60px rgba(0,0,0,0.2); 
-            z-index: 3000; display: none; border: 1px solid #e2e8f0;
+            z-index: 9999; display: none; border: 1px solid #e2e8f0;
             padding: 30px; animation: slideDown 0.3s cubic-bezier(0.16, 1, 0.3, 1);
         }
         .side-down-card.active { display: block; }
@@ -112,6 +118,8 @@
             border-radius: 12px;
             border: 1px solid rgba(255, 255, 255, 0.35);
             box-shadow: 0 10px 30px rgba(15, 23, 42, 0.25);
+            position: relative;
+            z-index: 1;
         }
 
         .glass-card .table,
@@ -440,7 +448,7 @@
             <div id="liveClock" class="clock-display font-monospace">00:00:00</div>
             <div class="admin-profile-trigger" onclick="toggleAdminCard()">
                 <img id="headerAvatar" src="/Profile/default.png" class="user-avatar shadow-sm">
-                <div class="side-down-card shadow-lg" id="adminFloatCard" onclick="event.stopPropagation()">
+                <div class="side-down-card account-dropdown shadow-lg" id="adminFloatCard" onclick="event.stopPropagation()">
                     
                     <div id="loginForm">
                         <div class="text-center mb-4">

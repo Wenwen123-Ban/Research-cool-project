@@ -37,6 +37,11 @@
         flex-direction: column;
       }
 
+      header {
+        position: relative;
+        z-index: 1000;
+      }
+
       #loginSection,
       #portalSection {
         position: relative;
@@ -198,12 +203,13 @@
         border: 1px solid var(--glass-border);
         position: sticky;
         top: 0;
-        z-index: 1000;
+        z-index: 100;
         display: flex;
         justify-content: space-between;
         align-items: center;
       }
-      .book-item {
+      .book-item,
+      .book-card {
         background: var(--glass-strong);
         backdrop-filter: blur(15px);
         -webkit-backdrop-filter: blur(15px);
@@ -211,6 +217,7 @@
         padding: 18px;
         margin-bottom: 15px;
         position: relative;
+        z-index: 1;
         border: 1px solid var(--glass-border);
         transition: transform 0.2s, box-shadow 0.2s;
       }
@@ -257,14 +264,21 @@
         transform: scale(1.03);
         box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
       }
-      #accountPanel {
+      #accountPanel,
+      .account-dropdown {
         display: none;
+        position: absolute;
+        top: calc(100% + 10px);
+        right: 20px;
+        width: min(420px, calc(100% - 40px));
         background: var(--glass-strong);
         backdrop-filter: blur(15px);
         -webkit-backdrop-filter: blur(15px);
-        border-bottom: 1px solid var(--glass-border);
+        border: 1px solid var(--glass-border);
+        border-radius: 14px;
         padding: 25px;
         animation: slideDown 0.3s;
+        z-index: 9999;
       }
 
       .rating-fab {
@@ -847,7 +861,7 @@
         </button>
       </nav>
 
-      <div id="accountPanel">
+      <div id="accountPanel" class="account-dropdown">
         <div class="d-flex align-items-center mb-3">
           <img
             id="user_pic"
