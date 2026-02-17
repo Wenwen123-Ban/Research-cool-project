@@ -419,7 +419,7 @@
     <header class="main-header">
       <div class="header-content">
         <div class="logo-section">
-            <img src="https://imgs.search.brave.com/lE2FOyg38YT4Tx9h9DIlUO9PQOqYIO9j6qKQ_0QDacg/rs:fit:500:0:1:0/g:ce/aHR0cHM6Ly93d3cu/bm1zYy5lZHUucGgvYXBwbGljYXRpb24vdGhlbWVzL25tc2Mvbm1zY3N0LnBuZw"
+            <img src="https://up.yimg.com/ib/th/id/OIP.3wZU8KYQ9wGoRl3eoloR0QHaHa?pid=Api&rs=1&c=1&qlt=95&w=114&h=114"
                  alt="School Logo"
                  class="school-logo">
             <div class="system-title">
@@ -429,7 +429,7 @@
       </div>
     </header>
 
-    <div class="network-banner">LBAS SECURE CROSS-DATABASE PROTOCOL V4.8</div>
+    <div class="network-banner">LBAS SECURE CROSS-DATABASE PROTOCOL V7.2 BETA</div>
 
     <div
       id="fabReview"
@@ -572,7 +572,7 @@
           </div>
         </div>
         <h3 class="fw-bold text-dark mb-1">LBAS PORTAL</h3>
-        <p class="text-muted small mb-4">Library Book Access System v4.8</p>
+        <p class="text-muted small mb-4">Library Book Access System v7.2 Beta</p>
 
         <div class="mb-3">
           <input
@@ -622,7 +622,7 @@
         </div>
       </div>
       <div class="mt-4 text-muted small opacity-50">
-        Authorized Access Only | V4.8-BETA
+        Authorized Access Only | V7.2-BETA
       </div>
     </div>
 
@@ -673,8 +673,8 @@
           </div>
         </div>
         <hr />
-        <p class="fw-bold small mb-2 text-uppercase text-muted">
-          <i class="fas fa-history me-1"></i> Active Leases (Max 5)
+        <p class="fw-bold small mb-2 text-uppercase text-muted" id="activeLeaseLabel">
+          <i class="fas fa-history me-1"></i> Active Leases (0/5)
         </p>
         <div id="activeHistory" class="mb-3"></div>
         <button
@@ -844,6 +844,20 @@
         return String(schoolID || "").trim().toLowerCase();
       }
 
+      function getNormalizedStatus(transaction) {
+        return String(transaction?.status || "").trim().toLowerCase();
+      }
+
+      function getTransactionSchoolId(transaction) {
+        return getReservationKey(transaction?.school_id ?? transaction?.schoolID ?? transaction?.user_id);
+      }
+
+      function parseTransactionPayload(payload) {
+        if (Array.isArray(payload)) return payload;
+        if (payload && Array.isArray(payload.transactions)) return payload.transactions;
+        return [];
+      }
+
       function normalizeLease(transaction) {
         const expiryDate = transaction.expiry
           ? new Date(transaction.expiry)
@@ -889,8 +903,8 @@
         const reservations = transactions
           .filter(
             (transaction) =>
-              getReservationKey(transaction.school_id) === key &&
-              transaction.status === "Reserved",
+              getTransactionSchoolId(transaction) === key &&
+              getNormalizedStatus(transaction) === "reserved",
           )
           .map(normalizeReservation);
 
@@ -919,10 +933,13 @@
         const key = getReservationKey(schoolID);
         const leases = transactions
           .filter(
-            (transaction) =>
-              getReservationKey(transaction.school_id) === key &&
-              (transaction.status === "Reserved" ||
-                transaction.status === "Borrowed"),
+            (transaction) => {
+              const status = getNormalizedStatus(transaction);
+              return (
+                getTransactionSchoolId(transaction) === key &&
+                (status === "reserved" || status === "borrowed")
+              );
+            },
           )
           .map(normalizeLease);
 
@@ -936,6 +953,11 @@
           .slice()
           .sort((a, b) => new Date(a.expiry) - new Date(b.expiry));
 
+        const activeLeaseLabel = document.getElementById("activeLeaseLabel");
+        if (activeLeaseLabel) {
+          activeLeaseLabel.innerHTML = `<i class="fas fa-history me-1"></i> Active Leases (${active.length}/${MAX_ACTIVE_RESERVATIONS})`;
+        }
+
         document.getElementById("activeHistory").innerHTML =
           active
             .map(
@@ -944,11 +966,11 @@
                   <div>
                     <div class="fw-bold text-dark">${lease.title}</div>
                     <code class="small text-primary fw-bold">${lease.book_no}</code><br>
-                    <span class="badge ${lease.status === "Reserved" ? "bg-warning text-dark" : "bg-success"}">${lease.status}</span>
+                    <span class="badge ${getNormalizedStatus(lease) === "reserved" ? "bg-warning text-dark" : "bg-success"}">${lease.status}</span>
                   </div>
                   <div class="text-end">
                     <span class="timer small fw-bold text-primary d-block" data-expiry="${lease.expiry}" data-status="${lease.status}" data-book-no="${lease.book_no}">Calculating...</span>
-                    ${lease.status === "Reserved" ? `<button class="btn btn-sm btn-outline-danger rounded-pill mt-1" onclick="releaseReservation('${lease.book_no}')">Release</button>` : ""}
+                    ${getNormalizedStatus(lease) === "reserved" ? `<button class="btn btn-sm btn-outline-danger rounded-pill mt-1" onclick="releaseReservation('${lease.book_no}')">Release</button>` : ""}
                   </div>
                 </div>`,
             )
@@ -962,7 +984,7 @@
         if (!currentID) return;
         try {
           const tRes = await fetch("/api/transactions");
-          const trans = await tRes.json();
+          const trans = parseTransactionPayload(await tRes.json());
           syncUserReservations(trans, currentID);
           syncUserActiveLeases(trans, currentID);
           renderActiveLeases();
@@ -1251,7 +1273,7 @@
             fetch("/api/transactions"),
           ]);
           const books = await bRes.json();
-          const trans = await tRes.json();
+          const trans = parseTransactionPayload(await tRes.json());
           latestBooksByCode = books.reduce((acc, book) => {
             acc[book.book_no] = book;
             return acc;
@@ -1523,7 +1545,7 @@
     <footer class="main-footer">
       <div class="footer-content">
         <p>© 2025 Library Borrowing and Assistance System</p>
-        <p>Developed by: [Your Group Names Here]</p>
+        <p>Made by and ideas of: Block B IT BOYS</p>
         <p>Northwestern Mindanao State College of Science and Technology</p>
       </div>
     </footer>

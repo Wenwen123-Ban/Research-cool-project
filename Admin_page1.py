@@ -57,7 +57,7 @@ def initialize_system():
         if not os.path.exists(file_path):
             if key == "config":
                 initial_data = {
-                    "system_version": "4.8.3",
+                    "system_version": "7.2 Beta",
                     "rating_enabled": True,
                     "last_reboot": datetime.now().strftime("%Y-%m-%d %H:%M"),
                 }
