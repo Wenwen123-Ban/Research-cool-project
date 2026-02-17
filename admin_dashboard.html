@@ -35,26 +35,35 @@
         
         /* Navigation & Sidebar */
         .sidebar { background: var(--admin-dark); color: white; position: relative; width: var(--sidebar-w); padding: 25px; transition: 0.3s; display: flex; flex-direction: column; border-right: 1px solid #1e293b; }
-        .main-content {
+        .main-content,
+        .dashboard-main {
             flex: 1;
             padding: 40px;
             transition: 0.3s;
             position: relative;
             isolation: isolate;
-            background-image: url("https://tse2.mm.bing.net/th/id/OIP.NNj0ra-PgYlu_TnxDC_PHwAAAA?pid=Api&P=0&h=220");
+            background-image: url("https://www.tangubcity.gov.ph/application/files/1116/1768/0018/NEW_6322.JPG");
             background-size: cover;
             background-position: center;
             background-repeat: no-repeat;
+            background-attachment: fixed;
             overflow: hidden;
         }
 
-        .main-content::before {
+        .main-content::before,
+        .dashboard-main::before {
             content: "";
             position: absolute;
             inset: 0;
-            background: rgba(0, 0, 0, 0.35);
-            z-index: -1;
+            background: rgba(0, 0, 0, 0.45);
+            z-index: 0;
             pointer-events: none;
+        }
+
+        .main-content > *,
+        .dashboard-main > * {
+            position: relative;
+            z-index: 1;
         }
 
         .main-content > header h2,
@@ -91,6 +100,35 @@
         /* Component Styling */
         .card { border: none; border-radius: 24px; box-shadow: var(--card-shadow); margin-bottom: 30px; transition: 0.3s; overflow: hidden; background: white; }
         .card:hover { transform: translateY(-3px); }
+
+        .glass-card {
+            background: rgba(255, 255, 255, 0.12);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border-radius: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            box-shadow: 0 10px 30px rgba(15, 23, 42, 0.25);
+        }
+
+        .glass-card .table,
+        .glass-card .table thead,
+        .glass-card .table tbody,
+        .glass-card .table th,
+        .glass-card .table td,
+        .glass-card .card-header {
+            background-color: transparent !important;
+        }
+
+        .glass-card h5,
+        .glass-card p,
+        .glass-card .small,
+        .glass-card .text-muted,
+        .glass-card .table,
+        .glass-card .table th,
+        .glass-card .table td,
+        .glass-card label {
+            color: #f8fafc !important;
+        }
         
         .status-pill { padding: 6px 16px; border-radius: 50px; font-size: 0.7rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; }
         .badge-borrowed { background: #fee2e2; color: #b91c1c; }
@@ -117,7 +155,7 @@
         .cat-pill:hover { border-color: var(--accent); color: var(--accent); }
         .cat-pill.active { background: var(--accent); color: white; border-color: var(--accent); box-shadow: 0 4px 12px rgba(56, 189, 248, 0.3); }
         
-        .clock-display { font-size: 1.5rem; font-weight: 800; background: white; padding: 12px 30px; border-radius: 18px; border: 1px solid #e2e8f0; box-shadow: 0 4px 10px rgba(0,0,0,0.03); color: var(--admin-dark); }
+        .clock-display { font-size: 1.5rem; font-weight: 800; background: white; padding: 12px 30px; border-radius: 18px; border: 1px solid #e2e8f0; box-shadow: 0 4px 10px rgba(0,0,0,0.03); color: var(--admin-dark); backdrop-filter: none; -webkit-backdrop-filter: none; opacity: 1; }
         .user-avatar { width: 52px; height: 52px; border-radius: 50%; object-fit: cover; border: 3px solid var(--accent); transition: 0.3s; }
         .user-avatar:hover { transform: scale(1.1); border-color: var(--success); }
         
@@ -286,7 +324,7 @@
     </div>
 </div>
 
-<div class="main-content">
+<div class="main-content dashboard-main">
     <header class="d-flex justify-content-between align-items-center mb-5">
         <div>
             <h2 class="fw-bold mb-1" id="viewTitle">Dashboard</h2>
@@ -344,7 +382,7 @@
     <div id="consoleView" class="view-section active">
         <div class="row g-4">
             <div class="col-xl-4">
-                <div class="card p-4 h-100 border-top border-4 border-success position-relative" id="enrollCard">
+                <div class="card glass-card p-4 h-100 border-top border-4 border-success position-relative" id="enrollCard">
                     <div class="control-lock-overlay">
                         <i class="fas fa-user-lock lock-icon"></i>
                         <h5 class="fw-bold text-white">Manual Override</h5>
@@ -367,7 +405,7 @@
             </div>
 
             <div class="col-xl-8">
-                <div class="card p-4 h-100 border-top border-4 border-primary position-relative" id="bulkCard">
+                <div class="card glass-card p-4 h-100 border-top border-4 border-primary position-relative" id="bulkCard">
                     <div class="control-lock-overlay"><i class="fas fa-database lock-icon"></i><p class="fw-bold text-white">Restricted Access</p></div>
                     <div class="d-flex justify-content-between align-items-center mb-4">
                         <h5 class="fw-bold mb-0"><i class="fas fa-file-import text-primary me-2"></i>Batch Asset Import</h5>
@@ -398,7 +436,7 @@
             </div>
         </div>
 
-        <div class="card mt-4 border-0 shadow-sm">
+        <div class="card glass-card mt-4 border-0 shadow-sm">
             <div class="card-header bg-dark text-white d-flex justify-content-between align-items-center p-3">
                 <span class="fw-bold small mt-1"><i class="fas fa-broadcast-tower text-danger me-2 animate-pulse"></i>ACTIVE TRAFFIC MONITOR</span>
                 <button class="btn btn-sm btn-outline-light rounded-pill px-3" onclick="loadData()">Refresh Stream</button>
@@ -417,7 +455,7 @@
     </div>
 
     <div id="requestsView" class="view-section">
-        <div class="card p-4 border-top border-4 border-warning">
+        <div class="card glass-card p-4 border-top border-4 border-warning">
             <div class="d-flex justify-content-between align-items-center mb-4">
                 <div>
                     <h5 class="fw-bold mb-0 text-dark"><i class="fas fa-user-clock text-warning me-2"></i>Registration Queue</h5>
@@ -450,7 +488,7 @@
     </div>
 
     <div id="usersView" class="view-section">
-        <div class="card p-4">
+        <div class="card glass-card p-4">
             <div class="d-flex justify-content-between align-items-center mb-4">
                 <div>
                     <h5 class="fw-bold mb-0"><i class="fas fa-database text-primary me-2"></i>Master User Database</h5>
@@ -484,7 +522,7 @@
     </div>
 
     <div id="inventoryView" class="view-section">
-        <div class="card p-4">
+        <div class="card glass-card p-4">
             <div class="d-flex justify-content-between align-items-center mb-4">
                 <h5 class="fw-bold"><i class="fas fa-boxes text-success me-2"></i>Inventory Control</h5>
                 <input type="text" id="inventorySearch" class="form-control w-25 bg-light border-0" placeholder="Scan or type code..." onkeyup="filterInventory()">
@@ -509,7 +547,7 @@
 
     <!-- NEW: Admin Leaderboard View -->
     <div id="leaderboardView" class="view-section">
-        <div class="card p-4 mb-4">
+        <div class="card glass-card p-4 mb-4">
             <h5 class="fw-bold"><i class="fas fa-users text-primary me-2"></i>Top Borrowers This Month</h5>
             <div class="table-responsive">
                 <table class="table table-hover align-middle">
@@ -518,7 +556,7 @@
                 </table>
             </div>
         </div>
-        <div class="card p-4">
+        <div class="card glass-card p-4">
             <h5 class="fw-bold"><i class="fas fa-book text-success me-2"></i>Top Books This Month</h5>
             <div class="table-responsive">
                 <table class="table table-hover align-middle">
