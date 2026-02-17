@@ -240,18 +240,24 @@
             overflow: visible;
         }
 
-        #bulkCard .d-flex.gap-2 {
+        #bulkCard .batch-category-dropdown {
             position: relative;
             z-index: 10001;
             isolation: isolate;
         }
 
-        #batchCategorySelect {
-            background: rgba(0, 0, 0, 0.75);
-            color: #ffffff;
-            border: 2px solid #ffd54f;
-            border-radius: 8px;
-            font-weight: 600;
+        #bulkCard .batch-category-dropdown,
+        #bulkCard #batch-category-selector,
+        #bulkCard #batchCategorySelect,
+        #bulkCard .batch-category-dropdown select {
+            background: rgba(0, 0, 0, 0.85) !important;
+            color: #ffffff !important;
+            border: 2px solid #ffd54f !important;
+            border-radius: 8px !important;
+            font-weight: 600 !important;
+        }
+
+        #bulkCard #batchCategorySelect {
             position: relative;
             z-index: 9999;
             appearance: none;
@@ -268,18 +274,20 @@
             background-repeat: no-repeat;
         }
 
-        #batchCategorySelect:focus,
-        #batchCategorySelect:active {
-            color: #ffffff;
-            font-weight: 600;
-            border-color: #ffd54f;
-            box-shadow: 0 0 0 0.2rem rgba(255, 213, 79, 0.35);
+        #bulkCard #batchCategorySelect:focus,
+        #bulkCard #batchCategorySelect:active {
+            background: rgba(0, 0, 0, 0.9) !important;
+            color: #ffffff !important;
+            font-weight: 600 !important;
+            border-color: #ffd54f !important;
+            box-shadow: 0 0 0 0.2rem rgba(255, 213, 79, 0.35) !important;
             outline: none;
         }
 
-        #batchCategorySelect option {
+        #bulkCard .batch-category-dropdown option,
+        #bulkCard #batchCategorySelect option {
             background: rgba(0, 0, 0, 0.85) !important;
-            color: #ffffff;
+            color: #ffffff !important;
             padding: 10px;
             font-weight: 600;
             border-bottom: 1px solid rgba(255,255,255,0.2);
@@ -293,8 +301,20 @@
             font-weight: 700;
         }
 
+        #bulkCard .batch-category-dropdown .dropdown-menu {
+            background: rgba(0, 0, 0, 0.85) !important;
+            border: 1px solid #ffd54f !important;
+            color: #ffffff !important;
+            z-index: 10000 !important;
+        }
+
+        #bulkCard .batch-category-dropdown .dropdown-menu li:hover {
+            background: #ffd54f !important;
+            color: #000000 !important;
+        }
+
         @supports selector(select::picker) {
-            #batchCategorySelect::picker(select) {
+            #bulkCard #batchCategorySelect::picker(select) {
                 background: rgba(0, 0, 0, 0.85) !important;
                 border: 1px solid #ffd54f !important;
                 color: #ffffff !important;
@@ -606,8 +626,8 @@
                         </div>
                     </div>
                     
-                    <div class="d-flex gap-2 mb-3">
-                        <select id="batchCategorySelect" class="form-select fw-bold text-muted">
+                    <div class="d-flex gap-2 mb-3 batch-category-dropdown">
+                        <select id="batchCategorySelect" class="form-select fw-bold text-muted batch-category-dropdown">
                             <option value="General">Target: General Collection</option>
                             <option value="Mathematics">Target: Mathematics</option>
                             <option value="Science">Target: Science & Tech</option>
