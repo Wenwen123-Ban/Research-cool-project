@@ -19,11 +19,42 @@
         --accent: #38bdf8;
         --success: #22c55e;
         --danger: #ef4444;
+        --text-primary-contrast: #ffffff;
+        --text-highlight: #ffd54f;
+        --text-muted-contrast: rgba(255, 255, 255, 0.75);
       }
       body {
         background-color: #f1f5f9;
         font-family: "Inter", sans-serif;
         color: #334155;
+        min-height: 100vh;
+      }
+
+      .analytics-main {
+        position: relative;
+        isolation: isolate;
+        background-image: url("https://www.tangubcity.gov.ph/application/files/1116/1768/0018/NEW_6322.JPG");
+        background-size: cover;
+        background-position: center;
+        background-repeat: no-repeat;
+        background-attachment: fixed;
+        overflow: hidden;
+      }
+
+      .analytics-main::before {
+        content: "";
+        position: absolute;
+        inset: 0;
+        background: rgba(0, 0, 0, 0.45);
+        backdrop-filter: blur(2px);
+        -webkit-backdrop-filter: blur(2px);
+        pointer-events: none;
+        z-index: 0;
+      }
+
+      .analytics-main > * {
+        position: relative;
+        z-index: 1;
       }
 
       .sidebar-header {
@@ -34,11 +65,14 @@
       }
 
       .stat-card {
-        background: white;
+        background: rgba(0, 0, 0, 0.55);
+        backdrop-filter: blur(10px);
+        -webkit-backdrop-filter: blur(10px);
         border-radius: 20px;
         padding: 25px;
         border: none;
-        box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+        box-shadow: 0 10px 20px rgba(0, 0, 0, 0.28);
+        border: 1px solid rgba(255, 255, 255, 0.2);
         transition: transform 0.2s;
       }
       .stat-card:hover {
@@ -57,18 +91,21 @@
         padding-right: 10px;
       }
       .feedback-item {
-        background: #fff;
+        background: rgba(0, 0, 0, 0.55);
+        backdrop-filter: blur(10px);
+        -webkit-backdrop-filter: blur(10px);
         border-radius: 12px;
         padding: 15px;
         margin-bottom: 15px;
-        border-left: 5px solid var(--accent);
+        border-left: 5px solid var(--text-highlight);
+        border: 1px solid rgba(255, 255, 255, 0.2);
         box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
       }
 
       .badge-star {
-        background: #fffbeb;
-        color: #b45309;
-        border: 1px solid #fde68a;
+        background: rgba(255, 213, 79, 0.2);
+        color: var(--text-highlight);
+        border: 1px solid rgba(255, 213, 79, 0.65);
         font-weight: 700;
       }
 
@@ -100,6 +137,57 @@
         color: var(--success);
         font-weight: 800;
         font-size: 0.7rem;
+      }
+
+
+
+      .analytics-main h1,
+      .analytics-main h2,
+      .analytics-main h3,
+      .analytics-main h4,
+      .analytics-main h5,
+      .analytics-main h6,
+      .analytics-main .text-dark {
+        color: var(--text-primary-contrast) !important;
+      }
+
+      .analytics-main p,
+      .analytics-main small,
+      .analytics-main span,
+      .analytics-main .text-muted,
+      .analytics-main .text-secondary,
+      .analytics-main .text-white-50 {
+        color: var(--text-muted-contrast) !important;
+      }
+
+      .analytics-main .text-primary,
+      .analytics-main .text-info,
+      .analytics-main .text-warning,
+      .analytics-main i.text-primary,
+      .analytics-main i.text-info {
+        color: var(--text-highlight) !important;
+      }
+
+      .analytics-main .alert,
+      .analytics-main .badge.bg-light,
+      .analytics-main .bg-light {
+        background: rgba(0, 0, 0, 0.55) !important;
+        color: #fff !important;
+        border: 1px solid rgba(255, 255, 255, 0.25) !important;
+      }
+
+      .analytics-main .btn-info,
+      .analytics-main .btn-success {
+        background: #ffd54f !important;
+        border-color: #ffd54f !important;
+        color: #000 !important;
+        font-weight: 700;
+      }
+
+      .analytics-main .btn-danger {
+        background: #e53935 !important;
+        border-color: #e53935 !important;
+        color: #fff !important;
       }
 
       .main-footer {
@@ -143,7 +231,8 @@
       </div>
     </div>
 
-    <div class="container pb-5">
+    <main class="analytics-main">
+      <div class="container pb-5">
       <div
         id="systemStateBanner"
         class="alert alert-dark text-center fw-bold mb-5 border-0 shadow-sm py-3"
@@ -208,6 +297,7 @@
         </div>
       </div>
     </div>
+    </main>
 
     <script>
       let myChart;

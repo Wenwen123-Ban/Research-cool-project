@@ -23,6 +23,9 @@
         --kiosk-success: #22c55e;
         --kiosk-warning: #f59e0b;
         --kiosk-missing: #64748b;
+        --text-primary-contrast: #ffffff;
+        --text-highlight: #ffd54f;
+        --text-muted-contrast: rgba(255, 255, 255, 0.75);
       }
 
       body {
@@ -33,20 +36,51 @@
         user-select: none;
       }
 
+      #loginSection,
+      #marketSection {
+        position: relative;
+        isolation: isolate;
+        background-image: url("https://www.tangubcity.gov.ph/application/files/1116/1768/0018/NEW_6322.JPG");
+        background-size: cover;
+        background-position: center;
+        background-repeat: no-repeat;
+        background-attachment: fixed;
+        overflow: hidden;
+      }
+
+      #loginSection::before,
+      #marketSection::before {
+        content: "";
+        position: absolute;
+        inset: 0;
+        background: rgba(0, 0, 0, 0.45);
+        backdrop-filter: blur(2px);
+        -webkit-backdrop-filter: blur(2px);
+        pointer-events: none;
+        z-index: 0;
+      }
+
+      #loginSection > *,
+      #marketSection > * {
+        position: relative;
+        z-index: 1;
+      }
+
       #loginSection {
         height: 100vh;
         display: flex;
         align-items: center;
         justify-content: center;
-        background: radial-gradient(circle at center, #1e293b 0%, #0f172a 100%);
+        background-color: transparent;
       }
 
       .auth-container {
-        background: rgba(255, 255, 255, 0.05);
-        backdrop-filter: blur(25px);
+        background: rgba(0, 0, 0, 0.55);
+        backdrop-filter: blur(10px);
+        -webkit-backdrop-filter: blur(10px);
         padding: 60px;
         border-radius: 50px;
-        border: 1px solid rgba(255, 255, 255, 0.1);
+        border: 1px solid rgba(255, 255, 255, 0.2);
         width: 480px;
         text-align: center;
         box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
@@ -66,7 +100,7 @@
 
       .auth-logo {
         font-size: 4.5rem;
-        color: var(--kiosk-accent);
+        color: var(--text-highlight);
         margin-bottom: 25px;
       }
 
@@ -103,11 +137,14 @@
       }
 
       .user-card {
-        background: var(--kiosk-surface);
+        background: rgba(0, 0, 0, 0.55);
+        backdrop-filter: blur(10px);
+        -webkit-backdrop-filter: blur(10px);
         border-radius: 40px;
         padding: 40px;
         text-align: center;
-        box-shadow: 0 15px 35px rgba(0, 0, 0, 0.05);
+        box-shadow: 0 15px 35px rgba(0, 0, 0, 0.22);
+        border: 1px solid rgba(255, 255, 255, 0.2);
         position: relative;
       }
 
@@ -146,11 +183,14 @@
       }
 
       .category-nav {
-        background: var(--kiosk-surface);
+        background: rgba(0, 0, 0, 0.55);
+        backdrop-filter: blur(10px);
+        -webkit-backdrop-filter: blur(10px);
         border-radius: 40px;
         padding: 25px;
         flex-grow: 1;
         overflow-y: auto;
+        border: 1px solid rgba(255, 255, 255, 0.2);
       }
 
       #dynamicCats {
@@ -164,7 +204,7 @@
         border-radius: 22px;
         border: none;
         background: transparent;
-        color: #475569;
+        color: var(--text-primary-contrast);
         font-weight: 700;
         display: flex;
         align-items: center;
@@ -173,8 +213,8 @@
       }
 
       .cat-link.active {
-        background: #f0f9ff;
-        color: var(--kiosk-accent);
+        background: rgba(255, 213, 79, 0.2);
+        color: var(--text-highlight);
       }
 
       .content-panel {
@@ -185,12 +225,15 @@
       }
 
       .search-container {
-        background: white;
+        background: rgba(0, 0, 0, 0.55);
+        backdrop-filter: blur(10px);
+        -webkit-backdrop-filter: blur(10px);
         border-radius: 35px;
         padding: 20px 40px;
         display: flex;
         align-items: center;
         gap: 20px;
+        border: 1px solid rgba(255, 255, 255, 0.2);
       }
 
       .book-grid {
@@ -203,17 +246,20 @@
       }
 
       .book-item {
-        background: white;
+        background: rgba(0, 0, 0, 0.55);
+        backdrop-filter: blur(10px);
+        -webkit-backdrop-filter: blur(10px);
         border-radius: 35px;
         padding: 35px;
         position: relative;
-        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
         transition: 0.3s;
+        border: 1px solid rgba(255, 255, 255, 0.2);
       }
 
       .book-item:hover {
         transform: translateY(-5px);
-        border: 1px solid var(--kiosk-accent);
+        border: 1px solid rgba(255, 213, 79, 0.85);
       }
 
       .status-badge {
@@ -250,10 +296,10 @@
       .timer-ui {
         font-family: monospace;
         font-weight: 800;
-        color: var(--kiosk-accent);
+        color: var(--text-highlight);
         font-size: 0.9rem;
         padding: 8px 15px;
-        background: #f8fafc;
+        background: rgba(0, 0, 0, 0.45);
         border-radius: 12px;
       }
 
@@ -261,6 +307,80 @@
         max-height: 350px;
         overflow-y: auto;
         border-radius: 25px;
+      }
+
+      #marketSection h1,
+      #marketSection h2,
+      #marketSection h3,
+      #marketSection h4,
+      #marketSection h5,
+      #marketSection h6,
+      #marketSection .text-dark,
+      #marketSection code,
+      .modal-content .text-dark {
+        color: var(--text-primary-contrast) !important;
+      }
+
+      #marketSection p,
+      #marketSection .text-muted,
+      #marketSection small,
+      #marketSection span,
+      #loginSection .text-white-50,
+      .modal-content .text-muted,
+      .modal-content p {
+        color: var(--text-muted-contrast) !important;
+      }
+
+      #marketSection .text-primary,
+      #marketSection .text-info,
+      #marketSection .badge.bg-primary,
+      #marketSection .fa,
+      #marketSection .fas,
+      .modal-content .text-primary {
+        color: var(--text-highlight) !important;
+      }
+
+      #bookSearch,
+      #bookSearch::placeholder {
+        color: #fff !important;
+      }
+
+      .btn-info,
+      .btn-primary {
+        background: #ffd54f !important;
+        color: #000 !important;
+        border-color: #ffd54f !important;
+        font-weight: 700;
+      }
+
+      .btn-danger,
+      .btn-outline-danger:hover {
+        background: #e53935 !important;
+        color: #fff !important;
+        border-color: #e53935 !important;
+      }
+
+      .btn-outline-secondary,
+      .btn-light,
+      .btn-link,
+      .btn-secondary {
+        background: rgba(255, 255, 255, 0.14) !important;
+        color: #fff !important;
+        border: 1px solid rgba(255, 255, 255, 0.35) !important;
+      }
+
+      .modal-content,
+      .modal-content .col-lg-7,
+      .modal-content .col-lg-5,
+      .modal-content .history-list {
+        background: rgba(0, 0, 0, 0.55) !important;
+        backdrop-filter: blur(10px);
+        -webkit-backdrop-filter: blur(10px);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+      }
+
+      .modal-content .badge.bg-primary {
+        background: rgba(255, 213, 79, 0.2) !important;
       }
 
 
