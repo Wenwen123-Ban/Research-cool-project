@@ -35,7 +35,33 @@
         
         /* Navigation & Sidebar */
         .sidebar { background: var(--admin-dark); color: white; position: relative; width: var(--sidebar-w); padding: 25px; transition: 0.3s; display: flex; flex-direction: column; border-right: 1px solid #1e293b; }
-        .main-content { flex: 1; padding: 40px; transition: 0.3s; }
+        .main-content {
+            flex: 1;
+            padding: 40px;
+            transition: 0.3s;
+            position: relative;
+            isolation: isolate;
+            background-image: url("https://tse2.mm.bing.net/th/id/OIP.NNj0ra-PgYlu_TnxDC_PHwAAAA?pid=Api&P=0&h=220");
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+            overflow: hidden;
+        }
+
+        .main-content::before {
+            content: "";
+            position: absolute;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.35);
+            z-index: -1;
+            pointer-events: none;
+        }
+
+        .main-content > header h2,
+        .main-content > header p,
+        .main-content > header #systemStateText {
+            color: #f8fafc !important;
+        }
         
         .nav-link { cursor: pointer; transition: 0.2s; border-radius: 12px !important; margin-bottom: 8px; padding: 12px 15px; font-weight: 500; display: flex; align-items: center; justify-content: space-between; }
         .nav-link:hover { background: rgba(255,255,255,0.08); transform: translateX(5px); }
