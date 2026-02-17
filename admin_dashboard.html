@@ -87,13 +87,23 @@
         .nav-link.active i { color: var(--admin-dark) !important; }
 
         /* Floating Admin Card */
-        .admin-profile-trigger { cursor: pointer; position: relative; }
+        .admin-profile-trigger { cursor: pointer; }
+        #global-dropdown-container {
+            position: fixed;
+            inset: 0;
+            z-index: 12000;
+            pointer-events: none;
+        }
         .side-down-card,
         .account-dropdown {
-            position: absolute; top: 120%; right: 0; width: 380px; 
+            position: fixed !important;
+            top: 0;
+            left: 0;
+            width: 380px;
             background: white; border-radius: 24px; box-shadow: 0 25px 60px rgba(0,0,0,0.2); 
-            z-index: 9999; display: none; border: 1px solid #e2e8f0;
+            z-index: 9999 !important; display: none; border: 1px solid #e2e8f0;
             padding: 30px; animation: slideDown 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+            pointer-events: auto;
         }
         .side-down-card.active { display: block; }
         
@@ -387,6 +397,7 @@
     </style>
 </head>
 <body id="mainBody">
+<div id="global-dropdown-container"></div>
 <!-- ===== HEADER SECTION ===== -->
     <header class="main-header">
       <div class="header-content">
@@ -446,52 +457,51 @@
         </div>
         <div class="d-flex align-items-center gap-4">
             <div id="liveClock" class="clock-display font-monospace">00:00:00</div>
-            <div class="admin-profile-trigger" onclick="toggleAdminCard()">
+            <div class="admin-profile-trigger" id="adminProfileTrigger" onclick="toggleAdminCard(event)">
                 <img id="headerAvatar" src="/Profile/default.png" class="user-avatar shadow-sm">
-                <div class="side-down-card account-dropdown shadow-lg" id="adminFloatCard" onclick="event.stopPropagation()">
-                    
-                    <div id="loginForm">
-                        <div class="text-center mb-4">
-                            <h5 class="fw-bold text-dark"><i class="fas fa-fingerprint text-primary me-2"></i>Staff Authorization</h5>
-                            <p class="small text-muted">Identify yourself to unlock controls</p>
-                        </div>
-                        <div class="mb-3">
-                            <div class="input-group">
-                                <span class="input-group-text bg-light border-0"><i class="fas fa-id-card text-muted"></i></span>
-                                <input type="text" id="loginUser" class="form-control bg-light border-0 py-2" placeholder="Admin ID">
-                            </div>
-                        </div>
-                        <div class="mb-4">
-                            <div class="input-group">
-                                <span class="input-group-text bg-light border-0"><i class="fas fa-key text-muted"></i></span>
-                                <input type="password" id="loginPass" class="form-control bg-light border-0 py-2" placeholder="Secure Phrase">
-                            </div>
-                        </div>
-                        <button class="btn btn-primary w-100 fw-bold py-3 rounded-3 shadow-sm transition-all" onclick="attemptLogin()">AUTHENTICATE SESSION</button>
-                        <div id="loginError" class="alert alert-danger mt-3 small py-2 fw-bold text-center" style="display:none;">
-                            <i class="fas fa-exclamation-triangle me-2"></i>Access Denied
-                        </div>
-                    </div>
-
-                    <div id="adminProfile" style="display: none;">
-                        <div class="text-center mb-4">
-                            <img id="activeAdminPhoto" src="/Profile/default.png" class="rounded-circle border border-4 border-primary mb-3 shadow-sm" style="width: 90px; height: 90px; object-fit: cover;">
-                            <h5 class="fw-bold mb-1 text-dark" id="activeAdminName">Librarian</h5>
-                            <span class="badge bg-primary-subtle text-primary border border-primary-subtle px-3 py-1 rounded-pill" id="activeAdminRole">HEAD LIBRARIAN</span>
-                        </div>
-                        <div class="d-flex justify-content-between align-items-center mb-3">
-                            <span class="small fw-bold text-uppercase text-muted"><i class="fas fa-history me-1"></i> Audit Log</span>
-                            <button class="btn btn-link btn-sm text-danger p-0 text-decoration-none fw-bold" onclick="clearHistory()">Clear All</button>
-                        </div>
-                        <div id="adminActionLog" class="mb-3" style="max-height: 180px; overflow-y: auto; padding-right: 5px;"></div>
-                        <button class="btn btn-outline-danger w-100 fw-bold py-2 rounded-3 mt-2" onclick="logout()">
-                            <i class="fas fa-sign-out-alt me-2"></i>Log Out
-                        </button>
-                    </div>
-                </div>
             </div>
         </div>
     </header>
+    <div class="side-down-card account-dropdown shadow-lg" id="adminFloatCard" onclick="event.stopPropagation()">
+        <div id="loginForm">
+            <div class="text-center mb-4">
+                <h5 class="fw-bold text-dark"><i class="fas fa-fingerprint text-primary me-2"></i>Staff Authorization</h5>
+                <p class="small text-muted">Identify yourself to unlock controls</p>
+            </div>
+            <div class="mb-3">
+                <div class="input-group">
+                    <span class="input-group-text bg-light border-0"><i class="fas fa-id-card text-muted"></i></span>
+                    <input type="text" id="loginUser" class="form-control bg-light border-0 py-2" placeholder="Admin ID">
+                </div>
+            </div>
+            <div class="mb-4">
+                <div class="input-group">
+                    <span class="input-group-text bg-light border-0"><i class="fas fa-key text-muted"></i></span>
+                    <input type="password" id="loginPass" class="form-control bg-light border-0 py-2" placeholder="Secure Phrase">
+                </div>
+            </div>
+            <button class="btn btn-primary w-100 fw-bold py-3 rounded-3 shadow-sm transition-all" onclick="attemptLogin()">AUTHENTICATE SESSION</button>
+            <div id="loginError" class="alert alert-danger mt-3 small py-2 fw-bold text-center" style="display:none;">
+                <i class="fas fa-exclamation-triangle me-2"></i>Access Denied
+            </div>
+        </div>
+
+        <div id="adminProfile" style="display: none;">
+            <div class="text-center mb-4">
+                <img id="activeAdminPhoto" src="/Profile/default.png" class="rounded-circle border border-4 border-primary mb-3 shadow-sm" style="width: 90px; height: 90px; object-fit: cover;">
+                <h5 class="fw-bold mb-1 text-dark" id="activeAdminName">Librarian</h5>
+                <span class="badge bg-primary-subtle text-primary border border-primary-subtle px-3 py-1 rounded-pill" id="activeAdminRole">HEAD LIBRARIAN</span>
+            </div>
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <span class="small fw-bold text-uppercase text-muted"><i class="fas fa-history me-1"></i> Audit Log</span>
+                <button class="btn btn-link btn-sm text-danger p-0 text-decoration-none fw-bold" onclick="clearHistory()">Clear All</button>
+            </div>
+            <div id="adminActionLog" class="mb-3" style="max-height: 180px; overflow-y: auto; padding-right: 5px;"></div>
+            <button class="btn btn-outline-danger w-100 fw-bold py-2 rounded-3 mt-2" onclick="logout()">
+                <i class="fas fa-sign-out-alt me-2"></i>Log Out
+            </button>
+        </div>
+    </div>
 
     <div id="consoleView" class="view-section active">
         <div class="row g-4">
@@ -778,6 +788,7 @@
     const leaderboardProfileModal = new bootstrap.Modal(document.getElementById('leaderboardProfileModal'));
 
     window.onload = () => {
+        mountAdminDropdown();
         if(localStorage.getItem('isStaffAuth') === 'true') {
             executeUnlock(localStorage.getItem('adminName'), localStorage.getItem('adminPhoto'), localStorage.getItem('adminSchoolId'), localStorage.getItem('adminToken'));
         }
@@ -1192,7 +1203,50 @@
     }
 
     function showLoginError() { document.getElementById('loginError').style.display = 'block'; setTimeout(() => { document.getElementById('loginError').style.display = 'none'; }, 3000); }
-    function toggleAdminCard() { document.getElementById('adminFloatCard').classList.toggle('active'); }
+
+    function mountAdminDropdown() {
+        const globalDropdownContainer = document.getElementById('global-dropdown-container');
+        const adminFloatCard = document.getElementById('adminFloatCard');
+        if (globalDropdownContainer && adminFloatCard && adminFloatCard.parentElement !== globalDropdownContainer) {
+            globalDropdownContainer.appendChild(adminFloatCard);
+        }
+
+        document.addEventListener('click', (event) => {
+            const card = document.getElementById('adminFloatCard');
+            const trigger = document.getElementById('adminProfileTrigger');
+            if (!card || !trigger || !card.classList.contains('active')) return;
+            if (!card.contains(event.target) && !trigger.contains(event.target)) {
+                card.classList.remove('active');
+            }
+        });
+
+        window.addEventListener('resize', updateAdminDropdownPosition);
+        window.addEventListener('scroll', updateAdminDropdownPosition, true);
+    }
+
+    function updateAdminDropdownPosition() {
+        const trigger = document.getElementById('adminProfileTrigger');
+        const card = document.getElementById('adminFloatCard');
+        if (!trigger || !card) return;
+
+        const triggerRect = trigger.getBoundingClientRect();
+        const dropdownWidth = card.offsetWidth || 380;
+        const spacing = 12;
+        const maxLeft = window.innerWidth - dropdownWidth - 12;
+        const left = Math.min(Math.max(12, triggerRect.right - dropdownWidth), maxLeft);
+
+        card.style.top = `${triggerRect.bottom + spacing}px`;
+        card.style.left = `${left}px`;
+    }
+
+    function toggleAdminCard(event) {
+        if (event) event.stopPropagation();
+        const card = document.getElementById('adminFloatCard');
+        if (!card) return;
+        card.classList.toggle('active');
+        if (card.classList.contains('active')) updateAdminDropdownPosition();
+    }
+
     function setRole(role) { currentRole = role; document.getElementById('btnStudent').classList.toggle('active', role === 'student'); document.getElementById('btnAdmin').classList.toggle('active', role === 'admin'); }
     function logout() { localStorage.clear(); location.reload(); }
     function addHistory(msg) { adminHistory.unshift({ msg, time: new Date().toLocaleTimeString() }); localStorage.setItem('adminHistory', JSON.stringify(adminHistory.slice(0, 20))); renderAdminHistory(); }
