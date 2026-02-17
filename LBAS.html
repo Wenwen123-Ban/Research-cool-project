@@ -22,6 +22,9 @@
         --success: #10b981;
         --danger: #ef4444;
         --warning: #f59e0b;
+        --text-primary-contrast: #ffffff;
+        --text-highlight: #ffd54f;
+        --text-muted-contrast: rgba(255, 255, 255, 0.75);
       }
       body {
         background-color: #f1f5f9;
@@ -30,6 +33,36 @@
         min-height: 100vh;
         display: flex;
         flex-direction: column;
+      }
+
+      #loginSection,
+      #portalSection {
+        position: relative;
+        isolation: isolate;
+        background-image: url("https://www.tangubcity.gov.ph/application/files/1116/1768/0018/NEW_6322.JPG");
+        background-size: cover;
+        background-position: center;
+        background-repeat: no-repeat;
+        background-attachment: fixed;
+        overflow: hidden;
+      }
+
+      #loginSection::before,
+      #portalSection::before {
+        content: "";
+        position: absolute;
+        inset: 0;
+        background: rgba(0, 0, 0, 0.45);
+        backdrop-filter: blur(2px);
+        -webkit-backdrop-filter: blur(2px);
+        pointer-events: none;
+        z-index: 0;
+      }
+
+      #loginSection > *,
+      #portalSection > * {
+        position: relative;
+        z-index: 1;
       }
       .network-banner {
         background: var(--primary);
@@ -42,15 +75,19 @@
       }
 
       .lbas-definition {
-        background: #e2e8f0;
+        background: rgba(0, 0, 0, 0.55);
+        backdrop-filter: blur(10px);
+        -webkit-backdrop-filter: blur(10px);
         padding: 10px;
         border-radius: 10px;
         margin-bottom: 20px;
-        border-left: 4px solid var(--accent);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        border-left: 4px solid var(--text-highlight);
+        color: var(--text-primary-contrast);
       }
       .lbas-letter {
         font-weight: 800;
-        color: var(--primary);
+        color: var(--text-highlight);
         margin-right: 5px;
       }
 
@@ -65,19 +102,19 @@
         white-space: nowrap;
         padding: 8px 16px;
         border-radius: 20px;
-        background: white;
-        border: 1px solid #cbd5e1;
-        color: #64748b;
+        background: rgba(0, 0, 0, 0.45);
+        border: 1px solid rgba(255, 255, 255, 0.3);
+        color: var(--text-primary-contrast);
         font-size: 13px;
         font-weight: 600;
         cursor: pointer;
         transition: 0.2s;
       }
       .cat-pill.active {
-        background: var(--accent);
-        color: white;
-        border-color: var(--accent);
-        box-shadow: 0 4px 10px rgba(56, 189, 248, 0.3);
+        background: rgba(255, 213, 79, 0.2);
+        color: var(--text-highlight);
+        border-color: rgba(255, 213, 79, 0.9);
+        box-shadow: 0 4px 10px rgba(255, 213, 79, 0.35);
       }
 
       #loginSection {
@@ -100,10 +137,13 @@
         gap: 12px;
       }
       .login-card {
-        background: white;
+        background: rgba(0, 0, 0, 0.55);
+        backdrop-filter: blur(10px);
+        -webkit-backdrop-filter: blur(10px);
         padding: 30px;
         border-radius: 24px;
-        box-shadow: 0 15px 35px rgba(0, 0, 0, 0.1);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        box-shadow: 0 15px 35px rgba(0, 0, 0, 0.25);
         width: 100%;
         max-width: 380px;
         text-align: center;
@@ -146,9 +186,11 @@
       }
 
       .mobile-nav {
-        background: white;
+        background: rgba(0, 0, 0, 0.55);
+        backdrop-filter: blur(10px);
+        -webkit-backdrop-filter: blur(10px);
         padding: 15px 20px;
-        border-bottom: 2px solid var(--accent);
+        border: 1px solid rgba(255, 255, 255, 0.2);
         position: sticky;
         top: 0;
         z-index: 1000;
@@ -157,12 +199,14 @@
         align-items: center;
       }
       .book-item {
-        background: white;
+        background: rgba(0, 0, 0, 0.55);
+        backdrop-filter: blur(10px);
+        -webkit-backdrop-filter: blur(10px);
         border-radius: 18px;
         padding: 18px;
         margin-bottom: 15px;
         position: relative;
-        border: 1px solid #e2e8f0;
+        border: 1px solid rgba(255, 255, 255, 0.2);
         transition: transform 0.2s;
       }
       .book-item:active {
@@ -191,8 +235,8 @@
         color: #991b1b;
       }
       .btn-action {
-        background: var(--primary);
-        color: white;
+        background: #ffd54f;
+        color: #000;
         border: none;
         width: 100%;
         padding: 12px;
@@ -202,8 +246,10 @@
       }
       #accountPanel {
         display: none;
-        background: white;
-        border-bottom: 1px solid #e2e8f0;
+        background: rgba(0, 0, 0, 0.55);
+        backdrop-filter: blur(10px);
+        -webkit-backdrop-filter: blur(10px);
+        border-bottom: 1px solid rgba(255, 255, 255, 0.2);
         padding: 25px;
         animation: slideDown 0.3s;
       }
@@ -242,13 +288,17 @@
         backdrop-filter: blur(5px);
       }
       .custom-modal {
-        background: white;
+        background: rgba(0, 0, 0, 0.55);
+        backdrop-filter: blur(10px);
+        -webkit-backdrop-filter: blur(10px);
         width: 100%;
         max-width: 400px;
         border-radius: 25px;
         padding: 30px;
         text-align: center;
         position: relative;
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        color: var(--text-primary-contrast);
       }
       .star-container {
         font-size: 35px;
@@ -256,7 +306,97 @@
         margin: 15px 0;
       }
       .star.selected {
-        color: #f59e0b;
+        color: var(--text-highlight);
+      }
+
+      #portalSection .container,
+      #portalSection .card,
+      #portalSection .modal-content {
+        background: rgba(0, 0, 0, 0.55);
+        backdrop-filter: blur(10px);
+        -webkit-backdrop-filter: blur(10px);
+        border-radius: 12px;
+        border: 1px solid rgba(255, 255, 255, 0.2);
+      }
+
+      #loginSection h1,
+      #loginSection h2,
+      #loginSection h3,
+      #loginSection h4,
+      #loginSection h5,
+      #portalSection h1,
+      #portalSection h2,
+      #portalSection h3,
+      #portalSection h4,
+      #portalSection h5,
+      #portalSection h6,
+      #portalSection .text-dark,
+      #portalSection code,
+      .modal-overlay .text-dark {
+        color: var(--text-primary-contrast) !important;
+      }
+
+      #loginSection p,
+      #portalSection p,
+      #portalSection label,
+      #portalSection .text-muted,
+      #loginSection .text-muted,
+      .modal-overlay .text-muted,
+      #portalSection small,
+      #portalSection span,
+      #portalSection li {
+        color: var(--text-muted-contrast) !important;
+      }
+
+      #portalSection .text-primary,
+      #portalSection .badge.bg-primary,
+      #portalSection .text-info,
+      #portalSection code.text-primary,
+      .modal-overlay .text-primary {
+        color: var(--text-highlight) !important;
+      }
+
+      #portalSection .table,
+      #portalSection .table td,
+      #portalSection .table tbody,
+      #portalSection .table tr,
+      #portalSection .table-responsive {
+        background: transparent !important;
+        color: #fff !important;
+      }
+
+      #portalSection .table th {
+        color: #ffd54f !important;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.35) !important;
+      }
+
+      #portalSection .table-hover tbody tr:hover {
+        background: rgba(255, 255, 255, 0.09) !important;
+      }
+
+      .btn-primary,
+      #portalSection .btn.btn-dark,
+      #loginSection #loginBtn {
+        background: #ffd54f !important;
+        color: #000 !important;
+        border-color: #ffd54f !important;
+        font-weight: 700;
+      }
+
+      .btn-danger,
+      .btn-outline-danger:hover {
+        background: #e53935 !important;
+        color: #fff !important;
+        border-color: #e53935 !important;
+      }
+
+      .btn-outline-secondary,
+      .btn-light,
+      .btn-outline-primary,
+      #portalSection .btn-secondary {
+        background: rgba(255, 255, 255, 0.14) !important;
+        color: #fff !important;
+        border: 1px solid rgba(255, 255, 255, 0.35) !important;
       }
 
 
