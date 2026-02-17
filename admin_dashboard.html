@@ -16,6 +16,10 @@
             --danger: #ef4444;
             --success: #22c55e;
             --warning: #f59e0b;
+            --text-primary-contrast: #ffffff;
+            --text-secondary-contrast: #f1f1f1;
+            --text-highlight: #ffd54f;
+            --text-muted-contrast: rgba(255, 255, 255, 0.75);
         }
         body {
             background-color: #f1f5f9;
@@ -102,11 +106,11 @@
         .card:hover { transform: translateY(-3px); }
 
         .glass-card {
-            background: rgba(255, 255, 255, 0.12);
+            background: rgba(0, 0, 0, 0.55);
             backdrop-filter: blur(10px);
             -webkit-backdrop-filter: blur(10px);
             border-radius: 12px;
-            border: 1px solid rgba(255, 255, 255, 0.2);
+            border: 1px solid rgba(255, 255, 255, 0.35);
             box-shadow: 0 10px 30px rgba(15, 23, 42, 0.25);
         }
 
@@ -127,7 +131,109 @@
         .glass-card .table th,
         .glass-card .table td,
         .glass-card label {
-            color: #f8fafc !important;
+            color: var(--text-secondary-contrast) !important;
+        }
+
+        .dashboard-main,
+        .dashboard-main .fw-bold,
+        .dashboard-main h1,
+        .dashboard-main h2,
+        .dashboard-main h3,
+        .dashboard-main h4,
+        .dashboard-main h5,
+        .dashboard-main h6,
+        .dashboard-main .text-dark,
+        .dashboard-main code {
+            color: var(--text-primary-contrast) !important;
+        }
+
+        .dashboard-main p,
+        .dashboard-main label,
+        .dashboard-main .small,
+        .dashboard-main .text-white-50,
+        .dashboard-main .text-muted {
+            color: var(--text-muted-contrast) !important;
+        }
+
+        .dashboard-main .text-primary,
+        .dashboard-main .border-primary,
+        .dashboard-main .border-primary-subtle {
+            color: var(--text-highlight) !important;
+            border-color: rgba(255, 213, 79, 0.6) !important;
+        }
+
+        .dashboard-main .bg-primary,
+        .dashboard-main .bg-primary-subtle {
+            background: rgba(255, 213, 79, 0.18) !important;
+            color: var(--text-highlight) !important;
+        }
+
+        .dashboard-main .cat-pill {
+            background: rgba(0, 0, 0, 0.45);
+            border: 1px solid rgba(255, 255, 255, 0.35);
+            color: var(--text-secondary-contrast);
+        }
+
+        .dashboard-main .cat-pill:hover,
+        .dashboard-main .cat-pill.active {
+            background: rgba(255, 213, 79, 0.2);
+            border-color: rgba(255, 213, 79, 0.8);
+            color: var(--text-highlight);
+            box-shadow: 0 4px 12px rgba(255, 213, 79, 0.25);
+        }
+
+        .dashboard-main table { color: var(--text-primary-contrast) !important; }
+        .dashboard-main table th { color: var(--text-highlight) !important; font-weight: 600; border-bottom: 1px solid rgba(255,255,255,0.32) !important; }
+        .dashboard-main table tr { border-bottom: 1px solid rgba(255,255,255,0.2); }
+        .dashboard-main table tr:hover { background: rgba(255,255,255,0.08); }
+
+        .dashboard-main .btn-primary {
+            background: #ffd54f;
+            color: #000;
+            font-weight: 600;
+            border: none;
+        }
+
+        .dashboard-main .btn-danger,
+        .dashboard-main .btn-outline-danger:hover {
+            background: #e53935;
+            color: #fff;
+            border-color: #e53935;
+        }
+
+        .dashboard-main .btn-light,
+        .dashboard-main .btn-outline-danger,
+        .dashboard-main .btn-secondary {
+            background: rgba(255,255,255,0.15);
+            color: #fff;
+            border: 1px solid rgba(255,255,255,0.35);
+        }
+
+        .dashboard-main .btn-primary:hover,
+        .dashboard-main .btn-light:hover,
+        .dashboard-main .btn-secondary:hover,
+        .dashboard-main .btn-outline-danger:hover {
+            box-shadow: 0 6px 14px rgba(0, 0, 0, 0.25);
+            filter: brightness(1.02);
+        }
+
+        #inventoryBody .inventory-code {
+            color: var(--text-highlight) !important;
+            font-weight: 700;
+        }
+
+        #inventoryBody .inventory-title {
+            color: var(--text-primary-contrast) !important;
+            font-weight: 700;
+        }
+
+        #inventoryBody .inventory-action i {
+            color: #fff !important;
+            transition: 0.2s;
+        }
+
+        #inventoryBody .inventory-action:hover i {
+            text-shadow: 0 0 10px rgba(255,255,255,0.55);
         }
         
         .status-pill { padding: 6px 16px; border-radius: 50px; font-size: 0.7rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; }
@@ -916,10 +1022,10 @@
         const tbody = document.getElementById('inventoryBody');
         tbody.innerHTML = data.map(b => `
             <tr>
-                <td width="150" class="ps-4"><code class="text-primary fw-bold">${b.book_no}</code></td>
-                <td><div class="fw-bold text-dark">${b.title}</div><div class="small text-muted text-uppercase fw-bold" style="font-size:0.65rem">${b.category}</div></td>
+                <td width="150" class="ps-4"><code class="inventory-code">${b.book_no}</code></td>
+                <td><div class="inventory-title">${b.title}</div><div class="small text-muted text-uppercase fw-bold" style="font-size:0.65rem">${b.category}</div></td>
                 <td><span class="status-pill badge-${b.status.toLowerCase()}">${b.status}</span></td>
-                <td class="text-end pe-4">${isStaff ? `<button class="btn btn-sm btn-light border me-1" onclick="openEdit('book', '${b.book_no}', '${b.title}', '${b.category}')"><i class="fas fa-pen text-primary"></i></button> <button class="btn btn-sm btn-light border" onclick="deleteRecord('book', '${b.book_no}')"><i class="fas fa-trash text-danger"></i></button>` : ''}</td>
+                <td class="text-end pe-4">${isStaff ? `<button class="btn btn-sm btn-light border me-1 inventory-action" onclick="openEdit('book', '${b.book_no}', '${b.title}', '${b.category}')"><i class="fas fa-pen"></i></button> <button class="btn btn-sm btn-light border inventory-action" onclick="deleteRecord('book', '${b.book_no}')"><i class="fas fa-trash"></i></button>` : ''}</td>
             </tr>`).join('');
     }
 
