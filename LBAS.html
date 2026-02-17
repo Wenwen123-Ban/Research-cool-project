@@ -791,7 +791,9 @@
       const MAX_ACTIVE_RESERVATIONS = 5;
       const RESERVATION_DURATION_MS = 30 * 60 * 1000;
       const userReservations = {};
+      const userActiveLeases = {};
       const pendingReservationRequests = new Set();
+      let latestBooksByCode = {};
 
       function shuffleBooks(books) {
         const shuffled = [...books];
@@ -838,8 +840,33 @@
         };
       }
 
+      function getReservationKey(schoolID) {
+        return String(schoolID || "").trim().toLowerCase();
+      }
+
+      function normalizeLease(transaction) {
+        const expiryDate = transaction.expiry
+          ? new Date(transaction.expiry)
+          : transaction.date
+            ? new Date(
+                new Date(transaction.date).getTime() +
+                  (transaction.status === "Borrowed"
+                    ? 7 * 24 * 60 * 60 * 1000
+                    : RESERVATION_DURATION_MS),
+              )
+            : new Date(Date.now() + RESERVATION_DURATION_MS);
+
+        const book = latestBooksByCode[transaction.book_no] || {};
+        return {
+          book_no: transaction.book_no,
+          title: transaction.title || book.title || "Unknown Title",
+          status: transaction.status,
+          expiry: expiryDate.toISOString(),
+        };
+      }
+
       function cleanupExpiredReservationsForUser(schoolID) {
-        const key = String(schoolID);
+        const key = getReservationKey(schoolID);
         const now = Date.now();
 
         if (!Array.isArray(userReservations[key])) {
@@ -857,16 +884,91 @@
       function syncUserReservations(transactions, schoolID) {
         if (!schoolID) return [];
 
+        const key = getReservationKey(schoolID);
+
         const reservations = transactions
           .filter(
             (transaction) =>
-              String(transaction.school_id) === String(schoolID) &&
+              getReservationKey(transaction.school_id) === key &&
               transaction.status === "Reserved",
           )
           .map(normalizeReservation);
 
-        userReservations[String(schoolID)] = reservations;
+        userReservations[key] = reservations;
         return cleanupExpiredReservationsForUser(schoolID);
+      }
+
+      function cleanupExpiredLeasesForUser(schoolID) {
+        const key = getReservationKey(schoolID);
+        const now = Date.now();
+
+        if (!Array.isArray(userActiveLeases[key])) {
+          userActiveLeases[key] = [];
+        }
+
+        userActiveLeases[key] = userActiveLeases[key].filter((lease) => {
+          const expiryTime = new Date(lease.expiry).getTime();
+          return Number.isFinite(expiryTime) && expiryTime > now;
+        });
+
+        return userActiveLeases[key];
+      }
+
+      function syncUserActiveLeases(transactions, schoolID) {
+        if (!schoolID) return [];
+        const key = getReservationKey(schoolID);
+        const leases = transactions
+          .filter(
+            (transaction) =>
+              getReservationKey(transaction.school_id) === key &&
+              (transaction.status === "Reserved" ||
+                transaction.status === "Borrowed"),
+          )
+          .map(normalizeLease);
+
+        userActiveLeases[key] = leases;
+        return cleanupExpiredLeasesForUser(schoolID);
+      }
+
+      function renderActiveLeases() {
+        const key = getReservationKey(currentID);
+        const active = cleanupExpiredLeasesForUser(key)
+          .slice()
+          .sort((a, b) => new Date(a.expiry) - new Date(b.expiry));
+
+        document.getElementById("activeHistory").innerHTML =
+          active
+            .map(
+              (lease) => `
+                <div class="p-3 border rounded-3 mb-2 bg-light d-flex justify-content-between align-items-center gap-2">
+                  <div>
+                    <div class="fw-bold text-dark">${lease.title}</div>
+                    <code class="small text-primary fw-bold">${lease.book_no}</code><br>
+                    <span class="badge ${lease.status === "Reserved" ? "bg-warning text-dark" : "bg-success"}">${lease.status}</span>
+                  </div>
+                  <div class="text-end">
+                    <span class="timer small fw-bold text-primary d-block" data-expiry="${lease.expiry}" data-status="${lease.status}" data-book-no="${lease.book_no}">Calculating...</span>
+                    ${lease.status === "Reserved" ? `<button class="btn btn-sm btn-outline-danger rounded-pill mt-1" onclick="releaseReservation('${lease.book_no}')">Release</button>` : ""}
+                  </div>
+                </div>`,
+            )
+            .join("") ||
+          '<p class="text-muted small text-center mt-3 border p-3 rounded-3 dashed">No active reservations.</p>';
+
+        updateTimers();
+      }
+
+      async function fetchUserActiveReservations() {
+        if (!currentID) return;
+        try {
+          const tRes = await fetch("/api/transactions");
+          const trans = await tRes.json();
+          syncUserReservations(trans, currentID);
+          syncUserActiveLeases(trans, currentID);
+          renderActiveLeases();
+        } catch (e) {
+          console.error("Unable to fetch active leases.");
+        }
       }
 
       async function handleLogin() {
@@ -1134,6 +1236,7 @@
         switchPortalView("catalog");
 
         fetchCategories();
+        fetchUserActiveReservations();
         loadData();
         checkRatingStatus();
         setInterval(loadData, 5000);
@@ -1149,7 +1252,12 @@
           ]);
           const books = await bRes.json();
           const trans = await tRes.json();
+          latestBooksByCode = books.reduce((acc, book) => {
+            acc[book.book_no] = book;
+            return acc;
+          }, {});
           syncUserReservations(trans, currentID);
+          syncUserActiveLeases(trans, currentID);
           const search = document
             .getElementById("searchBar")
             .value.toLowerCase();
@@ -1187,29 +1295,7 @@
               .join("") ||
             '<div class="text-center text-muted mt-5"><i class="fas fa-book-open fa-2x mb-3 opacity-25"></i><br>No books found.</div>';
 
-          const myActive = trans
-            .filter(
-              (t) =>
-                String(t.school_id) === String(currentID) &&
-                (t.status === "Reserved" || t.status === "Borrowed"),
-            )
-            .reverse();
-          document.getElementById("activeHistory").innerHTML =
-            myActive
-              .map(
-                (t) => `
-                <div class="p-3 border rounded-3 mb-2 bg-light d-flex justify-content-between align-items-center">
-                    <div>
-                        <b class="text-dark">${t.book_no}</b><br>
-                        <span class="badge ${t.status === "Reserved" ? "bg-warning text-dark" : "bg-success"}">${t.status}</span>
-                    </div>
-                    <div class="text-end">
-                        <span class="timer small fw-bold text-primary" data-expiry="${t.expiry}" data-status="${t.status}">Calculating...</span>
-                    </div>
-                </div>`,
-              )
-              .join("") ||
-            '<p class="text-muted small text-center mt-3 border p-3 rounded-3 dashed">No active reservations.</p>';
+          renderActiveLeases();
         } catch (e) {
           console.error("Data Sync Error");
         }
@@ -1248,12 +1334,29 @@
             return;
           }
 
-          const key = String(currentID);
+          const key = getReservationKey(currentID);
           if (!Array.isArray(userReservations[key])) userReservations[key] = [];
+          if (!Array.isArray(userActiveLeases[key])) userActiveLeases[key] = [];
+
+          const expiry = new Date(Date.now() + RESERVATION_DURATION_MS).toISOString();
+          const leaseTitle = (latestBooksByCode[no] && latestBooksByCode[no].title) ||
+            result.title ||
+            "Unknown Title";
+
           userReservations[key].push({
             book_no: no,
-            expiry: new Date(Date.now() + RESERVATION_DURATION_MS).toISOString(),
+            expiry,
           });
+          userActiveLeases[key] = userActiveLeases[key].filter(
+            (lease) => lease.book_no !== no,
+          );
+          userActiveLeases[key].push({
+            book_no: no,
+            title: leaseTitle,
+            status: "Reserved",
+            expiry,
+          });
+          renderActiveLeases();
 
           showStatusPopup(
             "success",
@@ -1273,6 +1376,40 @@
         }
       }
 
+      async function releaseReservation(bookNo) {
+        if (!currentID || !bookNo) return;
+        if (!confirm("Release this reservation?")) return;
+
+        try {
+          const res = await fetch("/api/process_transaction", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              book_no: bookNo,
+              action: "return",
+              school_id: currentID,
+            }),
+          });
+          const data = await res.json();
+          if (!res.ok || !data.success) {
+            alert(data.message || "Unable to release reservation.");
+            return;
+          }
+
+          const key = getReservationKey(currentID);
+          userReservations[key] = (userReservations[key] || []).filter(
+            (reservation) => reservation.book_no !== bookNo,
+          );
+          userActiveLeases[key] = (userActiveLeases[key] || []).filter(
+            (lease) => lease.book_no !== bookNo,
+          );
+          renderActiveLeases();
+          loadData();
+        } catch (e) {
+          alert("Unable to release reservation right now.");
+        }
+      }
+
       function setCategoryFilter(cat) {
         selectedCategory = cat;
         document.querySelectorAll("#catFilterList .cat-pill").forEach((p) => {
@@ -1283,9 +1420,14 @@
       }
 
       function updateTimers() {
+        let foundExpiredReservation = false;
         document.querySelectorAll(".timer").forEach((el) => {
           const diff = new Date(el.dataset.expiry) - new Date();
           if (diff <= 0) {
+            if (el.dataset.status === "Reserved") {
+              foundExpiredReservation = true;
+              return;
+            }
             el.innerText = "EXPIRED";
             el.classList.add("text-danger");
           } else {
@@ -1294,6 +1436,12 @@
             el.innerText = `${m}m ${s}s remaining`;
           }
         });
+
+        if (foundExpiredReservation) {
+          cleanupExpiredReservationsForUser(currentID);
+          cleanupExpiredLeasesForUser(currentID);
+          renderActiveLeases();
+        }
       }
 
       async function checkRatingStatus() {
