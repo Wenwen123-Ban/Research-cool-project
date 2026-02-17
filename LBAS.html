@@ -791,6 +791,7 @@
       const MAX_ACTIVE_RESERVATIONS = 5;
       const RESERVATION_DURATION_MS = 30 * 60 * 1000;
       const userReservations = {};
+      const pendingReservationRequests = new Set();
 
       function shuffleBooks(books) {
         const shuffled = [...books];
@@ -1180,7 +1181,7 @@
                     <span class="text-muted" style="font-size: 10px; font-weight:700;">${b.category.toUpperCase()}</span>
                     <div class="fw-bold text-dark mt-1">${b.title}</div>
                     <code class="small text-primary fw-bold">${b.book_no}</code>
-                    ${b.status === "Available" ? `<button class="btn-action shadow-sm" onclick="reserveBook('${b.book_no}')">RESERVE BOOK</button>` : ""}
+                    ${b.status === "Available" ? `<button class="btn-action shadow-sm" data-book-no="${b.book_no}" onclick="reserveBook('${b.book_no}')">RESERVE BOOK</button>` : ""}
                 </div>`,
               )
               .join("") ||
@@ -1217,45 +1218,36 @@
       async function reserveBook(no) {
         const schoolID = String(currentID);
         if (!schoolID) return;
+        if (pendingReservationRequests.has(no)) return;
+
+        const reserveButton = document.querySelector(
+          `button[data-book-no="${no}"]`,
+        );
+        pendingReservationRequests.add(no);
+        if (reserveButton) reserveButton.disabled = true;
 
         try {
-          const txRes = await fetch("/api/transactions");
-          const transactions = await txRes.json();
-          syncUserReservations(transactions, schoolID);
-
-          const activeReservations = cleanupExpiredReservationsForUser(schoolID);
-
-          if (activeReservations.some((reservation) => reservation.book_no === no)) {
-            alert("You have already reserved this book.");
+          if (!confirm("Reserve this book? You have 30 minutes to claim it.")) {
             return;
           }
 
-          if (activeReservations.length >= MAX_ACTIVE_RESERVATIONS) {
-            alert("You can only reserve up to 5 books at a time.");
+          const res = await fetch("/api/reserve", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              book_no: no,
+              school_id: currentID,
+              token: currentToken,
+            }),
+          });
+
+          const result = await res.json();
+
+          if (!res.ok || !result.success || result.status === "error") {
+            alert(result.message || "Unable to complete reservation.");
             return;
           }
-        } catch (e) {
-          showStatusPopup(
-            "error",
-            "Action Failed",
-            "Unable to validate your reservation right now. Please try again.",
-          );
-          return;
-        }
 
-        if (!confirm("Reserve this book? You have 30 minutes to claim it."))
-          return;
-        const res = await fetch("/api/reserve", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            book_no: no,
-            school_id: currentID,
-            token: currentToken,
-          }),
-        });
-        const result = await res.json();
-        if (result.success) {
           const key = String(currentID);
           if (!Array.isArray(userReservations[key])) userReservations[key] = [];
           userReservations[key].push({
@@ -1269,8 +1261,15 @@
             "Please proceed to the librarian desk to claim your book.",
           );
           loadData();
-        } else {
-          showStatusPopup("error", "Action Failed", result.message);
+        } catch (e) {
+          showStatusPopup(
+            "error",
+            "Action Failed",
+            "Unable to complete reservation right now. Please try again.",
+          );
+        } finally {
+          pendingReservationRequests.delete(no);
+          if (reserveButton) reserveButton.disabled = false;
         }
       }
 

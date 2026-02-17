@@ -789,6 +789,65 @@ def api_reserve():
 
     books = get_db("books")
     transactions = get_db("transactions")
+    now = datetime.now()
+
+    # 1) Cleanup expired reservations for this user before any validation.
+    expired_found = False
+    for t in transactions:
+        if t.get("school_id") != s_id or t.get("status") != "Reserved":
+            continue
+        expiry_raw = t.get("expiry")
+        if not expiry_raw:
+            continue
+        try:
+            if now > datetime.strptime(expiry_raw, "%Y-%m-%d %H:%M"):
+                t["status"] = "Expired"
+                expired_found = True
+                for b in books:
+                    if b.get("book_no") == t.get("book_no") and b.get("status") == "Reserved":
+                        b["status"] = "Available"
+                        break
+        except ValueError:
+            continue
+
+    # 2) Query active reservations after cleanup.
+    active_reservations = [
+        t
+        for t in transactions
+        if t.get("school_id") == s_id and t.get("status") == "Reserved"
+    ]
+
+    # 3) Block duplicate active reservation for same book.
+    if any(t.get("book_no") == b_no for t in active_reservations):
+        if expired_found:
+            save_db("books", books)
+            save_db("transactions", transactions)
+        return (
+            jsonify(
+                {
+                    "success": False,
+                    "status": "error",
+                    "message": "You already have an active reservation for this book.",
+                }
+            ),
+            400,
+        )
+
+    # 4) Enforce max active reservation count.
+    if len(active_reservations) >= 5:
+        if expired_found:
+            save_db("books", books)
+            save_db("transactions", transactions)
+        return (
+            jsonify(
+                {
+                    "success": False,
+                    "status": "error",
+                    "message": "Reservation limit reached (5 max).",
+                }
+            ),
+            400,
+        )
 
     for b in books:
         if b["book_no"] == b_no and b["status"] == "Available":
@@ -798,8 +857,8 @@ def api_reserve():
                     "book_no": b_no,
                     "school_id": s_id,
                     "status": "Reserved",
-                    "date": datetime.now().strftime("%Y-%m-%d %H:%M"),
-                    "expiry": (datetime.now() + timedelta(minutes=30)).strftime(
+                    "date": now.strftime("%Y-%m-%d %H:%M"),
+                    "expiry": (now + timedelta(minutes=30)).strftime(
                         "%Y-%m-%d %H:%M"
                     ),
                 }
@@ -807,6 +866,10 @@ def api_reserve():
             save_db("books", books)
             save_db("transactions", transactions)
             return jsonify({"success": True})
+
+    if expired_found:
+        save_db("books", books)
+        save_db("transactions", transactions)
 
     return jsonify({"success": False, "message": "Unavailable"})
 
