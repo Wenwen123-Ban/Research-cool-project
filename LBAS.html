@@ -62,6 +62,8 @@
         position: absolute;
         inset: 0;
         background: rgba(0, 0, 0, 0.45);
+        backdrop-filter: blur(0px);
+        -webkit-backdrop-filter: blur(0px);
         pointer-events: none;
         z-index: 0;
       }
@@ -592,6 +594,12 @@
       }
 
       @media (max-width: 768px) {
+        #loginSection::before,
+        #portalSection::before {
+          backdrop-filter: none !important;
+          -webkit-backdrop-filter: none !important;
+        }
+
         .header-content {
           padding: 14px 16px;
         }
@@ -1024,13 +1032,15 @@
       let selectedStars = 5;
       let availableCategories = [];
       let leaderboardProfileModal = null;
+      let dataInterval = null;
+      let timerInterval = null;
       const ALL_COLLECTION_LIMIT = 20;
       const CATEGORY_LIMIT = 10;
       const MAX_ACTIVE_RESERVATIONS = 5;
       const RESERVATION_DURATION_MS = 30 * 60 * 1000;
-      const userReservations = {};
-      const userActiveLeases = {};
-      const pendingReservationRequests = new Set();
+      let userReservations = {};
+      let userActiveLeases = {};
+      let pendingReservationRequests = new Set();
       let latestBooksByCode = {};
       let allCollectionOrder = [];
       let categoryCollectionOrder = {};
@@ -1478,6 +1488,9 @@
       function initPortal(profile) {
         if (!profile) return logout();
 
+        if (dataInterval) clearInterval(dataInterval);
+        if (timerInterval) clearInterval(timerInterval);
+
         document.getElementById("loginSection").style.display = "none";
         document.getElementById("portalSection").style.display = "block";
 
@@ -1513,11 +1526,12 @@
         fetchUserActiveReservations();
         loadData();
         checkRatingStatus();
-        setInterval(loadReservations, 30000);
-        setInterval(updateTimers, 1000);
+        dataInterval = setInterval(loadData, 5000);
+        timerInterval = setInterval(updateTimers, 1000);
       }
 
       async function loadData() {
+        if (!currentID) return;
         try {
           const [bRes, tRes] = await Promise.all([
             fetch("/api/books"),
@@ -1792,8 +1806,31 @@
         p.style.display = p.style.display === "block" ? "none" : "block";
       }
       function logout() {
-        localStorage.clear();
-        location.reload();
+        if (dataInterval) {
+          clearInterval(dataInterval);
+          dataInterval = null;
+        }
+        if (timerInterval) {
+          clearInterval(timerInterval);
+          timerInterval = null;
+        }
+
+        currentID = null;
+        currentToken = null;
+        userReservations = {};
+        userActiveLeases = {};
+        pendingReservationRequests = new Set();
+        latestBooksByCode = {};
+        allCollectionOrder = [];
+        categoryCollectionOrder = {};
+
+        localStorage.removeItem("lbas_id");
+        localStorage.removeItem("lbas_token");
+
+        document.getElementById("portalSection").style.display = "none";
+        document.getElementById("loginSection").style.display = "flex";
+        document.getElementById("accountPanel").style.display = "none";
+        document.getElementById("bookContainer").innerHTML = "";
       }
 
       window.onload = () => {
