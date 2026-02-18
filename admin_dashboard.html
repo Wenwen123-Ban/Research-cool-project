@@ -24,48 +24,21 @@
         * {
             box-sizing: border-box;
         }
-
-        html,
-        body {
-            height: 100%;
-            margin: 0;
-            padding: 0;
-        }
-
         body {
             background-image: url("https://www.tangubcity.gov.ph/application/files/1116/1768/0018/NEW_6322.JPG");
         background-size: cover;
         background-position: center;
         background-repeat: no-repeat;
-        background-attachment: fixed;
             font-family: 'Inter', system-ui, sans-serif;
             overflow-x: hidden;
             color: #334155;
-            display: flex;
-            flex-direction: column;
             min-height: 100vh;
         }
-
-        .main-wrapper {
-            min-height: 100vh;
-            display: flex;
-            flex-direction: column;
-        }
-
         .dashboard-layout {
             display: flex;
             flex: 1;
             align-items: stretch;
         }
-
-        .content {
-            flex: 1;
-        }
-
-        footer {
-            margin-top: auto;
-        }
-        
         /* Navigation & Sidebar */
         .sidebar { background: var(--admin-dark); color: white; position: relative; z-index: 100; width: var(--sidebar-w); padding: 25px; transition: 0.3s; display: flex; flex-direction: column; border-right: 1px solid #1e293b; }
 
@@ -84,7 +57,6 @@
             background-size: cover;
             background-position: center;
             background-repeat: no-repeat;
-            background-attachment: fixed;
             overflow: hidden;
         }
 
