@@ -23,8 +23,37 @@
         --text-highlight: #ffd54f;
         --text-muted-contrast: rgba(255, 255, 255, 0.75);
       }
+      * {
+        box-sizing: border-box;
+      }
+
+      html,
       body {
-        background-color: #f1f5f9;
+        height: 100%;
+        margin: 0;
+        padding: 0;
+      }
+
+      .main-wrapper {
+        min-height: 100vh;
+        display: flex;
+        flex-direction: column;
+      }
+
+      .content {
+        flex: 1;
+      }
+
+      footer {
+        margin-top: auto;
+      }
+
+      body {
+        background-image: url("https://www.tangubcity.gov.ph/application/files/1116/1768/0018/NEW_6322.JPG");
+        background-size: cover;
+        background-position: center;
+        background-repeat: no-repeat;
+        background-attachment: fixed;
         font-family: "Inter", sans-serif;
         color: #334155;
         min-height: 100vh;
@@ -209,7 +238,7 @@
       }
     </style>
   </head>
-  <body>
+  <body class="main-wrapper">
     <div class="sidebar-header mb-5 shadow-lg">
       <div class="container d-flex justify-content-between align-items-center">
         <div>
@@ -240,7 +269,7 @@
       </div>
     </div>
 
-    <main class="analytics-main">
+    <main class="analytics-main content">
       <div class="container pb-5">
       <div
         id="systemStateBanner"

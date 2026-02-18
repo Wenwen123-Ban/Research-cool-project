@@ -30,8 +30,37 @@
         --glass-border: rgba(255, 255, 255, 0.3);
       }
 
+      * {
+        box-sizing: border-box;
+      }
+
+      html,
       body {
-        background-color: rgb(40, 152, 167);
+        height: 100%;
+        margin: 0;
+        padding: 0;
+      }
+
+      .main-wrapper {
+        min-height: 100vh;
+        display: flex;
+        flex-direction: column;
+      }
+
+      .content {
+        flex: 1;
+      }
+
+      footer {
+        margin-top: auto;
+      }
+
+      body {
+        background-image: url("https://www.tangubcity.gov.ph/application/files/1116/1768/0018/NEW_6322.JPG");
+        background-size: cover;
+        background-position: center;
+        background-repeat: no-repeat;
+        background-attachment: fixed;
         font-family: "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
         overflow-x: hidden;
         min-height: 100vh;
@@ -595,7 +624,7 @@
 
     </style>
   </head>
-  <body>
+  <body class="main-wrapper">
     <!-- ===== HEADER SECTION ===== -->
     <header class="main-header">
       <div class="header-content">
@@ -610,7 +639,7 @@
       </div>
     </header>
 
-    <div id="loginSection">
+    <div id="loginSection" class="content">
       <div class="auth-container">
         <div class="auth-logo"><i class="fas fa-tablet-screen-button"></i></div>
         <h1 class="text-white fw-bold mb-1">KIOSK TERMINAL</h1>
@@ -647,7 +676,7 @@
       </div>
     </div>
 
-    <div id="marketSection">
+    <div id="marketSection" class="content">
       <div class="kiosk-wrapper">
         <div class="sidebar-panel">
           <div class="user-card profile-panel">
