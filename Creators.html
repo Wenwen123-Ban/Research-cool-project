@@ -14,6 +14,8 @@
         --text-muted-contrast: rgba(255, 255, 255, 0.82);
         --glass-strong: rgba(0, 0, 0, 0.55);
         --glass-border: rgba(255, 255, 255, 0.3);
+        --card-bg-start: rgba(30, 64, 175, 0.9);
+        --card-bg-end: rgba(15, 23, 42, 0.95);
         --accent-gold: #facc15;
       }
 
@@ -44,7 +46,7 @@
         right: 0;
         width: 55%;
         height: 100%;
-        background: linear-gradient(125deg, #6d28d9 0%, #a855f7 48%, #ec4899 100%);
+        background: linear-gradient(125deg, #6d28d9 0%, #8b5cf6 50%, #ec4899 100%);
         clip-path: polygon(30% 0, 100% 0, 100% 100%, 0% 100%);
         z-index: -1;
       }
@@ -101,7 +103,7 @@
         content: "";
         position: absolute;
         inset: 0;
-        background: rgba(0, 0, 0, 0.48);
+        background: rgba(0, 0, 0, 0.5);
         backdrop-filter: blur(2px);
         -webkit-backdrop-filter: blur(2px);
         z-index: 0;
@@ -131,48 +133,60 @@
       .hierarchy-section {
         max-width: 1200px;
         margin: 0 auto;
-        padding: 0 20px 30px;
+        padding: 0 20px 44px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 80px;
+      }
+
+      .hierarchy-group {
+        width: 100%;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 24px;
       }
 
       .group-title {
         color: #f8fafc;
         font-weight: 800;
         letter-spacing: 0.7px;
-        margin: 24px 0 16px;
-        padding-left: 12px;
-        border-left: 4px solid rgba(255, 255, 255, 0.6);
+        margin: 0;
         text-transform: uppercase;
         font-size: 0.95rem;
+        padding: 10px 18px;
+        background: rgba(15, 23, 42, 0.62);
+        border: 1px solid rgba(255, 255, 255, 0.2);
       }
 
-      .cards-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-        gap: 28px;
-        justify-items: center;
-      }
-
-      .cards-grid.leader-grid {
-        grid-template-columns: minmax(260px, 340px);
+      .cards-row {
+        width: 100%;
+        display: flex;
         justify-content: center;
+        gap: 40px;
+        flex-wrap: wrap;
       }
 
       .profile-card {
         position: relative;
-        width: min(100%, 320px);
-        padding: 14px 8px 10px;
-        transition: transform 0.28s ease, filter 0.28s ease;
+        width: min(100%, 300px);
+        min-height: 470px;
+        padding: 20px 18px 16px;
+        cursor: pointer;
+        user-select: none;
+        transition: transform 0.25s ease, filter 0.25s ease;
       }
 
       .profile-card:hover {
-        transform: scale(1.03);
-        filter: drop-shadow(0 0 15px rgba(250, 204, 21, 0.4));
+        transform: translateY(-4px) scale(1.01);
+        filter: drop-shadow(0 0 14px rgba(250, 204, 21, 0.34));
       }
 
       .profile-badge {
         position: absolute;
-        top: -10px;
-        left: 0;
+        top: -14px;
+        left: -8px;
         width: 62px;
         height: 62px;
         border-radius: 50%;
@@ -181,73 +195,102 @@
         background: #fff
           url("https://up.yimg.com/ib/th/id/OIP.3wZU8KYQ9wGoRl3eoloR0QHaHa?pid=Api&rs=1&c=1&qlt=95&w=114&h=114")
           center/70% no-repeat;
-        z-index: 3;
+        z-index: 5;
       }
 
       .profile-frame {
         position: relative;
-        padding: 14px;
-        clip-path: polygon(0 12%, 10% 0, 100% 0, 100% 88%, 90% 100%, 0 100%);
-        background: linear-gradient(140deg, rgba(23, 37, 84, 0.78), rgba(30, 58, 138, 0.75));
+        height: 100%;
+        padding: 16px;
+        clip-path: polygon(0 10%, 8% 0, 100% 0, 100% 90%, 92% 100%, 0 100%);
+        background: linear-gradient(170deg, var(--card-bg-start), var(--card-bg-end));
+        border: 1px solid var(--glass-border);
       }
 
       .profile-frame::before,
       .profile-frame::after {
         content: "";
         position: absolute;
-        inset: -7px;
-        clip-path: polygon(0 12%, 10% 0, 100% 0, 100% 88%, 90% 100%, 0 100%);
+        clip-path: polygon(0 10%, 8% 0, 100% 0, 100% 90%, 92% 100%, 0 100%);
         z-index: -2;
       }
 
       .profile-frame::before {
-        background: linear-gradient(135deg, rgba(250, 204, 21, 0.85), rgba(250, 204, 21, 0.1));
+        inset: -8px;
+        background: linear-gradient(125deg, rgba(250, 204, 21, 0.9), rgba(250, 204, 21, 0.08));
       }
 
       .profile-frame::after {
-        inset: -12px;
+        inset: -13px;
         z-index: -3;
-        background: linear-gradient(155deg, rgba(255, 255, 255, 0.2), rgba(17, 24, 39, 0.65));
+        background: linear-gradient(145deg, rgba(255, 255, 255, 0.25), rgba(15, 23, 42, 0.72));
+      }
+
+      .profile-frame .diamond,
+      .profile-frame .diamond-small {
+        position: absolute;
+        width: 14px;
+        height: 14px;
+        transform: rotate(45deg);
+        background: rgba(250, 204, 21, 0.92);
+        box-shadow: 0 0 10px rgba(250, 204, 21, 0.5);
+      }
+
+      .profile-frame .diamond {
+        top: 14px;
+        right: 30px;
+      }
+
+      .profile-frame .diamond-small {
+        bottom: 20px;
+        left: 22px;
+        width: 10px;
+        height: 10px;
       }
 
       .profile-image {
-        min-height: 290px;
-        clip-path: polygon(0 12%, 8% 0, 100% 0, 100% 88%, 92% 100%, 0 100%);
-        background: linear-gradient(145deg, rgba(15, 23, 42, 0.74), rgba(29, 78, 216, 0.48));
-        border: 1px solid rgba(255, 255, 255, 0.22);
+        height: 230px;
+        margin-bottom: 14px;
+        clip-path: polygon(0 10%, 6% 0, 100% 0, 100% 90%, 94% 100%, 0 100%);
+        border: 1px solid rgba(255, 255, 255, 0.3);
+        background: linear-gradient(145deg, rgba(59, 130, 246, 0.48), rgba(30, 58, 138, 0.78));
+        background-size: cover;
+        background-position: center;
         position: relative;
-        overflow: hidden;
       }
 
       .profile-image::before {
-        content: "";
+        content: "Click to upload image";
         position: absolute;
         inset: 0;
-        background: rgba(255, 255, 255, 0.05);
-        backdrop-filter: blur(5px);
-        -webkit-backdrop-filter: blur(5px);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: rgba(255, 255, 255, 0.84);
+        font-size: 0.82rem;
+        letter-spacing: 0.5px;
+        text-transform: uppercase;
+        background: rgba(15, 23, 42, 0.38);
       }
 
-      .profile-image::after {
+      .profile-card.has-image .profile-image::before {
         content: "";
-        position: absolute;
-        inset: 0;
-        background: radial-gradient(circle at 10% 10%, rgba(255, 255, 255, 0.12), transparent 55%);
+        background: linear-gradient(180deg, rgba(15, 23, 42, 0), rgba(15, 23, 42, 0.08));
       }
 
-      .role-vertical-text {
+      .profile-role-strip {
         position: absolute;
-        top: 24px;
+        top: 32px;
         right: -12px;
-        min-height: 170px;
+        min-height: 180px;
         width: 34px;
         display: flex;
         align-items: center;
         justify-content: center;
         writing-mode: vertical-rl;
         transform: rotate(180deg);
-        font-size: 0.7rem;
-        letter-spacing: 1.8px;
+        font-size: 0.68rem;
+        letter-spacing: 1.6px;
         text-transform: uppercase;
         font-weight: 800;
         color: #0f172a;
@@ -255,47 +298,31 @@
         border: 1px solid rgba(255, 255, 255, 0.8);
       }
 
-      .profile-frame .diamond,
-      .profile-frame .diamond-small {
-        position: absolute;
-        width: 16px;
-        height: 16px;
-        background: rgba(250, 204, 21, 0.92);
-        transform: rotate(45deg);
-        box-shadow: 0 0 12px rgba(250, 204, 21, 0.45);
-      }
-
-      .profile-frame .diamond {
-        top: 16px;
-        right: 30px;
-      }
-
-      .profile-frame .diamond-small {
-        width: 10px;
-        height: 10px;
-        bottom: 22px;
-        left: 24px;
-      }
-
-      .profile-footer-text {
-        margin: 15px auto 2px;
-        min-height: 42px;
-        width: 90%;
-        border: 1px solid rgba(255, 255, 255, 0.38);
-        background: var(--glass-strong);
-        color: #ffffff;
+      .profile-fields {
         display: flex;
-        align-items: center;
-        justify-content: center;
-        letter-spacing: 0.6px;
-        font-weight: 700;
+        flex-direction: column;
+        gap: 8px;
       }
 
-      .profile-subtitle {
-        text-align: center;
-        color: rgba(255, 255, 255, 0.82);
-        margin-top: 7px;
-        font-size: 0.78rem;
+      .profile-input,
+      .profile-textarea {
+        width: 100%;
+        border: 1px solid rgba(255, 255, 255, 0.45);
+        background: var(--glass-strong);
+        color: #fff;
+        border-radius: 6px;
+        padding: 8px 10px;
+        font-size: 0.86rem;
+      }
+
+      .profile-input::placeholder,
+      .profile-textarea::placeholder {
+        color: rgba(255, 255, 255, 0.74);
+      }
+
+      .profile-textarea {
+        min-height: 62px;
+        resize: vertical;
       }
 
       .main-footer {
@@ -351,16 +378,12 @@
           align-items: flex-start;
         }
 
-        .cards-grid {
-          grid-template-columns: 1fr;
-        }
-
-        .cards-grid.leader-grid {
-          grid-template-columns: 1fr;
+        .hierarchy-section {
+          gap: 56px;
         }
 
         .profile-card {
-          width: min(100%, 360px);
+          width: min(100%, 340px);
         }
       }
     </style>
@@ -389,79 +412,103 @@
       </section>
 
       <section class="hierarchy-section">
-        <h3 class="group-title">1. Group Leader</h3>
-        <div class="cards-grid leader-grid">
-          <article class="profile-card">
-            <div class="profile-badge"></div>
-            <div class="profile-frame">
-              <div class="profile-image"></div>
-              <div class="diamond"></div>
-              <div class="diamond-small"></div>
-              <div class="role-vertical-text">Group Leader</div>
-            </div>
-            <div class="profile-footer-text">Name Placeholder</div>
-            <p class="profile-subtitle">Project Coordinator</p>
-          </article>
+        <div class="hierarchy-group">
+          <h3 class="group-title">Group Leader</h3>
+          <div class="cards-row">
+            <article class="profile-card" onclick="triggerUpload(this)">
+              <input type="file" accept="image/*" hidden />
+              <div class="profile-badge"></div>
+              <div class="profile-frame">
+                <div class="profile-image"></div>
+                <div class="diamond"></div>
+                <div class="diamond-small"></div>
+                <div class="profile-role-strip">Group Leader</div>
+                <div class="profile-fields">
+                  <input class="profile-input" type="text" placeholder="Name" />
+                  <input class="profile-input" type="text" placeholder="Role" />
+                  <textarea class="profile-textarea" placeholder="Description"></textarea>
+                </div>
+              </div>
+            </article>
+          </div>
         </div>
 
-        <h3 class="group-title">2. Front-End Developer</h3>
-        <div class="cards-grid">
-          <article class="profile-card">
-            <div class="profile-badge"></div>
-            <div class="profile-frame">
-              <div class="profile-image"></div>
-              <div class="diamond"></div>
-              <div class="diamond-small"></div>
-              <div class="role-vertical-text">Front-End Developer</div>
-            </div>
-            <div class="profile-footer-text">Name Placeholder</div>
-            <p class="profile-subtitle">UI/UX Implementation</p>
-          </article>
+        <div class="hierarchy-group">
+          <h3 class="group-title">Front-End Developers</h3>
+          <div class="cards-row">
+            <article class="profile-card" onclick="triggerUpload(this)">
+              <input type="file" accept="image/*" hidden />
+              <div class="profile-badge"></div>
+              <div class="profile-frame">
+                <div class="profile-image"></div>
+                <div class="diamond"></div>
+                <div class="diamond-small"></div>
+                <div class="profile-role-strip">Front-End Developer</div>
+                <div class="profile-fields">
+                  <input class="profile-input" type="text" placeholder="Name" />
+                  <input class="profile-input" type="text" placeholder="Role" />
+                  <textarea class="profile-textarea" placeholder="Description"></textarea>
+                </div>
+              </div>
+            </article>
+            <article class="profile-card" onclick="triggerUpload(this)">
+              <input type="file" accept="image/*" hidden />
+              <div class="profile-badge"></div>
+              <div class="profile-frame">
+                <div class="profile-image"></div>
+                <div class="diamond"></div>
+                <div class="diamond-small"></div>
+                <div class="profile-role-strip">Front-End Developer</div>
+                <div class="profile-fields">
+                  <input class="profile-input" type="text" placeholder="Name" />
+                  <input class="profile-input" type="text" placeholder="Role" />
+                  <textarea class="profile-textarea" placeholder="Description"></textarea>
+                </div>
+              </div>
+            </article>
+          </div>
         </div>
 
-        <h3 class="group-title">3. Back-End Developer</h3>
-        <div class="cards-grid">
-          <article class="profile-card">
-            <div class="profile-badge"></div>
-            <div class="profile-frame">
-              <div class="profile-image"></div>
-              <div class="diamond"></div>
-              <div class="diamond-small"></div>
-              <div class="role-vertical-text">Back-End Developer</div>
-            </div>
-            <div class="profile-footer-text">Name Placeholder</div>
-            <p class="profile-subtitle">Data and API Development</p>
-          </article>
+        <div class="hierarchy-group">
+          <h3 class="group-title">Back-End Developer</h3>
+          <div class="cards-row">
+            <article class="profile-card" onclick="triggerUpload(this)">
+              <input type="file" accept="image/*" hidden />
+              <div class="profile-badge"></div>
+              <div class="profile-frame">
+                <div class="profile-image"></div>
+                <div class="diamond"></div>
+                <div class="diamond-small"></div>
+                <div class="profile-role-strip">Back-End Developer</div>
+                <div class="profile-fields">
+                  <input class="profile-input" type="text" placeholder="Name" />
+                  <input class="profile-input" type="text" placeholder="Role" />
+                  <textarea class="profile-textarea" placeholder="Description"></textarea>
+                </div>
+              </div>
+            </article>
+          </div>
         </div>
 
-        <h3 class="group-title">4. Research Writer</h3>
-        <div class="cards-grid">
-          <article class="profile-card">
-            <div class="profile-badge"></div>
-            <div class="profile-frame">
-              <div class="profile-image"></div>
-              <div class="diamond"></div>
-              <div class="diamond-small"></div>
-              <div class="role-vertical-text">Research Writer</div>
-            </div>
-            <div class="profile-footer-text">Name Placeholder</div>
-            <p class="profile-subtitle">Documentation and Analysis</p>
-          </article>
-        </div>
-
-        <h3 class="group-title">5. Paper Compiler</h3>
-        <div class="cards-grid">
-          <article class="profile-card">
-            <div class="profile-badge"></div>
-            <div class="profile-frame">
-              <div class="profile-image"></div>
-              <div class="diamond"></div>
-              <div class="diamond-small"></div>
-              <div class="role-vertical-text">Paper Compiler</div>
-            </div>
-            <div class="profile-footer-text">Name Placeholder</div>
-            <p class="profile-subtitle">Final Manuscript Assembly</p>
-          </article>
+        <div class="hierarchy-group">
+          <h3 class="group-title">Research Writer &amp; Paper Compiler</h3>
+          <div class="cards-row">
+            <article class="profile-card" onclick="triggerUpload(this)">
+              <input type="file" accept="image/*" hidden />
+              <div class="profile-badge"></div>
+              <div class="profile-frame">
+                <div class="profile-image"></div>
+                <div class="diamond"></div>
+                <div class="diamond-small"></div>
+                <div class="profile-role-strip">Research Writer &amp; Paper Compiler</div>
+                <div class="profile-fields">
+                  <input class="profile-input" type="text" placeholder="Name" />
+                  <input class="profile-input" type="text" placeholder="Role" />
+                  <textarea class="profile-textarea" placeholder="Description"></textarea>
+                </div>
+              </div>
+            </article>
+          </div>
         </div>
       </section>
     </main>
@@ -476,5 +523,31 @@
         </p>
       </div>
     </footer>
+
+    <script>
+      function triggerUpload(card) {
+        const input = card.querySelector("input[type='file']");
+        input.click();
+
+        input.onchange = function () {
+          if (!input.files || !input.files[0]) {
+            return;
+          }
+
+          const reader = new FileReader();
+          reader.onload = function (e) {
+            card.querySelector(".profile-image").style.backgroundImage = `url(${e.target.result})`;
+            card.classList.add("has-image");
+          };
+          reader.readAsDataURL(input.files[0]);
+        };
+      }
+
+      document.querySelectorAll(".profile-input, .profile-textarea").forEach((field) => {
+        field.addEventListener("click", (event) => {
+          event.stopPropagation();
+        });
+      });
+    </script>
   </body>
 </html>
