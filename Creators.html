@@ -1,0 +1,433 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>LBAS | System Creators</title>
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css"
+    />
+    <style>
+      :root {
+        --text-primary-contrast: #ffffff;
+        --text-highlight: #ffd54f;
+        --text-muted-contrast: rgba(255, 255, 255, 0.82);
+        --glass-strong: rgba(0, 0, 0, 0.55);
+        --glass-border: rgba(255, 255, 255, 0.3);
+      }
+
+      body {
+        margin: 0;
+        min-height: 100vh;
+        font-family: "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+        display: flex;
+        flex-direction: column;
+        overflow-x: hidden;
+        background-color: #f1f5f9;
+      }
+
+      header {
+        position: relative;
+        z-index: 1000;
+      }
+
+      .main-header {
+        background: #111827;
+        color: #fff;
+        padding: 14px 0;
+        position: sticky;
+        top: 0;
+        z-index: 999;
+        box-shadow: 0 4px 18px rgba(0, 0, 0, 0.35);
+      }
+
+      .main-header::before {
+        content: "";
+        position: absolute;
+        top: 0;
+        right: 0;
+        width: 55%;
+        height: 100%;
+        background: linear-gradient(125deg, #6d28d9 0%, #a855f7 48%, #ec4899 100%);
+        clip-path: polygon(30% 0, 100% 0, 100% 100%, 0% 100%);
+        z-index: -1;
+      }
+
+      .header-content {
+        max-width: 1200px;
+        margin: 0 auto;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 0 20px;
+      }
+
+      .logo-section {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+      }
+
+      .school-logo {
+        width: 44px;
+        height: 44px;
+        border-radius: 50%;
+        background: #fff;
+        object-fit: cover;
+      }
+
+      .logo-section h1 {
+        margin: 0;
+        font-size: 1.2rem;
+        font-weight: 800;
+      }
+
+      .logo-section small {
+        display: block;
+        color: rgba(255, 255, 255, 0.82);
+        font-size: 0.74rem;
+        letter-spacing: 0.6px;
+      }
+
+      .main-content {
+        position: relative;
+        isolation: isolate;
+        background-image: url("https://www.tangubcity.gov.ph/application/files/1116/1768/0018/NEW_6322.JPG");
+        background-size: cover;
+        background-position: center;
+        background-repeat: no-repeat;
+        background-attachment: fixed;
+        overflow: hidden;
+        flex: 1;
+      }
+
+      .main-content::before {
+        content: "";
+        position: absolute;
+        inset: 0;
+        background: rgba(0, 0, 0, 0.48);
+        backdrop-filter: blur(2px);
+        -webkit-backdrop-filter: blur(2px);
+        z-index: 0;
+        pointer-events: none;
+      }
+
+      .main-content > * {
+        position: relative;
+        z-index: 1;
+      }
+
+      .page-head {
+        text-align: center;
+        padding: 34px 16px 12px;
+      }
+
+      .page-head h2 {
+        color: var(--text-primary-contrast);
+        font-weight: 800;
+        margin-bottom: 8px;
+      }
+
+      .page-head p {
+        color: var(--text-muted-contrast);
+        margin: 0;
+      }
+
+      .hierarchy-section {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 0 20px 30px;
+      }
+
+      .group-title {
+        color: #f8fafc;
+        font-weight: 800;
+        letter-spacing: 0.7px;
+        margin: 24px 0 16px;
+        padding-left: 12px;
+        border-left: 4px solid rgba(255, 255, 255, 0.6);
+        text-transform: uppercase;
+        font-size: 0.95rem;
+      }
+
+      .cards-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+        gap: 22px;
+        justify-content: center;
+      }
+
+      .cards-grid.leader-grid {
+        grid-template-columns: minmax(260px, 340px);
+        justify-content: center;
+      }
+
+      .creator-card {
+        position: relative;
+        background: var(--glass-strong);
+        backdrop-filter: blur(12px);
+        -webkit-backdrop-filter: blur(12px);
+        border: 1px solid var(--glass-border);
+        border-radius: 22px;
+        padding: 22px 18px 18px;
+        text-align: center;
+        color: #fff;
+        box-shadow: 0 12px 30px rgba(0, 0, 0, 0.28);
+      }
+
+      .creator-card.leader {
+        transform: scale(1.03);
+      }
+
+      .creator-card.gold {
+        border-left: 5px solid #fbbf24;
+      }
+
+      .creator-card.blue {
+        border-left: 5px solid #3b82f6;
+      }
+
+      .creator-card.green {
+        border-left: 5px solid #22c55e;
+      }
+
+      .creator-card.purple {
+        border-left: 5px solid #a855f7;
+      }
+
+      .creator-card.gray {
+        border-left: 5px solid #9ca3af;
+      }
+
+      .logo-badge {
+        position: absolute;
+        top: -14px;
+        left: -10px;
+        width: 54px;
+        height: 54px;
+        border-radius: 50%;
+        background: #000;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        box-shadow: 0 6px 16px rgba(0, 0, 0, 0.35);
+        border: 2px solid rgba(255, 255, 255, 0.9);
+      }
+
+      .logo-badge img {
+        width: 30px;
+        height: 30px;
+        object-fit: cover;
+        border-radius: 50%;
+        background: #fff;
+      }
+
+      .profile-photo {
+        width: 108px;
+        height: 108px;
+        border-radius: 50%;
+        object-fit: cover;
+        border: 3px solid rgba(255, 255, 255, 0.68);
+        margin: 8px auto 14px;
+        display: block;
+      }
+
+      .creator-name {
+        margin: 0;
+        font-size: 1.05rem;
+        font-weight: 800;
+      }
+
+      .creator-role {
+        color: var(--text-highlight);
+        font-size: 0.77rem;
+        letter-spacing: 1px;
+        font-weight: 700;
+        margin: 5px 0 7px;
+      }
+
+      .creator-desc {
+        margin: 0;
+        color: var(--text-muted-contrast);
+        font-size: 0.86rem;
+      }
+
+      .main-footer {
+        margin-top: auto;
+        padding: 18px 12px;
+        text-align: center;
+        background: #0f172a;
+        color: #cbd5e1;
+        border-top: 1px solid #1e293b;
+        position: relative;
+        overflow: hidden;
+      }
+
+      .main-footer::before {
+        content: "";
+        position: absolute;
+        top: 0;
+        right: 0;
+        width: 50%;
+        height: 100%;
+        background: linear-gradient(120deg, rgba(15, 23, 42, 0.7), rgba(56, 189, 248, 0.2));
+        clip-path: polygon(40% 0, 100% 0, 100% 100%, 0% 100%);
+      }
+
+      .footer-content {
+        position: relative;
+        z-index: 1;
+      }
+
+      .footer-content p {
+        margin: 3px 0;
+        font-size: 13px;
+      }
+
+      .footer-purpose-link {
+        color: #60a5fa;
+        font-weight: 700;
+        text-decoration: none;
+      }
+
+      .footer-purpose-link:hover {
+        text-decoration: underline;
+      }
+
+      @media (max-width: 768px) {
+        .main-header::before {
+          width: 72%;
+        }
+
+        .header-content {
+          flex-direction: column;
+          gap: 8px;
+          align-items: flex-start;
+        }
+
+        .cards-grid.leader-grid {
+          grid-template-columns: 1fr;
+        }
+
+        .creator-card.leader {
+          transform: none;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <header class="main-header">
+      <div class="header-content">
+        <div class="logo-section">
+          <img
+            src="https://up.yimg.com/ib/th/id/OIP.3wZU8KYQ9wGoRl3eoloR0QHaHa?pid=Api&rs=1&c=1&qlt=95&w=114&h=114"
+            alt="School Logo"
+            class="school-logo"
+          />
+          <div>
+            <h1>Library Borrowing and Assistance System</h1>
+            <small>CREATORS HIERARCHY DIRECTORY</small>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <main class="main-content">
+      <section class="page-head">
+        <h2>The Makers of the Library Borrowing and Assistance System</h2>
+        <p>Structured contributor hierarchy for the LBAS development and research team.</p>
+      </section>
+
+      <section class="hierarchy-section">
+        <h3 class="group-title">1. Group Leader</h3>
+        <div class="cards-grid leader-grid">
+          <article class="creator-card leader gold">
+            <span class="logo-badge"
+              ><img
+                src="https://up.yimg.com/ib/th/id/OIP.3wZU8KYQ9wGoRl3eoloR0QHaHa?pid=Api&rs=1&c=1&qlt=95&w=114&h=114"
+                alt="School Badge"
+            /></span>
+            <img src="/Profile/default.png" alt="Group Leader" class="profile-photo" />
+            <p class="creator-name">Placeholder Name</p>
+            <p class="creator-role">PRESIDENT / GROUP LEADER</p>
+            <p class="creator-desc">Leads project coordination, architecture direction, and delivery planning.</p>
+          </article>
+        </div>
+
+        <h3 class="group-title">2. Frontend Developer(s)</h3>
+        <div class="cards-grid">
+          <article class="creator-card blue">
+            <span class="logo-badge"><img src="https://up.yimg.com/ib/th/id/OIP.3wZU8KYQ9wGoRl3eoloR0QHaHa?pid=Api&rs=1&c=1&qlt=95&w=114&h=114" alt="School Badge" /></span>
+            <img src="/Profile/default.png" alt="Frontend Developer" class="profile-photo" />
+            <p class="creator-name">Placeholder Name</p>
+            <p class="creator-role">FRONTEND DEVELOPER</p>
+            <p class="creator-desc">Builds responsive interfaces and modern user experiences for LBAS.</p>
+          </article>
+          <article class="creator-card blue">
+            <span class="logo-badge"><img src="https://up.yimg.com/ib/th/id/OIP.3wZU8KYQ9wGoRl3eoloR0QHaHa?pid=Api&rs=1&c=1&qlt=95&w=114&h=114" alt="School Badge" /></span>
+            <img src="/Profile/default.png" alt="Frontend Developer" class="profile-photo" />
+            <p class="creator-name">Placeholder Name</p>
+            <p class="creator-role">FRONTEND DEVELOPER</p>
+            <p class="creator-desc">Implements UI polish, accessibility, and interaction consistency.</p>
+          </article>
+        </div>
+
+        <h3 class="group-title">3. Backend Developer(s)</h3>
+        <div class="cards-grid">
+          <article class="creator-card green">
+            <span class="logo-badge"><img src="https://up.yimg.com/ib/th/id/OIP.3wZU8KYQ9wGoRl3eoloR0QHaHa?pid=Api&rs=1&c=1&qlt=95&w=114&h=114" alt="School Badge" /></span>
+            <img src="/Profile/default.png" alt="Backend Developer" class="profile-photo" />
+            <p class="creator-name">Placeholder Name</p>
+            <p class="creator-role">BACKEND DEVELOPER</p>
+            <p class="creator-desc">Designs APIs, database logic, and system security workflows.</p>
+          </article>
+          <article class="creator-card green">
+            <span class="logo-badge"><img src="https://up.yimg.com/ib/th/id/OIP.3wZU8KYQ9wGoRl3eoloR0QHaHa?pid=Api&rs=1&c=1&qlt=95&w=114&h=114" alt="School Badge" /></span>
+            <img src="/Profile/default.png" alt="Backend Developer" class="profile-photo" />
+            <p class="creator-name">Placeholder Name</p>
+            <p class="creator-role">BACKEND DEVELOPER</p>
+            <p class="creator-desc">Maintains data integrity, transactions, and endpoint performance.</p>
+          </article>
+        </div>
+
+        <h3 class="group-title">4. Research Writer</h3>
+        <div class="cards-grid">
+          <article class="creator-card purple">
+            <span class="logo-badge"><img src="https://up.yimg.com/ib/th/id/OIP.3wZU8KYQ9wGoRl3eoloR0QHaHa?pid=Api&rs=1&c=1&qlt=95&w=114&h=114" alt="School Badge" /></span>
+            <img src="/Profile/default.png" alt="Research Writer" class="profile-photo" />
+            <p class="creator-name">Placeholder Name</p>
+            <p class="creator-role">RESEARCH WRITER</p>
+            <p class="creator-desc">Develops methodology, analysis narrative, and documentation quality.</p>
+          </article>
+        </div>
+
+        <h3 class="group-title">5. Paper Compiler</h3>
+        <div class="cards-grid">
+          <article class="creator-card gray">
+            <span class="logo-badge"><img src="https://up.yimg.com/ib/th/id/OIP.3wZU8KYQ9wGoRl3eoloR0QHaHa?pid=Api&rs=1&c=1&qlt=95&w=114&h=114" alt="School Badge" /></span>
+            <img src="/Profile/default.png" alt="Paper Compiler" class="profile-photo" />
+            <p class="creator-name">Placeholder Name</p>
+            <p class="creator-role">PAPER COMPILER</p>
+            <p class="creator-desc">Consolidates all chapters, formatting standards, and final publishables.</p>
+          </article>
+        </div>
+      </section>
+    </main>
+
+    <footer class="main-footer">
+      <div class="footer-content">
+        <p>© 2025 Library Borrowing and Assistance System</p>
+        <p>The Makers of the System</p>
+        <p>
+          Purpose:
+          <a class="footer-purpose-link" href="Creators.html">Creators Page</a>
+        </p>
+      </div>
+    </footer>
+  </body>
+</html>
