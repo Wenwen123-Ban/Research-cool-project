@@ -8,17 +8,13 @@
       href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css"
       rel="stylesheet"
     />
-    <link
-      rel="stylesheet"
-      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css"
-    />
     <style>
       :root {
         --text-primary-contrast: #ffffff;
-        --text-highlight: #ffd54f;
         --text-muted-contrast: rgba(255, 255, 255, 0.82);
         --glass-strong: rgba(0, 0, 0, 0.55);
         --glass-border: rgba(255, 255, 255, 0.3);
+        --accent-gold: #facc15;
       }
 
       body {
@@ -29,11 +25,6 @@
         flex-direction: column;
         overflow-x: hidden;
         background-color: #f1f5f9;
-      }
-
-      header {
-        position: relative;
-        z-index: 1000;
       }
 
       .main-header {
@@ -114,7 +105,6 @@
         backdrop-filter: blur(2px);
         -webkit-backdrop-filter: blur(2px);
         z-index: 0;
-        pointer-events: none;
       }
 
       .main-content > * {
@@ -157,9 +147,9 @@
 
       .cards-grid {
         display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
-        gap: 22px;
-        justify-content: center;
+        grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+        gap: 28px;
+        justify-items: center;
       }
 
       .cards-grid.leader-grid {
@@ -167,94 +157,145 @@
         justify-content: center;
       }
 
-      .creator-card {
+      .profile-card {
         position: relative;
-        background: var(--glass-strong);
-        backdrop-filter: blur(12px);
-        -webkit-backdrop-filter: blur(12px);
-        border: 1px solid var(--glass-border);
-        border-radius: 22px;
-        padding: 22px 18px 18px;
-        text-align: center;
-        color: #fff;
-        box-shadow: 0 12px 30px rgba(0, 0, 0, 0.28);
+        width: min(100%, 320px);
+        padding: 14px 8px 10px;
+        transition: transform 0.28s ease, filter 0.28s ease;
       }
 
-      .creator-card.leader {
+      .profile-card:hover {
         transform: scale(1.03);
+        filter: drop-shadow(0 0 15px rgba(250, 204, 21, 0.4));
       }
 
-      .creator-card.gold {
-        border-left: 5px solid #fbbf24;
-      }
-
-      .creator-card.blue {
-        border-left: 5px solid #3b82f6;
-      }
-
-      .creator-card.green {
-        border-left: 5px solid #22c55e;
-      }
-
-      .creator-card.purple {
-        border-left: 5px solid #a855f7;
-      }
-
-      .creator-card.gray {
-        border-left: 5px solid #9ca3af;
-      }
-
-      .logo-badge {
+      .profile-badge {
         position: absolute;
-        top: -14px;
-        left: -10px;
-        width: 54px;
-        height: 54px;
+        top: -10px;
+        left: 0;
+        width: 62px;
+        height: 62px;
         border-radius: 50%;
-        background: #000;
+        border: 3px solid #ffffff;
+        box-shadow: 0 0 14px rgba(255, 255, 255, 0.4), 0 8px 18px rgba(0, 0, 0, 0.45);
+        background: #fff
+          url("https://up.yimg.com/ib/th/id/OIP.3wZU8KYQ9wGoRl3eoloR0QHaHa?pid=Api&rs=1&c=1&qlt=95&w=114&h=114")
+          center/70% no-repeat;
+        z-index: 3;
+      }
+
+      .profile-frame {
+        position: relative;
+        padding: 14px;
+        clip-path: polygon(0 12%, 10% 0, 100% 0, 100% 88%, 90% 100%, 0 100%);
+        background: linear-gradient(140deg, rgba(23, 37, 84, 0.78), rgba(30, 58, 138, 0.75));
+      }
+
+      .profile-frame::before,
+      .profile-frame::after {
+        content: "";
+        position: absolute;
+        inset: -7px;
+        clip-path: polygon(0 12%, 10% 0, 100% 0, 100% 88%, 90% 100%, 0 100%);
+        z-index: -2;
+      }
+
+      .profile-frame::before {
+        background: linear-gradient(135deg, rgba(250, 204, 21, 0.85), rgba(250, 204, 21, 0.1));
+      }
+
+      .profile-frame::after {
+        inset: -12px;
+        z-index: -3;
+        background: linear-gradient(155deg, rgba(255, 255, 255, 0.2), rgba(17, 24, 39, 0.65));
+      }
+
+      .profile-image {
+        min-height: 290px;
+        clip-path: polygon(0 12%, 8% 0, 100% 0, 100% 88%, 92% 100%, 0 100%);
+        background: linear-gradient(145deg, rgba(15, 23, 42, 0.74), rgba(29, 78, 216, 0.48));
+        border: 1px solid rgba(255, 255, 255, 0.22);
+        position: relative;
+        overflow: hidden;
+      }
+
+      .profile-image::before {
+        content: "";
+        position: absolute;
+        inset: 0;
+        background: rgba(255, 255, 255, 0.05);
+        backdrop-filter: blur(5px);
+        -webkit-backdrop-filter: blur(5px);
+      }
+
+      .profile-image::after {
+        content: "";
+        position: absolute;
+        inset: 0;
+        background: radial-gradient(circle at 10% 10%, rgba(255, 255, 255, 0.12), transparent 55%);
+      }
+
+      .role-vertical-text {
+        position: absolute;
+        top: 24px;
+        right: -12px;
+        min-height: 170px;
+        width: 34px;
         display: flex;
         align-items: center;
         justify-content: center;
-        box-shadow: 0 6px 16px rgba(0, 0, 0, 0.35);
-        border: 2px solid rgba(255, 255, 255, 0.9);
-      }
-
-      .logo-badge img {
-        width: 30px;
-        height: 30px;
-        object-fit: cover;
-        border-radius: 50%;
-        background: #fff;
-      }
-
-      .profile-photo {
-        width: 108px;
-        height: 108px;
-        border-radius: 50%;
-        object-fit: cover;
-        border: 3px solid rgba(255, 255, 255, 0.68);
-        margin: 8px auto 14px;
-        display: block;
-      }
-
-      .creator-name {
-        margin: 0;
-        font-size: 1.05rem;
+        writing-mode: vertical-rl;
+        transform: rotate(180deg);
+        font-size: 0.7rem;
+        letter-spacing: 1.8px;
+        text-transform: uppercase;
         font-weight: 800;
+        color: #0f172a;
+        background: linear-gradient(180deg, #f8fafc, #e2e8f0);
+        border: 1px solid rgba(255, 255, 255, 0.8);
       }
 
-      .creator-role {
-        color: var(--text-highlight);
-        font-size: 0.77rem;
-        letter-spacing: 1px;
+      .profile-frame .diamond,
+      .profile-frame .diamond-small {
+        position: absolute;
+        width: 16px;
+        height: 16px;
+        background: rgba(250, 204, 21, 0.92);
+        transform: rotate(45deg);
+        box-shadow: 0 0 12px rgba(250, 204, 21, 0.45);
+      }
+
+      .profile-frame .diamond {
+        top: 16px;
+        right: 30px;
+      }
+
+      .profile-frame .diamond-small {
+        width: 10px;
+        height: 10px;
+        bottom: 22px;
+        left: 24px;
+      }
+
+      .profile-footer-text {
+        margin: 15px auto 2px;
+        min-height: 42px;
+        width: 90%;
+        border: 1px solid rgba(255, 255, 255, 0.38);
+        background: var(--glass-strong);
+        color: #ffffff;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        letter-spacing: 0.6px;
         font-weight: 700;
-        margin: 5px 0 7px;
       }
 
-      .creator-desc {
-        margin: 0;
-        color: var(--text-muted-contrast);
-        font-size: 0.86rem;
+      .profile-subtitle {
+        text-align: center;
+        color: rgba(255, 255, 255, 0.82);
+        margin-top: 7px;
+        font-size: 0.78rem;
       }
 
       .main-footer {
@@ -310,12 +351,16 @@
           align-items: flex-start;
         }
 
+        .cards-grid {
+          grid-template-columns: 1fr;
+        }
+
         .cards-grid.leader-grid {
           grid-template-columns: 1fr;
         }
 
-        .creator-card.leader {
-          transform: none;
+        .profile-card {
+          width: min(100%, 360px);
         }
       }
     </style>
@@ -346,74 +391,76 @@
       <section class="hierarchy-section">
         <h3 class="group-title">1. Group Leader</h3>
         <div class="cards-grid leader-grid">
-          <article class="creator-card leader gold">
-            <span class="logo-badge"
-              ><img
-                src="https://up.yimg.com/ib/th/id/OIP.3wZU8KYQ9wGoRl3eoloR0QHaHa?pid=Api&rs=1&c=1&qlt=95&w=114&h=114"
-                alt="School Badge"
-            /></span>
-            <img src="/Profile/default.png" alt="Group Leader" class="profile-photo" />
-            <p class="creator-name">Placeholder Name</p>
-            <p class="creator-role">PRESIDENT / GROUP LEADER</p>
-            <p class="creator-desc">Leads project coordination, architecture direction, and delivery planning.</p>
+          <article class="profile-card">
+            <div class="profile-badge"></div>
+            <div class="profile-frame">
+              <div class="profile-image"></div>
+              <div class="diamond"></div>
+              <div class="diamond-small"></div>
+              <div class="role-vertical-text">Group Leader</div>
+            </div>
+            <div class="profile-footer-text">Name Placeholder</div>
+            <p class="profile-subtitle">Project Coordinator</p>
           </article>
         </div>
 
-        <h3 class="group-title">2. Frontend Developer(s)</h3>
+        <h3 class="group-title">2. Front-End Developer</h3>
         <div class="cards-grid">
-          <article class="creator-card blue">
-            <span class="logo-badge"><img src="https://up.yimg.com/ib/th/id/OIP.3wZU8KYQ9wGoRl3eoloR0QHaHa?pid=Api&rs=1&c=1&qlt=95&w=114&h=114" alt="School Badge" /></span>
-            <img src="/Profile/default.png" alt="Frontend Developer" class="profile-photo" />
-            <p class="creator-name">Placeholder Name</p>
-            <p class="creator-role">FRONTEND DEVELOPER</p>
-            <p class="creator-desc">Builds responsive interfaces and modern user experiences for LBAS.</p>
-          </article>
-          <article class="creator-card blue">
-            <span class="logo-badge"><img src="https://up.yimg.com/ib/th/id/OIP.3wZU8KYQ9wGoRl3eoloR0QHaHa?pid=Api&rs=1&c=1&qlt=95&w=114&h=114" alt="School Badge" /></span>
-            <img src="/Profile/default.png" alt="Frontend Developer" class="profile-photo" />
-            <p class="creator-name">Placeholder Name</p>
-            <p class="creator-role">FRONTEND DEVELOPER</p>
-            <p class="creator-desc">Implements UI polish, accessibility, and interaction consistency.</p>
+          <article class="profile-card">
+            <div class="profile-badge"></div>
+            <div class="profile-frame">
+              <div class="profile-image"></div>
+              <div class="diamond"></div>
+              <div class="diamond-small"></div>
+              <div class="role-vertical-text">Front-End Developer</div>
+            </div>
+            <div class="profile-footer-text">Name Placeholder</div>
+            <p class="profile-subtitle">UI/UX Implementation</p>
           </article>
         </div>
 
-        <h3 class="group-title">3. Backend Developer(s)</h3>
+        <h3 class="group-title">3. Back-End Developer</h3>
         <div class="cards-grid">
-          <article class="creator-card green">
-            <span class="logo-badge"><img src="https://up.yimg.com/ib/th/id/OIP.3wZU8KYQ9wGoRl3eoloR0QHaHa?pid=Api&rs=1&c=1&qlt=95&w=114&h=114" alt="School Badge" /></span>
-            <img src="/Profile/default.png" alt="Backend Developer" class="profile-photo" />
-            <p class="creator-name">Placeholder Name</p>
-            <p class="creator-role">BACKEND DEVELOPER</p>
-            <p class="creator-desc">Designs APIs, database logic, and system security workflows.</p>
-          </article>
-          <article class="creator-card green">
-            <span class="logo-badge"><img src="https://up.yimg.com/ib/th/id/OIP.3wZU8KYQ9wGoRl3eoloR0QHaHa?pid=Api&rs=1&c=1&qlt=95&w=114&h=114" alt="School Badge" /></span>
-            <img src="/Profile/default.png" alt="Backend Developer" class="profile-photo" />
-            <p class="creator-name">Placeholder Name</p>
-            <p class="creator-role">BACKEND DEVELOPER</p>
-            <p class="creator-desc">Maintains data integrity, transactions, and endpoint performance.</p>
+          <article class="profile-card">
+            <div class="profile-badge"></div>
+            <div class="profile-frame">
+              <div class="profile-image"></div>
+              <div class="diamond"></div>
+              <div class="diamond-small"></div>
+              <div class="role-vertical-text">Back-End Developer</div>
+            </div>
+            <div class="profile-footer-text">Name Placeholder</div>
+            <p class="profile-subtitle">Data and API Development</p>
           </article>
         </div>
 
         <h3 class="group-title">4. Research Writer</h3>
         <div class="cards-grid">
-          <article class="creator-card purple">
-            <span class="logo-badge"><img src="https://up.yimg.com/ib/th/id/OIP.3wZU8KYQ9wGoRl3eoloR0QHaHa?pid=Api&rs=1&c=1&qlt=95&w=114&h=114" alt="School Badge" /></span>
-            <img src="/Profile/default.png" alt="Research Writer" class="profile-photo" />
-            <p class="creator-name">Placeholder Name</p>
-            <p class="creator-role">RESEARCH WRITER</p>
-            <p class="creator-desc">Develops methodology, analysis narrative, and documentation quality.</p>
+          <article class="profile-card">
+            <div class="profile-badge"></div>
+            <div class="profile-frame">
+              <div class="profile-image"></div>
+              <div class="diamond"></div>
+              <div class="diamond-small"></div>
+              <div class="role-vertical-text">Research Writer</div>
+            </div>
+            <div class="profile-footer-text">Name Placeholder</div>
+            <p class="profile-subtitle">Documentation and Analysis</p>
           </article>
         </div>
 
         <h3 class="group-title">5. Paper Compiler</h3>
         <div class="cards-grid">
-          <article class="creator-card gray">
-            <span class="logo-badge"><img src="https://up.yimg.com/ib/th/id/OIP.3wZU8KYQ9wGoRl3eoloR0QHaHa?pid=Api&rs=1&c=1&qlt=95&w=114&h=114" alt="School Badge" /></span>
-            <img src="/Profile/default.png" alt="Paper Compiler" class="profile-photo" />
-            <p class="creator-name">Placeholder Name</p>
-            <p class="creator-role">PAPER COMPILER</p>
-            <p class="creator-desc">Consolidates all chapters, formatting standards, and final publishables.</p>
+          <article class="profile-card">
+            <div class="profile-badge"></div>
+            <div class="profile-frame">
+              <div class="profile-image"></div>
+              <div class="diamond"></div>
+              <div class="diamond-small"></div>
+              <div class="role-vertical-text">Paper Compiler</div>
+            </div>
+            <div class="profile-footer-text">Name Placeholder</div>
+            <p class="profile-subtitle">Final Manuscript Assembly</p>
           </article>
         </div>
       </section>
