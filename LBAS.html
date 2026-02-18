@@ -269,8 +269,8 @@
       #accountPanel,
       .account-dropdown {
         display: none;
-        position: absolute;
-        top: calc(100% + 10px);
+        position: fixed;
+        top: 86px;
         right: 20px;
         width: min(420px, calc(100% - 40px));
         background: var(--glass-strong);
@@ -1839,7 +1839,10 @@
         );
         fetchCategories();
         const savedID = localStorage.getItem("lbas_id");
+        const savedToken = localStorage.getItem("lbas_token");
         if (savedID) {
+          currentID = savedID;
+          currentToken = savedToken;
           fetch("/api/user/" + savedID)
             .then((r) => r.json())
             .then((d) => {
