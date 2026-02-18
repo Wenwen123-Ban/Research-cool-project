@@ -19,14 +19,40 @@
         --accent-gold: #facc15;
       }
 
+      * {
+        box-sizing: border-box;
+      }
+
+      html,
       body {
+        height: 100%;
         margin: 0;
+        padding: 0;
+      }
+
+      .main-wrapper {
         min-height: 100vh;
-        font-family: "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
         display: flex;
         flex-direction: column;
+      }
+
+      .content {
+        flex: 1;
+      }
+
+      footer {
+        margin-top: auto;
+      }
+
+      body {
+        min-height: 100vh;
+        font-family: "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
         overflow-x: hidden;
-        background-color: #f1f5f9;
+        background-image: url("https://www.tangubcity.gov.ph/application/files/1116/1768/0018/NEW_6322.JPG");
+        background-size: cover;
+        background-position: center;
+        background-repeat: no-repeat;
+        background-attachment: fixed;
       }
 
       .main-header {
@@ -130,10 +156,10 @@
         margin: 0;
       }
 
-      .hierarchy-section {
+      .creators-container {
         max-width: 1200px;
         margin: 0 auto;
-        padding: 0 20px 44px;
+        padding: 40px 20px;
         display: flex;
         flex-direction: column;
         align-items: center;
@@ -168,10 +194,17 @@
         flex-wrap: wrap;
       }
 
+      .frontend-section {
+        display: flex;
+        justify-content: center;
+        gap: 40px;
+        flex-wrap: wrap;
+      }
+
       .profile-card {
         position: relative;
         width: min(100%, 300px);
-        min-height: 470px;
+        height: 470px;
         padding: 20px 18px 16px;
         cursor: pointer;
         user-select: none;
@@ -278,7 +311,8 @@
         background: linear-gradient(180deg, rgba(15, 23, 42, 0), rgba(15, 23, 42, 0.08));
       }
 
-      .profile-role-strip {
+      .profile-role-strip,
+      .vertical-role-label {
         position: absolute;
         top: 32px;
         right: -12px;
@@ -367,6 +401,13 @@
         text-decoration: underline;
       }
 
+      @media (max-width: 1024px) {
+        .profile-card {
+          width: 280px;
+          height: 420px;
+        }
+      }
+
       @media (max-width: 768px) {
         .main-header::before {
           width: 72%;
@@ -378,17 +419,28 @@
           align-items: flex-start;
         }
 
-        .hierarchy-section {
+        .creators-container {
           gap: 56px;
         }
 
+        .frontend-section {
+          flex-direction: column;
+          align-items: center;
+        }
+
         .profile-card {
-          width: min(100%, 340px);
+          width: 90%;
+          max-width: 320px;
+          height: 420px;
+        }
+
+        .vertical-role-label {
+          font-size: 12px;
         }
       }
     </style>
   </head>
-  <body>
+  <body class="main-wrapper">
     <header class="main-header">
       <div class="header-content">
         <div class="logo-section">
@@ -405,13 +457,13 @@
       </div>
     </header>
 
-    <main class="main-content">
+    <main class="main-content content">
       <section class="page-head">
         <h2>The Makers of the Library Borrowing and Assistance System</h2>
         <p>Structured contributor hierarchy for the LBAS development and research team.</p>
       </section>
 
-      <section class="hierarchy-section">
+      <section class="hierarchy-section creators-container">
         <div class="hierarchy-group">
           <h3 class="group-title">Group Leader</h3>
           <div class="cards-row">
@@ -422,7 +474,7 @@
                 <div class="profile-image"></div>
                 <div class="diamond"></div>
                 <div class="diamond-small"></div>
-                <div class="profile-role-strip">Group Leader</div>
+                <div class="profile-role-strip vertical-role-label">Group Leader</div>
                 <div class="profile-fields">
                   <input class="profile-input" type="text" placeholder="Name" />
                   <input class="profile-input" type="text" placeholder="Role" />
@@ -435,7 +487,7 @@
 
         <div class="hierarchy-group">
           <h3 class="group-title">Front-End Developers</h3>
-          <div class="cards-row">
+          <div class="cards-row frontend-section">
             <article class="profile-card" onclick="triggerUpload(this)">
               <input type="file" accept="image/*" hidden />
               <div class="profile-badge"></div>
@@ -443,7 +495,7 @@
                 <div class="profile-image"></div>
                 <div class="diamond"></div>
                 <div class="diamond-small"></div>
-                <div class="profile-role-strip">Front-End Developer</div>
+                <div class="profile-role-strip vertical-role-label">Front-End Developer</div>
                 <div class="profile-fields">
                   <input class="profile-input" type="text" placeholder="Name" />
                   <input class="profile-input" type="text" placeholder="Role" />
@@ -458,7 +510,7 @@
                 <div class="profile-image"></div>
                 <div class="diamond"></div>
                 <div class="diamond-small"></div>
-                <div class="profile-role-strip">Front-End Developer</div>
+                <div class="profile-role-strip vertical-role-label">Front-End Developer</div>
                 <div class="profile-fields">
                   <input class="profile-input" type="text" placeholder="Name" />
                   <input class="profile-input" type="text" placeholder="Role" />
@@ -479,7 +531,7 @@
                 <div class="profile-image"></div>
                 <div class="diamond"></div>
                 <div class="diamond-small"></div>
-                <div class="profile-role-strip">Back-End Developer</div>
+                <div class="profile-role-strip vertical-role-label">Back-End Developer</div>
                 <div class="profile-fields">
                   <input class="profile-input" type="text" placeholder="Name" />
                   <input class="profile-input" type="text" placeholder="Role" />
@@ -500,7 +552,7 @@
                 <div class="profile-image"></div>
                 <div class="diamond"></div>
                 <div class="diamond-small"></div>
-                <div class="profile-role-strip">Research Writer &amp; Paper Compiler</div>
+                <div class="profile-role-strip vertical-role-label">Research Writer &amp; Paper Compiler</div>
                 <div class="profile-fields">
                   <input class="profile-input" type="text" placeholder="Name" />
                   <input class="profile-input" type="text" placeholder="Role" />

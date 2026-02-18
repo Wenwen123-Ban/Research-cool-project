@@ -28,8 +28,37 @@
         --glass-strong: rgba(0, 0, 0, 0.65);
         --glass-border: rgba(255, 255, 255, 0.3);
       }
+      * {
+        box-sizing: border-box;
+      }
+
+      html,
       body {
-        background-color: #f1f5f9;
+        height: 100%;
+        margin: 0;
+        padding: 0;
+      }
+
+      .main-wrapper {
+        min-height: 100vh;
+        display: flex;
+        flex-direction: column;
+      }
+
+      .content {
+        flex: 1;
+      }
+
+      footer {
+        margin-top: auto;
+      }
+
+      body {
+        background-image: url("https://www.tangubcity.gov.ph/application/files/1116/1768/0018/NEW_6322.JPG");
+        background-size: cover;
+        background-position: center;
+        background-repeat: no-repeat;
+        background-attachment: fixed;
         font-family: "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
         overflow-x: hidden;
         min-height: 100vh;
@@ -637,7 +666,7 @@
 
     </style>
   </head>
-  <body>
+  <body class="main-wrapper">
     <!-- ===== HEADER SECTION ===== -->
     <header class="main-header">
       <div class="header-content">
@@ -784,7 +813,7 @@
       </div>
     </div>
 
-    <div id="loginSection">
+    <div id="loginSection" class="content">
       <div class="login-card">
         <div class="mb-4">
           <div
@@ -849,7 +878,7 @@
       </div>
     </div>
 
-    <div id="portalSection" style="display: none">
+    <div id="portalSection" class="content" style="display: none">
       <nav class="mobile-nav shadow-sm">
         <div>
           <span
