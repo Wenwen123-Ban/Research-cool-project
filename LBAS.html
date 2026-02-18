@@ -32,9 +32,11 @@
         box-sizing: border-box;
       }
       body {
-        background-image: url("https://www.tangubcity.gov.ph/application/files/1116/1768/0018/NEW_6322.JPG");
+        margin: 0;
+        padding: 0;
+        background: url("https://www.tangubcity.gov.ph/application/files/1116/1768/0018/NEW_6322.JPG") no-repeat center center;
         background-size: cover;
-        background-position: center;
+        background-attachment: scroll;
         background-repeat: no-repeat;
         font-family: "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
         overflow-x: hidden;
@@ -50,10 +52,7 @@
       #portalSection {
         position: relative;
         isolation: isolate;
-        background-image: url("https://www.tangubcity.gov.ph/application/files/1116/1768/0018/NEW_6322.JPG");
-        background-size: cover;
-        background-position: center;
-        background-repeat: no-repeat;
+        background: transparent;
         overflow: hidden;
       }
 
@@ -63,8 +62,6 @@
         position: absolute;
         inset: 0;
         background: rgba(0, 0, 0, 0.45);
-        backdrop-filter: blur(2px);
-        -webkit-backdrop-filter: blur(2px);
         pointer-events: none;
         z-index: 0;
       }
@@ -86,8 +83,8 @@
 
       .lbas-definition {
         background: var(--glass-strong);
-        backdrop-filter: blur(15px);
-        -webkit-backdrop-filter: blur(15px);
+        backdrop-filter: blur(4px);
+        -webkit-backdrop-filter: blur(4px);
         padding: 10px;
         border-radius: 10px;
         margin-bottom: 20px;
@@ -151,8 +148,8 @@
       }
       .login-card {
         background: var(--glass-strong);
-        backdrop-filter: blur(15px);
-        -webkit-backdrop-filter: blur(15px);
+        backdrop-filter: blur(4px);
+        -webkit-backdrop-filter: blur(4px);
         padding: 30px;
         border-radius: 24px;
         border: 1px solid var(--glass-border);
@@ -200,8 +197,8 @@
 
       .mobile-nav {
         background: var(--glass-strong);
-        backdrop-filter: blur(15px);
-        -webkit-backdrop-filter: blur(15px);
+        backdrop-filter: blur(4px);
+        -webkit-backdrop-filter: blur(4px);
         padding: 15px 20px;
         border: 1px solid var(--glass-border);
         position: sticky;
@@ -214,8 +211,8 @@
       .book-item,
       .book-card {
         background: var(--glass-strong);
-        backdrop-filter: blur(15px);
-        -webkit-backdrop-filter: blur(15px);
+        backdrop-filter: blur(4px);
+        -webkit-backdrop-filter: blur(4px);
         border-radius: 18px;
         padding: 18px;
         margin-bottom: 15px;
@@ -275,8 +272,8 @@
         right: 20px;
         width: min(420px, calc(100% - 40px));
         background: var(--glass-strong);
-        backdrop-filter: blur(15px);
-        -webkit-backdrop-filter: blur(15px);
+        backdrop-filter: blur(4px);
+        -webkit-backdrop-filter: blur(4px);
         border: 1px solid var(--glass-border);
         border-radius: 14px;
         padding: 25px;
@@ -315,12 +312,12 @@
         align-items: center;
         justify-content: center;
         padding: 20px;
-        backdrop-filter: blur(5px);
+        backdrop-filter: blur(4px);
       }
       .custom-modal {
         background: var(--glass-strong);
-        backdrop-filter: blur(15px);
-        -webkit-backdrop-filter: blur(15px);
+        backdrop-filter: blur(4px);
+        -webkit-backdrop-filter: blur(4px);
         width: 100%;
         max-width: 400px;
         border-radius: 25px;
@@ -343,8 +340,8 @@
       #portalSection .card,
       #portalSection .modal-content {
         background: var(--glass-strong);
-        backdrop-filter: blur(15px);
-        -webkit-backdrop-filter: blur(15px);
+        backdrop-filter: blur(4px);
+        -webkit-backdrop-filter: blur(4px);
         border-radius: 12px;
         border: 1px solid var(--glass-border);
       }
@@ -626,6 +623,21 @@
           padding: 14px;
           margin-bottom: 0;
         }
+
+        .book-item,
+        .book-card,
+        .login-card,
+        .mobile-nav,
+        .custom-modal,
+        .account-dropdown,
+        #portalSection .container,
+        #portalSection .card,
+        #portalSection .modal-content,
+        .lbas-definition {
+          backdrop-filter: none;
+          -webkit-backdrop-filter: none;
+          background: rgba(0, 0, 0, 0.6);
+        }
       }
 
       @media (max-width: 576px) {
@@ -900,7 +912,7 @@
         </div>
         <hr />
         <p class="fw-bold small mb-2 text-uppercase text-muted" id="activeLeaseLabel">
-          <i class="fas fa-history me-1"></i> Active Leases (0/5)
+          <i class="fas fa-history me-1"></i> Active Leases (<span id="reservationCount">0</span>/5)
         </p>
         <div id="activeHistory" class="mb-3"></div>
         <button
@@ -1020,6 +1032,8 @@
       const userActiveLeases = {};
       const pendingReservationRequests = new Set();
       let latestBooksByCode = {};
+      let allCollectionOrder = [];
+      let categoryCollectionOrder = {};
 
       function shuffleBooks(books) {
         const shuffled = [...books];
@@ -1178,6 +1192,14 @@
         const active = cleanupExpiredLeasesForUser(key)
           .slice()
           .sort((a, b) => new Date(a.expiry) - new Date(b.expiry));
+        const reservationCount = active.filter(
+          (lease) => getNormalizedStatus(lease) === "reserved",
+        ).length;
+
+        const reservationCountNode = document.getElementById("reservationCount");
+        if (reservationCountNode) {
+          reservationCountNode.textContent = String(reservationCount);
+        }
 
         const activeLeaseLabel = document.getElementById("activeLeaseLabel");
         if (activeLeaseLabel) {
@@ -1206,7 +1228,7 @@
         updateTimers();
       }
 
-      async function fetchUserActiveReservations() {
+      async function loadReservations() {
         if (!currentID) return;
         try {
           const tRes = await fetch("/api/transactions");
@@ -1215,8 +1237,12 @@
           syncUserActiveLeases(trans, currentID);
           renderActiveLeases();
         } catch (e) {
-          console.error("Unable to fetch active leases.");
+          console.error("Unable to refresh reservations.");
         }
+      }
+
+      async function fetchUserActiveReservations() {
+        await loadReservations();
       }
 
       async function handleLogin() {
@@ -1487,8 +1513,7 @@
         fetchUserActiveReservations();
         loadData();
         checkRatingStatus();
-        setInterval(loadData, 5000);
-        setInterval(fetchCategories, 12000);
+        setInterval(loadReservations, 30000);
         setInterval(updateTimers, 1000);
       }
 
@@ -1522,11 +1547,32 @@
             return matchesSearch && matchesCategory;
           });
 
+          if (allCollectionOrder.length === 0) {
+            allCollectionOrder = getRandomizedAllCollection(books, ALL_COLLECTION_LIMIT).map(
+              (book) => book.book_no,
+            );
+          }
+
+          const categoryKey = selectedCategory;
+          if (
+            !isSearching &&
+            selectedCategory !== "All" &&
+            !categoryCollectionOrder[categoryKey]
+          ) {
+            categoryCollectionOrder[categoryKey] = shuffleBooks(filtered)
+              .slice(0, CATEGORY_LIMIT)
+              .map((book) => book.book_no);
+          }
+
           const displayBooks = isSearching
             ? filtered
             : selectedCategory === "All"
-              ? getRandomizedAllCollection(filtered, ALL_COLLECTION_LIMIT)
-              : shuffleBooks(filtered).slice(0, CATEGORY_LIMIT);
+              ? allCollectionOrder
+                  .map((bookNo) => latestBooksByCode[bookNo])
+                  .filter((book) => book && filtered.some((f) => f.book_no === book.book_no))
+              : (categoryCollectionOrder[categoryKey] || [])
+                  .map((bookNo) => latestBooksByCode[bookNo])
+                  .filter(Boolean);
 
           document.getElementById("bookContainer").innerHTML =
             displayBooks
@@ -1611,6 +1657,7 @@
             "Reservation Confirmed",
             "Please proceed to the librarian desk to claim your book.",
           );
+          await loadReservations();
           loadData();
         } catch (e) {
           showStatusPopup(
@@ -1652,6 +1699,7 @@
             (lease) => lease.book_no !== bookNo,
           );
           renderActiveLeases();
+          await loadReservations();
           loadData();
         } catch (e) {
           alert("Unable to release reservation right now.");
