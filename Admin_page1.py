@@ -259,6 +259,11 @@ def dev_analysis():
     return render_template("Developers_rate_analysis.html")
 
 
+@app.route("/creators")
+def creators_page():
+    return render_template("Creators.html")
+
+
 @app.route("/api/bulk_register", methods=["POST"])
 def bulk_register():
     """
