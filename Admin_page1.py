@@ -55,7 +55,7 @@ ACTIVE_SESSIONS = {}
 def ensure_creators_profile_db():
     if not os.path.exists(CREATORS_PROFILE_DB):
         with open(CREATORS_PROFILE_DB, "w", encoding="utf-8") as f:
-            json.dump([], f, indent=4, ensure_ascii=False)
+            json.dump({}, f, indent=4, ensure_ascii=False)
 
 
 def load_creators_profiles():
@@ -63,15 +63,29 @@ def load_creators_profiles():
     try:
         with open(CREATORS_PROFILE_DB, "r", encoding="utf-8") as f:
             data = json.load(f)
-            return data if isinstance(data, list) else []
+            if isinstance(data, dict):
+                return data
+            if isinstance(data, list):
+                normalized = {}
+                for idx, entry in enumerate(data):
+                    if isinstance(entry, dict):
+                        slot_key = str(entry.get("slot") or f"legacy_{idx}")
+                        normalized[slot_key] = entry
+                return normalized
+            return {}
     except Exception:
-        return []
+        return {}
 
 
 def save_creators_profiles(data):
     ensure_creators_profile_db()
     with open(CREATORS_PROFILE_DB, "w", encoding="utf-8") as f:
-        json.dump(data, f, indent=4, ensure_ascii=False)
+        json.dump(data if isinstance(data, dict) else {}, f, indent=4, ensure_ascii=False)
+
+
+def sanitize_creator_name(value):
+    base = secure_filename(str(value or "").strip())
+    return base[:80] or "creator"
 
 
 def initialize_system():
@@ -291,30 +305,44 @@ def creators_page():
 @app.route("/api/creators/upload", methods=["POST"])
 def api_creators_upload():
     payload = request.get_json(silent=True) or {}
+    slot = str(request.form.get("slot") or payload.get("slot") or "").strip()
     role = str(request.form.get("role") or payload.get("role") or "").strip()
     name = str(request.form.get("name") or payload.get("name") or "").strip()
+    description = str(
+        request.form.get("description") or payload.get("description") or ""
+    ).strip()
 
-    if not role or not name:
-        return jsonify({"success": False, "message": "role and name are required"}), 400
+    if not slot or not role or not name:
+        return (
+            jsonify({"success": False, "message": "slot, role and name are required"}),
+            400,
+        )
 
     photo_file = request.files.get("photo")
-    photo_filename = ""
+    profiles = load_creators_profiles()
+    existing = profiles.get(slot, {})
+    photo_filename = existing.get("photo", "")
+
     if photo_file and photo_file.filename:
         ext = os.path.splitext(secure_filename(photo_file.filename))[1].lower() or ".png"
-        photo_filename = f"creator_{uuid.uuid4().hex}{ext}"
+        photo_filename = f"{sanitize_creator_name(name)}_{int(datetime.now().timestamp() * 1000)}{ext}"
         photo_file.save(os.path.join(app.config["UPLOAD_FOLDER"], photo_filename))
-
-    profiles = load_creators_profiles()
-    profiles.append(
-        {
-            "role": role,
-            "name": name,
-            "photo": photo_filename,
-        }
-    )
+    profiles[slot] = {
+        "slot": slot,
+        "role": role,
+        "name": name,
+        "description": description,
+        "photo": photo_filename,
+        "updated_at": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+    }
     save_creators_profiles(profiles)
 
-    return jsonify({"success": True, "profile": profiles[-1], "total": len(profiles)})
+    return jsonify({"success": True, "profile": profiles[slot], "total": len(profiles)})
+
+
+@app.route("/api/creators/profiles")
+def api_creators_profiles():
+    return jsonify({"success": True, "profiles": load_creators_profiles()})
 
 
 @app.route("/api/bulk_register", methods=["POST"])

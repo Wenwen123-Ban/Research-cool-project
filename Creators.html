@@ -443,7 +443,7 @@
         <div class="hierarchy-group">
           <h3 class="group-title">Group Leader</h3>
           <div class="cards-row">
-            <article class="profile-card" onclick="triggerUpload(this)">
+            <article class="profile-card" data-slot="group-leader">
               <input type="file" accept="image/*" hidden />
               <div class="profile-badge"></div>
               <div class="profile-frame">
@@ -464,7 +464,7 @@
         <div class="hierarchy-group">
           <h3 class="group-title">Front-End Developers</h3>
           <div class="cards-row frontend-section">
-            <article class="profile-card" onclick="triggerUpload(this)">
+            <article class="profile-card" data-slot="frontend-1">
               <input type="file" accept="image/*" hidden />
               <div class="profile-badge"></div>
               <div class="profile-frame">
@@ -479,7 +479,7 @@
                 </div>
               </div>
             </article>
-            <article class="profile-card" onclick="triggerUpload(this)">
+            <article class="profile-card" data-slot="frontend-2">
               <input type="file" accept="image/*" hidden />
               <div class="profile-badge"></div>
               <div class="profile-frame">
@@ -500,7 +500,7 @@
         <div class="hierarchy-group">
           <h3 class="group-title">Back-End Developer</h3>
           <div class="cards-row">
-            <article class="profile-card" onclick="triggerUpload(this)">
+            <article class="profile-card" data-slot="backend-1">
               <input type="file" accept="image/*" hidden />
               <div class="profile-badge"></div>
               <div class="profile-frame">
@@ -521,7 +521,7 @@
         <div class="hierarchy-group">
           <h3 class="group-title">Research Writer &amp; Paper Compiler</h3>
           <div class="cards-row">
-            <article class="profile-card" onclick="triggerUpload(this)">
+            <article class="profile-card" data-slot="research-1">
               <input type="file" accept="image/*" hidden />
               <div class="profile-badge"></div>
               <div class="profile-frame">
@@ -553,29 +553,88 @@
     </footer>
 
     <script>
-      function triggerUpload(card) {
-        const input = card.querySelector("input[type='file']");
-        input.click();
+      const cards = Array.from(document.querySelectorAll(".profile-card"));
 
-        input.onchange = function () {
-          if (!input.files || !input.files[0]) {
-            return;
-          }
-
-          const reader = new FileReader();
-          reader.onload = function (e) {
-            card.querySelector(".profile-image").style.backgroundImage = `url(${e.target.result})`;
-            card.classList.add("has-image");
-          };
-          reader.readAsDataURL(input.files[0]);
+      function getCardPayload(card) {
+        const fields = card.querySelectorAll(".profile-input, .profile-textarea");
+        return {
+          slot: card.dataset.slot,
+          name: fields[0].value.trim(),
+          role: fields[1].value.trim() || card.querySelector(".vertical-role-label").textContent.trim(),
+          description: fields[2].value.trim(),
         };
       }
 
-      document.querySelectorAll(".profile-input, .profile-textarea").forEach((field) => {
-        field.addEventListener("click", (event) => {
-          event.stopPropagation();
+      function applyCardProfile(card, profile) {
+        const fields = card.querySelectorAll(".profile-input, .profile-textarea");
+        fields[0].value = profile?.name || "";
+        fields[1].value = profile?.role || card.querySelector(".vertical-role-label").textContent.trim();
+        fields[2].value = profile?.description || "";
+
+        if (profile?.photo) {
+          card.querySelector(".profile-image").style.backgroundImage = `url(Profile/${profile.photo})`;
+          card.classList.add("has-image");
+        }
+      }
+
+      async function saveCard(card, photoFile = null) {
+        const payload = getCardPayload(card);
+        if (!payload.name || !payload.role || !payload.slot) {
+          return;
+        }
+
+        const form = new FormData();
+        Object.entries(payload).forEach(([key, value]) => form.append(key, value));
+        if (photoFile) {
+          form.append("photo", photoFile);
+        }
+
+        const response = await fetch("/api/creators/upload", {
+          method: "POST",
+          body: form,
+        });
+
+        if (!response.ok) {
+          console.error("Unable to save creator profile");
+          return;
+        }
+
+        const result = await response.json();
+        if (result?.success && result.profile?.photo) {
+          card.querySelector(".profile-image").style.backgroundImage = `url(Profile/${result.profile.photo})`;
+          card.classList.add("has-image");
+        }
+      }
+
+      async function loadProfiles() {
+        const response = await fetch("/api/creators/profiles");
+        if (!response.ok) {
+          return;
+        }
+
+        const data = await response.json();
+        const profiles = data?.profiles || {};
+        cards.forEach((card) => applyCardProfile(card, profiles[card.dataset.slot]));
+      }
+
+      cards.forEach((card) => {
+        const imageArea = card.querySelector(".profile-image");
+        const input = card.querySelector("input[type='file']");
+        const fields = card.querySelectorAll(".profile-input, .profile-textarea");
+
+        imageArea.addEventListener("click", () => input.click());
+        input.addEventListener("change", () => {
+          if (input.files && input.files[0]) {
+            saveCard(card, input.files[0]);
+          }
+        });
+
+        fields.forEach((field) => {
+          field.addEventListener("blur", () => saveCard(card));
         });
       });
+
+      loadProfiles();
     </script>
   </body>
 </html>
