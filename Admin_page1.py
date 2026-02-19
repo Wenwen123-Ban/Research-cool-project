@@ -50,6 +50,35 @@ DB_FILES = {
 }
 
 ACTIVE_SESSIONS = {}
+SESSION_TIMEOUT_HOURS = 2
+
+
+def require_auth():
+    token = request.headers.get("Authorization")
+    if not token:
+        return None
+
+    to_delete = []
+    for user_id, session in list(ACTIVE_SESSIONS.items()):
+        if isinstance(session, dict) and session.get("token") == token:
+            if datetime.now() < session.get("expires", datetime.min):
+                return user_id
+            to_delete.append(user_id)
+
+    for uid in to_delete:
+        del ACTIVE_SESSIONS[uid]
+
+    return None
+
+
+def is_session_valid(user_id, token):
+    session = ACTIVE_SESSIONS.get(str(user_id).strip().lower())
+    if not isinstance(session, dict) or session.get("token") != token:
+        return False
+    if datetime.now() >= session.get("expires", datetime.min):
+        del ACTIVE_SESSIONS[str(user_id).strip().lower()]
+        return False
+    return True
 
 
 def ensure_creators_profile_db():
@@ -599,14 +628,29 @@ def api_login():
 
     if user.get("password") == pwd:
         token = str(uuid.uuid4())
-        ACTIVE_SESSIONS[s_id] = token
+        ACTIVE_SESSIONS[s_id] = {
+            "token": token,
+            "expires": datetime.now() + timedelta(hours=SESSION_TIMEOUT_HOURS),
+        }
         return jsonify({"success": True, "token": token, "profile": user})
 
     return jsonify({"success": False, "message": "Invalid Password"}), 401
 
 
+@app.route("/api/logout", methods=["POST"])
+def api_logout():
+    token = request.headers.get("Authorization")
+    for user_id, session in list(ACTIVE_SESSIONS.items()):
+        if isinstance(session, dict) and session.get("token") == token:
+            del ACTIVE_SESSIONS[user_id]
+            return jsonify({"success": True})
+    return jsonify({"success": False}), 401
+
+
 @app.route("/api/books")
 def api_get_books():
+    if not require_auth():
+        return jsonify({"success": False, "message": "Unauthorized"}), 401
     return jsonify(run_auto_sync_engine())
 
 
@@ -695,16 +739,22 @@ def api_delete_category_cascade():
 
 @app.route("/api/users")
 def api_get_users():
+    if not require_auth():
+        return jsonify({"success": False, "message": "Unauthorized"}), 401
     return jsonify(get_db("users"))
 
 
 @app.route("/api/admins")
 def api_get_admins():
+    if not require_auth():
+        return jsonify({"success": False, "message": "Unauthorized"}), 401
     return jsonify(get_db("admins"))
 
 
 @app.route("/api/transactions")
 def api_get_transactions():
+    if not require_auth():
+        return jsonify({"success": False, "message": "Unauthorized"}), 401
     return jsonify(get_db("transactions"))
 
 
@@ -719,6 +769,8 @@ def api_get_specific_user(s_id):
 
 @app.route("/api/update_book", methods=["POST"])
 def api_update_book():
+    if not require_auth():
+        return jsonify({"success": False, "message": "Unauthorized"}), 401
     data = request.json
     books = get_db("books")
     for b in books:
@@ -734,6 +786,8 @@ def api_update_book():
 
 @app.route("/api/delete_book", methods=["POST"])
 def api_del_book():
+    if not require_auth():
+        return jsonify({"success": False, "message": "Unauthorized"}), 401
     data = request.json
     books = [b for b in get_db("books") if b["book_no"] != data["book_no"]]
     save_db("books", books)
@@ -743,6 +797,8 @@ def api_del_book():
 
 @app.route("/api/update_member", methods=["POST"])
 def api_update_member():
+    if not require_auth():
+        return jsonify({"success": False, "message": "Unauthorized"}), 401
     data = request.json
     school_id = str(data.get("school_id", "")).strip().lower()
     name = str(data.get("name", "")).strip()
@@ -763,6 +819,8 @@ def api_update_member():
 
 @app.route("/api/delete_member", methods=["POST"])
 def api_delete_member():
+    if not require_auth():
+        return jsonify({"success": False, "message": "Unauthorized"}), 401
     data = request.json
     school_id = str(data.get("school_id", "")).strip().lower()
     target_type = str(data.get("type", "student")).strip().lower()
@@ -808,6 +866,8 @@ def api_process_trans():
     MASTER TRANSACTION HANDLER
     Restored: Now handles 'borrow' logic for Kiosk/Tablet.
     """
+    if not require_auth():
+        return jsonify({"success": False, "message": "Unauthorized"}), 401
     data = request.json
     b_no = data.get("book_no")
     action = data.get("action")  # 'borrow' or 'return'
@@ -869,6 +929,8 @@ def api_process_trans():
 
 @app.route("/api/reserve", methods=["POST"])
 def api_reserve():
+    if not require_auth():
+        return jsonify({"success": False, "message": "Unauthorized"}), 401
     data = request.json
     b_no = data.get("book_no")
     s_id = str(data.get("school_id", "")).strip().lower()
@@ -1000,7 +1062,7 @@ def api_submit_rating():
     data = request.json
     s_id = str(data.get("school_id", "")).strip().lower()
 
-    if ACTIVE_SESSIONS.get(s_id) != data.get("token"):
+    if not is_session_valid(s_id, data.get("token")):
         return jsonify({"success": False, "message": "Security Handshake Failed"}), 401
 
     ratings = get_db("ratings")
@@ -1204,7 +1266,7 @@ def _is_staff_session_valid():
     token = str(
         request.headers.get("X-Session-Token", request.args.get("token", ""))
     ).strip()
-    if not staff_id or ACTIVE_SESSIONS.get(staff_id) != token:
+    if not staff_id or not is_session_valid(staff_id, token):
         return False
     user = find_any_user(staff_id)
     return bool(user and user.get("is_staff"))
