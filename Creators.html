@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>LBAS | System Creators</title>
+    <title>LBAS | Creators Slideshow v8.0</title>
     <link
       href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css"
       rel="stylesheet"
@@ -12,24 +12,17 @@
       :root {
         --text-primary-contrast: #ffffff;
         --text-muted-contrast: rgba(255, 255, 255, 0.82);
-        --glass-strong: rgba(0, 0, 0, 0.55);
-        --glass-border: rgba(255, 255, 255, 0.3);
-        --card-bg-start: rgba(30, 64, 175, 0.9);
-        --card-bg-end: rgba(15, 23, 42, 0.95);
-        --accent-gold: #facc15;
+        --glass-strong: rgba(0, 0, 0, 0.62);
+        --glass-border: rgba(255, 255, 255, 0.26);
       }
 
-      * {
-        box-sizing: border-box;
-      }
+      * { box-sizing: border-box; }
+
       body {
-        min-height: 100vh;
+        margin: 0;
         font-family: "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
         overflow-x: hidden;
-        background-image: url("https://www.tangubcity.gov.ph/application/files/1116/1768/0018/NEW_6322.JPG");
-        background-size: cover;
-        background-position: center;
-        background-repeat: no-repeat;
+        background: url("https://www.tangubcity.gov.ph/application/files/1116/1768/0018/NEW_6322.JPG") center center / cover no-repeat;
       }
 
       .main-header {
@@ -38,7 +31,7 @@
         padding: 14px 0;
         position: sticky;
         top: 0;
-        z-index: 999;
+        z-index: 2000;
         box-shadow: 0 4px 18px rgba(0, 0, 0, 0.35);
       }
 
@@ -49,7 +42,7 @@
         right: 0;
         width: 55%;
         height: 100%;
-        background: linear-gradient(125deg, #6d28d9 0%, #8b5cf6 50%, #ec4899 100%);
+        background: linear-gradient(125deg, #6d28d9 0%, #8b5cf6 52%, #ec4899 100%);
         clip-path: polygon(30% 0, 100% 0, 100% 100%, 0% 100%);
         z-index: -1;
       }
@@ -63,280 +56,123 @@
         padding: 0 20px;
       }
 
-      .logo-section {
-        display: flex;
-        align-items: center;
-        gap: 12px;
-      }
+      .logo-section { display: flex; align-items: center; gap: 12px; }
+      .school-logo { width: 44px; height: 44px; border-radius: 50%; background: #fff; object-fit: cover; }
 
-      .school-logo {
-        width: 44px;
-        height: 44px;
-        border-radius: 50%;
-        background: #fff;
-        object-fit: cover;
-      }
-
-      .logo-section h1 {
-        margin: 0;
-        font-size: 1.2rem;
-        font-weight: 800;
-      }
-
-      .logo-section small {
-        display: block;
-        color: rgba(255, 255, 255, 0.82);
-        font-size: 0.74rem;
-        letter-spacing: 0.6px;
-      }
+      .logo-section h1 { margin: 0; font-size: 1.15rem; font-weight: 800; }
+      .logo-section small { color: rgba(255,255,255,0.82); font-size: 0.74rem; letter-spacing: 0.6px; }
 
       .main-content {
         position: relative;
         isolation: isolate;
-        background-image: url("https://www.tangubcity.gov.ph/application/files/1116/1768/0018/NEW_6322.JPG");
-        background-size: cover;
-        background-position: center;
-        background-repeat: no-repeat;
         overflow: hidden;
-        flex: 1;
+        padding: 34px 16px 54px;
       }
 
       .main-content::before {
         content: "";
         position: absolute;
         inset: 0;
-        background: rgba(0, 0, 0, 0.5);
+        background: rgba(0, 0, 0, 0.42);
+        pointer-events: none;
+      }
+
+      .main-content > * { position: relative; z-index: 1; }
+
+      .page-head { text-align: center; margin-bottom: 26px; }
+      .page-head h2 { color: #fff; font-weight: 800; margin-bottom: 8px; }
+      .page-head p { color: var(--text-muted-contrast); margin: 0; }
+
+      .slideshow-shell {
+        width: min(860px, 100%);
+        margin: 0 auto;
+        background: var(--glass-strong);
+        border: 1px solid var(--glass-border);
+        border-radius: 22px;
+        padding: 28px 22px;
         backdrop-filter: blur(2px);
         -webkit-backdrop-filter: blur(2px);
-        z-index: 0;
       }
 
-      .main-content > * {
-        position: relative;
-        z-index: 1;
-      }
-
-      .page-head {
+      .slide-track { position: relative; min-height: 420px; }
+      .creator-slide {
+        display: none;
+        animation: fadeIn 0.35s ease;
         text-align: center;
-        padding: 34px 16px 12px;
       }
+      .creator-slide.active { display: block; }
 
-      .page-head h2 {
-        color: var(--text-primary-contrast);
-        font-weight: 800;
-        margin-bottom: 8px;
-      }
-
-      .page-head p {
-        color: var(--text-muted-contrast);
-        margin: 0;
-      }
-
-      .creators-container {
-        max-width: 1200px;
-        margin: 0 auto;
-        padding: 40px 20px;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        gap: 80px;
-      }
-
-      .hierarchy-group {
-        width: 100%;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        gap: 24px;
-      }
-
-      .group-title {
-        color: #f8fafc;
-        font-weight: 800;
-        letter-spacing: 0.7px;
-        margin: 0;
-        text-transform: uppercase;
-        font-size: 0.95rem;
-        padding: 10px 18px;
-        background: rgba(15, 23, 42, 0.62);
-        border: 1px solid rgba(255, 255, 255, 0.2);
-      }
-
-      .cards-row {
-        width: 100%;
-        display: flex;
-        justify-content: center;
-        gap: 40px;
-        flex-wrap: wrap;
-      }
-
-      .frontend-section {
-        display: flex;
-        justify-content: center;
-        gap: 40px;
-        flex-wrap: wrap;
-      }
-
-      .profile-card {
-        position: relative;
-        width: min(100%, 300px);
-        height: 470px;
-        padding: 20px 18px 16px;
-        cursor: pointer;
-        user-select: none;
-        transition: transform 0.25s ease, filter 0.25s ease;
-      }
-
-      .profile-card:hover {
-        transform: translateY(-4px) scale(1.01);
-        filter: drop-shadow(0 0 14px rgba(250, 204, 21, 0.34));
-      }
-
-      .profile-badge {
-        position: absolute;
-        top: -14px;
-        left: -8px;
-        width: 62px;
-        height: 62px;
+      .creator-photo {
+        width: 150px;
+        height: 150px;
         border-radius: 50%;
-        border: 3px solid #ffffff;
-        box-shadow: 0 0 14px rgba(255, 255, 255, 0.4), 0 8px 18px rgba(0, 0, 0, 0.45);
-        background: #fff
-          url("https://up.yimg.com/ib/th/id/OIP.3wZU8KYQ9wGoRl3eoloR0QHaHa?pid=Api&rs=1&c=1&qlt=95&w=114&h=114")
-          center/70% no-repeat;
-        z-index: 5;
-      }
-
-      .profile-frame {
-        position: relative;
-        height: 100%;
-        padding: 16px;
-        clip-path: polygon(0 10%, 8% 0, 100% 0, 100% 90%, 92% 100%, 0 100%);
-        background: linear-gradient(170deg, var(--card-bg-start), var(--card-bg-end));
-        border: 1px solid var(--glass-border);
-      }
-
-      .profile-frame::before,
-      .profile-frame::after {
-        content: "";
-        position: absolute;
-        clip-path: polygon(0 10%, 8% 0, 100% 0, 100% 90%, 92% 100%, 0 100%);
-        z-index: -2;
-      }
-
-      .profile-frame::before {
-        inset: -8px;
-        background: linear-gradient(125deg, rgba(250, 204, 21, 0.9), rgba(250, 204, 21, 0.08));
-      }
-
-      .profile-frame::after {
-        inset: -13px;
-        z-index: -3;
-        background: linear-gradient(145deg, rgba(255, 255, 255, 0.25), rgba(15, 23, 42, 0.72));
-      }
-
-      .profile-frame .diamond,
-      .profile-frame .diamond-small {
-        position: absolute;
-        width: 14px;
-        height: 14px;
-        transform: rotate(45deg);
-        background: rgba(250, 204, 21, 0.92);
-        box-shadow: 0 0 10px rgba(250, 204, 21, 0.5);
-      }
-
-      .profile-frame .diamond {
-        top: 14px;
-        right: 30px;
-      }
-
-      .profile-frame .diamond-small {
-        bottom: 20px;
-        left: 22px;
-        width: 10px;
-        height: 10px;
-      }
-
-      .profile-image {
-        height: 230px;
-        margin-bottom: 14px;
-        clip-path: polygon(0 10%, 6% 0, 100% 0, 100% 90%, 94% 100%, 0 100%);
-        border: 1px solid rgba(255, 255, 255, 0.3);
-        background: linear-gradient(145deg, rgba(59, 130, 246, 0.48), rgba(30, 58, 138, 0.78));
+        margin: 0 auto 18px;
+        border: 4px solid #f8fafc;
+        background: linear-gradient(145deg, rgba(129, 140, 248, 0.5), rgba(124, 58, 237, 0.6));
         background-size: cover;
         background-position: center;
         position: relative;
+        overflow: hidden;
+        cursor: pointer;
       }
 
-      .profile-image::before {
-        content: "Click to upload image";
+      .creator-photo::after {
+        content: "Tap to upload";
         position: absolute;
-        inset: 0;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        color: rgba(255, 255, 255, 0.84);
-        font-size: 0.82rem;
-        letter-spacing: 0.5px;
-        text-transform: uppercase;
-        background: rgba(15, 23, 42, 0.38);
-      }
-
-      .profile-card.has-image .profile-image::before {
-        content: "";
-        background: linear-gradient(180deg, rgba(15, 23, 42, 0), rgba(15, 23, 42, 0.08));
-      }
-
-      .profile-role-strip,
-      .vertical-role-label {
-        position: absolute;
-        top: 32px;
-        right: -12px;
-        min-height: 180px;
-        width: 34px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        writing-mode: vertical-rl;
-        transform: rotate(180deg);
+        inset: auto 0 0 0;
+        padding: 7px;
         font-size: 0.68rem;
-        letter-spacing: 1.6px;
-        text-transform: uppercase;
-        font-weight: 800;
-        color: #0f172a;
-        background: linear-gradient(180deg, #f8fafc, #e2e8f0);
-        border: 1px solid rgba(255, 255, 255, 0.8);
+        color: #f8fafc;
+        background: rgba(15, 23, 42, 0.68);
       }
 
-      .profile-fields {
-        display: flex;
-        flex-direction: column;
-        gap: 8px;
-      }
-
-      .profile-input,
-      .profile-textarea {
-        width: 100%;
-        border: 1px solid rgba(255, 255, 255, 0.45);
-        background: var(--glass-strong);
+      .creator-name,
+      .creator-role,
+      .creator-desc {
+        width: min(540px, 100%);
+        margin: 0 auto 11px;
+        border: 1px solid rgba(255,255,255,0.32);
+        background: rgba(0, 0, 0, 0.46);
         color: #fff;
-        border-radius: 6px;
-        padding: 8px 10px;
-        font-size: 0.86rem;
+        border-radius: 10px;
+        padding: 10px 12px;
       }
 
-      .profile-input::placeholder,
-      .profile-textarea::placeholder {
-        color: rgba(255, 255, 255, 0.74);
+      .creator-name::placeholder,
+      .creator-role::placeholder,
+      .creator-desc::placeholder { color: rgba(255,255,255,0.76); }
+
+      .creator-desc { min-height: 110px; resize: vertical; }
+
+      .slide-controls {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        gap: 14px;
+        margin-top: 12px;
       }
 
-      .profile-textarea {
-        min-height: 62px;
-        resize: vertical;
+      .slide-arrow {
+        width: 44px;
+        height: 44px;
+        border: 1px solid rgba(255,255,255,0.42);
+        border-radius: 50%;
+        background: rgba(0,0,0,0.58);
+        color: #ffd54f;
+        font-size: 1.2rem;
       }
+
+      .dots { display: flex; gap: 8px; align-items: center; }
+      .dot {
+        width: 11px;
+        height: 11px;
+        border-radius: 50%;
+        border: none;
+        background: rgba(255,255,255,0.32);
+      }
+      .dot.active { background: #ffd54f; transform: scale(1.1); }
 
       .main-footer {
-        margin-top: auto;
         padding: 18px 12px;
         text-align: center;
         background: #0f172a;
@@ -357,186 +193,87 @@
         clip-path: polygon(40% 0, 100% 0, 100% 100%, 0% 100%);
       }
 
-      .footer-content {
-        position: relative;
-        z-index: 1;
-      }
-
-      .footer-content p {
-        margin: 3px 0;
-        font-size: 13px;
-      }
-
-      .footer-purpose-link {
-        color: #60a5fa;
-        font-weight: 700;
-        text-decoration: none;
-      }
-
-      .footer-purpose-link:hover {
-        text-decoration: underline;
-      }
-
-      @media (max-width: 1024px) {
-        .profile-card {
-          width: 280px;
-          height: 420px;
-        }
-      }
+      .footer-content { position: relative; z-index: 1; }
+      .footer-content p { margin: 3px 0; font-size: 13px; }
+      .footer-purpose-link { color: #60a5fa; font-weight: 700; text-decoration: none; }
 
       @media (max-width: 768px) {
-        .main-header::before {
-          width: 72%;
-        }
-
-        .header-content {
-          flex-direction: column;
-          gap: 8px;
-          align-items: flex-start;
-        }
-
-        .creators-container {
-          gap: 56px;
-        }
-
-        .frontend-section {
-          flex-direction: column;
-          align-items: center;
-        }
-
-        .profile-card {
-          width: 90%;
-          max-width: 320px;
-          height: 420px;
-        }
-
-        .vertical-role-label {
-          font-size: 12px;
-        }
+        .header-content { flex-direction: column; align-items: flex-start; gap: 8px; }
+        .main-header::before { width: 72%; }
+        .slideshow-shell { padding: 20px 14px; }
+        .slide-track { min-height: 460px; }
       }
+
+      @keyframes fadeIn { from { opacity: 0.35; } to { opacity: 1; } }
     </style>
   </head>
-  <body class="main-wrapper">
+  <body>
+    <!-- LBAS System v8.0 – UI Stabilization & Structural Hardening -->
     <header class="main-header">
       <div class="header-content">
         <div class="logo-section">
-          <img
-            src="https://up.yimg.com/ib/th/id/OIP.3wZU8KYQ9wGoRl3eoloR0QHaHa?pid=Api&rs=1&c=1&qlt=95&w=114&h=114"
-            alt="School Logo"
-            class="school-logo"
-          />
+          <img src="https://up.yimg.com/ib/th/id/OIP.3wZU8KYQ9wGoRl3eoloR0QHaHa?pid=Api&rs=1&c=1&qlt=95&w=114&h=114" alt="School Logo" class="school-logo" />
           <div>
             <h1>Library Borrowing and Assistance System</h1>
-            <small>CREATORS HIERARCHY DIRECTORY</small>
+            <small>CREATORS SHOWCASE</small>
           </div>
         </div>
       </div>
     </header>
 
-    <main class="main-content content">
+    <main class="main-content">
       <section class="page-head">
         <h2>The Makers of the Library Borrowing and Assistance System</h2>
-        <p>Structured contributor hierarchy for the LBAS development and research team.</p>
+        <p>LBAS System v8.0 – UI Stabilization &amp; Structural Hardening</p>
       </section>
 
-      <section class="hierarchy-section creators-container">
-        <div class="hierarchy-group">
-          <h3 class="group-title">Group Leader</h3>
-          <div class="cards-row">
-            <article class="profile-card" data-slot="group-leader">
-              <input type="file" accept="image/*" hidden />
-              <div class="profile-badge"></div>
-              <div class="profile-frame">
-                <div class="profile-image"></div>
-                <div class="diamond"></div>
-                <div class="diamond-small"></div>
-                <div class="profile-role-strip vertical-role-label">Group Leader</div>
-                <div class="profile-fields">
-                  <input class="profile-input" type="text" placeholder="Name" />
-                  <input class="profile-input" type="text" placeholder="Role" />
-                  <textarea class="profile-textarea" placeholder="Description"></textarea>
-                </div>
-              </div>
-            </article>
-          </div>
+      <section class="slideshow-shell">
+        <div class="slide-track" id="slideTrack">
+          <article class="creator-slide active" data-slot="group-leader">
+            <input type="file" accept="image/*" hidden />
+            <div class="creator-photo"></div>
+            <input class="creator-name" type="text" placeholder="Name" />
+            <input class="creator-role" type="text" placeholder="Role" value="Group Leader" />
+            <textarea class="creator-desc" placeholder="Short description"></textarea>
+          </article>
+
+          <article class="creator-slide" data-slot="frontend-1">
+            <input type="file" accept="image/*" hidden />
+            <div class="creator-photo"></div>
+            <input class="creator-name" type="text" placeholder="Name" />
+            <input class="creator-role" type="text" placeholder="Role" value="Front-End Developer" />
+            <textarea class="creator-desc" placeholder="Short description"></textarea>
+          </article>
+
+          <article class="creator-slide" data-slot="frontend-2">
+            <input type="file" accept="image/*" hidden />
+            <div class="creator-photo"></div>
+            <input class="creator-name" type="text" placeholder="Name" />
+            <input class="creator-role" type="text" placeholder="Role" value="Front-End Developer" />
+            <textarea class="creator-desc" placeholder="Short description"></textarea>
+          </article>
+
+          <article class="creator-slide" data-slot="backend-1">
+            <input type="file" accept="image/*" hidden />
+            <div class="creator-photo"></div>
+            <input class="creator-name" type="text" placeholder="Name" />
+            <input class="creator-role" type="text" placeholder="Role" value="Back-End Developer" />
+            <textarea class="creator-desc" placeholder="Short description"></textarea>
+          </article>
+
+          <article class="creator-slide" data-slot="research-1">
+            <input type="file" accept="image/*" hidden />
+            <div class="creator-photo"></div>
+            <input class="creator-name" type="text" placeholder="Name" />
+            <input class="creator-role" type="text" placeholder="Role" value="Research Writer &amp; Paper Compiler" />
+            <textarea class="creator-desc" placeholder="Short description"></textarea>
+          </article>
         </div>
 
-        <div class="hierarchy-group">
-          <h3 class="group-title">Front-End Developers</h3>
-          <div class="cards-row frontend-section">
-            <article class="profile-card" data-slot="frontend-1">
-              <input type="file" accept="image/*" hidden />
-              <div class="profile-badge"></div>
-              <div class="profile-frame">
-                <div class="profile-image"></div>
-                <div class="diamond"></div>
-                <div class="diamond-small"></div>
-                <div class="profile-role-strip vertical-role-label">Front-End Developer</div>
-                <div class="profile-fields">
-                  <input class="profile-input" type="text" placeholder="Name" />
-                  <input class="profile-input" type="text" placeholder="Role" />
-                  <textarea class="profile-textarea" placeholder="Description"></textarea>
-                </div>
-              </div>
-            </article>
-            <article class="profile-card" data-slot="frontend-2">
-              <input type="file" accept="image/*" hidden />
-              <div class="profile-badge"></div>
-              <div class="profile-frame">
-                <div class="profile-image"></div>
-                <div class="diamond"></div>
-                <div class="diamond-small"></div>
-                <div class="profile-role-strip vertical-role-label">Front-End Developer</div>
-                <div class="profile-fields">
-                  <input class="profile-input" type="text" placeholder="Name" />
-                  <input class="profile-input" type="text" placeholder="Role" />
-                  <textarea class="profile-textarea" placeholder="Description"></textarea>
-                </div>
-              </div>
-            </article>
-          </div>
-        </div>
-
-        <div class="hierarchy-group">
-          <h3 class="group-title">Back-End Developer</h3>
-          <div class="cards-row">
-            <article class="profile-card" data-slot="backend-1">
-              <input type="file" accept="image/*" hidden />
-              <div class="profile-badge"></div>
-              <div class="profile-frame">
-                <div class="profile-image"></div>
-                <div class="diamond"></div>
-                <div class="diamond-small"></div>
-                <div class="profile-role-strip vertical-role-label">Back-End Developer</div>
-                <div class="profile-fields">
-                  <input class="profile-input" type="text" placeholder="Name" />
-                  <input class="profile-input" type="text" placeholder="Role" />
-                  <textarea class="profile-textarea" placeholder="Description"></textarea>
-                </div>
-              </div>
-            </article>
-          </div>
-        </div>
-
-        <div class="hierarchy-group">
-          <h3 class="group-title">Research Writer &amp; Paper Compiler</h3>
-          <div class="cards-row">
-            <article class="profile-card" data-slot="research-1">
-              <input type="file" accept="image/*" hidden />
-              <div class="profile-badge"></div>
-              <div class="profile-frame">
-                <div class="profile-image"></div>
-                <div class="diamond"></div>
-                <div class="diamond-small"></div>
-                <div class="profile-role-strip vertical-role-label">Research Writer &amp; Paper Compiler</div>
-                <div class="profile-fields">
-                  <input class="profile-input" type="text" placeholder="Name" />
-                  <input class="profile-input" type="text" placeholder="Role" />
-                  <textarea class="profile-textarea" placeholder="Description"></textarea>
-                </div>
-              </div>
-            </article>
-          </div>
+        <div class="slide-controls">
+          <button class="slide-arrow" id="prevBtn" aria-label="Previous">&#10094;</button>
+          <div class="dots" id="dots"></div>
+          <button class="slide-arrow" id="nextBtn" aria-label="Next">&#10095;</button>
         </div>
       </section>
     </main>
@@ -545,95 +282,91 @@
       <div class="footer-content">
         <p>© 2025 Library Borrowing and Assistance System</p>
         <p>The Makers of the System</p>
-        <p>
-          Purpose:
-          <a class="footer-purpose-link" href="/creators">Creators Page</a>
-        </p>
+        <p>Purpose: <a class="footer-purpose-link" href="/creators">Creators Page</a></p>
       </div>
     </footer>
 
     <script>
-      const cards = Array.from(document.querySelectorAll(".profile-card"));
+      const slides = Array.from(document.querySelectorAll('.creator-slide'));
+      const dotsWrap = document.getElementById('dots');
+      let currentIndex = 0;
 
-      function getCardPayload(card) {
-        const fields = card.querySelectorAll(".profile-input, .profile-textarea");
+      function getPayload(slide) {
         return {
-          slot: card.dataset.slot,
-          name: fields[0].value.trim(),
-          role: fields[1].value.trim() || card.querySelector(".vertical-role-label").textContent.trim(),
-          description: fields[2].value.trim(),
+          slot: slide.dataset.slot,
+          name: slide.querySelector('.creator-name').value.trim(),
+          role: slide.querySelector('.creator-role').value.trim(),
+          description: slide.querySelector('.creator-desc').value.trim()
         };
       }
 
-      function applyCardProfile(card, profile) {
-        const fields = card.querySelectorAll(".profile-input, .profile-textarea");
-        fields[0].value = profile?.name || "";
-        fields[1].value = profile?.role || card.querySelector(".vertical-role-label").textContent.trim();
-        fields[2].value = profile?.description || "";
-
-        if (profile?.photo) {
-          card.querySelector(".profile-image").style.backgroundImage = `url(Profile/${profile.photo})`;
-          card.classList.add("has-image");
+      function applyProfile(slide, profile) {
+        if (!profile) return;
+        slide.querySelector('.creator-name').value = profile.name || '';
+        slide.querySelector('.creator-role').value = profile.role || slide.querySelector('.creator-role').value;
+        slide.querySelector('.creator-desc').value = profile.description || '';
+        if (profile.photo) {
+          slide.querySelector('.creator-photo').style.backgroundImage = `url(Profile/${profile.photo})`;
         }
       }
 
-      async function saveCard(card, photoFile = null) {
-        const payload = getCardPayload(card);
-        if (!payload.name || !payload.role || !payload.slot) {
-          return;
-        }
+      async function saveSlide(slide, photoFile = null) {
+        const payload = getPayload(slide);
+        if (!payload.slot || !payload.name || !payload.role) return;
 
         const form = new FormData();
-        Object.entries(payload).forEach(([key, value]) => form.append(key, value));
-        if (photoFile) {
-          form.append("photo", photoFile);
-        }
+        Object.entries(payload).forEach(([k, v]) => form.append(k, v));
+        if (photoFile) form.append('photo', photoFile);
 
-        const response = await fetch("/api/creators/upload", {
-          method: "POST",
-          body: form,
-        });
-
-        if (!response.ok) {
-          console.error("Unable to save creator profile");
-          return;
-        }
+        const response = await fetch('/api/creators/upload', { method: 'POST', body: form });
+        if (!response.ok) return;
 
         const result = await response.json();
         if (result?.success && result.profile?.photo) {
-          card.querySelector(".profile-image").style.backgroundImage = `url(Profile/${result.profile.photo})`;
-          card.classList.add("has-image");
+          slide.querySelector('.creator-photo').style.backgroundImage = `url(Profile/${result.profile.photo})`;
         }
       }
 
       async function loadProfiles() {
-        const response = await fetch("/api/creators/profiles");
-        if (!response.ok) {
-          return;
-        }
-
+        const response = await fetch('/api/creators/profiles');
+        if (!response.ok) return;
         const data = await response.json();
         const profiles = data?.profiles || {};
-        cards.forEach((card) => applyCardProfile(card, profiles[card.dataset.slot]));
+        slides.forEach((slide) => applyProfile(slide, profiles[slide.dataset.slot]));
       }
 
-      cards.forEach((card) => {
-        const imageArea = card.querySelector(".profile-image");
-        const input = card.querySelector("input[type='file']");
-        const fields = card.querySelectorAll(".profile-input, .profile-textarea");
+      function renderSlides(index) {
+        slides.forEach((slide, i) => slide.classList.toggle('active', i === index));
+        Array.from(document.querySelectorAll('.dot')).forEach((dot, i) => dot.classList.toggle('active', i === index));
+      }
 
-        imageArea.addEventListener("click", () => input.click());
-        input.addEventListener("change", () => {
-          if (input.files && input.files[0]) {
-            saveCard(card, input.files[0]);
-          }
+      function shift(step) {
+        currentIndex = (currentIndex + step + slides.length) % slides.length;
+        renderSlides(currentIndex);
+      }
+
+      slides.forEach((slide, i) => {
+        const dot = document.createElement('button');
+        dot.className = 'dot' + (i === 0 ? ' active' : '');
+        dot.addEventListener('click', () => {
+          currentIndex = i;
+          renderSlides(currentIndex);
+        });
+        dotsWrap.appendChild(dot);
+
+        const inputFile = slide.querySelector('input[type="file"]');
+        slide.querySelector('.creator-photo').addEventListener('click', () => inputFile.click());
+        inputFile.addEventListener('change', () => {
+          if (inputFile.files && inputFile.files[0]) saveSlide(slide, inputFile.files[0]);
         });
 
-        fields.forEach((field) => {
-          field.addEventListener("blur", () => saveCard(card));
+        slide.querySelectorAll('.creator-name, .creator-role, .creator-desc').forEach((field) => {
+          field.addEventListener('blur', () => saveSlide(slide));
         });
       });
 
+      document.getElementById('prevBtn').addEventListener('click', () => shift(-1));
+      document.getElementById('nextBtn').addEventListener('click', () => shift(1));
       loadProfiles();
     </script>
   </body>
