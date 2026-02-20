@@ -903,6 +903,11 @@
         staffSessionID = localStorage.getItem('adminSchoolId') || '',
         staffSessionToken = localStorage.getItem('adminToken') || '';
 
+    function getAuthHeaders() {
+        const token = staffSessionToken || localStorage.getItem('adminToken') || '';
+        return token ? { Authorization: token } : {};
+    }
+
     const editModal = new bootstrap.Modal(document.getElementById('editModal'));
     const leaderboardProfileModal = new bootstrap.Modal(document.getElementById('leaderboardProfileModal'));
 
@@ -921,20 +926,30 @@
     async function loadData(resetFilter = false) {
         try {
             const preservedFilterCat = activeFilterCat;
+            const authHeaders = getAuthHeaders();
             const [bRes, uRes, aRes, tRes] = await Promise.all([
-                fetch('/api/books'),
-                fetch('/api/users'), 
-                fetch('/api/admins'),
-                fetch('/api/transactions')
+                fetch('/api/books', { headers: authHeaders }),
+                fetch('/api/users', { headers: authHeaders }), 
+                fetch('/api/admins', { headers: authHeaders }),
+                fetch('/api/transactions', { headers: authHeaders })
             ]);
+
+            if ([bRes, uRes, aRes, tRes].some(res => !res.ok)) {
+                throw new Error('Unauthorized or failed API request');
+            }
             
             masterBooks = await bRes.json();
             const allUsers = await uRes.json();
             masterAdmins = await aRes.json();
             masterTransactions = await tRes.json();
+
+            if (!Array.isArray(masterBooks)) masterBooks = [];
+            if (!Array.isArray(masterAdmins)) masterAdmins = [];
+            if (!Array.isArray(masterTransactions)) masterTransactions = [];
+            const normalizedUsers = Array.isArray(allUsers) ? allUsers : [];
             
-            masterUsers = allUsers.filter(u => u.status !== 'pending');
-            pendingRequests = allUsers.filter(u => u.status === 'pending');
+            masterUsers = normalizedUsers.filter(u => u.status !== 'pending');
+            pendingRequests = normalizedUsers.filter(u => u.status === 'pending');
 
             document.getElementById('syncDot').classList.add('sync-online');
             document.getElementById('systemStateText').innerText = "Live & Synced";
