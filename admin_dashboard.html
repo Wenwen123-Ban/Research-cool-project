@@ -688,7 +688,7 @@
                 <table class="table table-hover align-middle mb-0">
                     <thead class="bg-light text-muted">
                         <tr class="small text-uppercase">
-                            <th class="ps-4">Status</th><th>Book Code</th><th>Borrowed By</th><th>Timer</th><th class="text-end pe-4">Control</th>
+                            <th class="ps-4">Status</th><th>Book Code</th><th>Borrowed By</th><th>Timer</th><th class="text-end pe-4">Menu</th>
                         </tr>
                     </thead>
                     <tbody id="monitorBody"></tbody>
@@ -835,6 +835,21 @@
 
 </div>
 
+
+<div class="modal fade" id="transactionDetailModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg rounded-4">
+            <div class="modal-header border-0 pb-0">
+                <h5 class="fw-bold mb-0" id="transactionModalTitle">Transaction Info</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body p-4">
+                <div id="transactionModalBody" class="small text-muted"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
 <div class="modal fade" id="editModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content border-0 shadow-lg" style="border-radius: 24px; overflow: hidden;">
@@ -910,6 +925,7 @@
 
     const editModal = new bootstrap.Modal(document.getElementById('editModal'));
     const leaderboardProfileModal = new bootstrap.Modal(document.getElementById('leaderboardProfileModal'));
+    const transactionDetailModal = new bootstrap.Modal(document.getElementById('transactionDetailModal'));
 
     window.onload = () => {
         mountAdminDropdown();
@@ -1263,9 +1279,54 @@
         if((await res.json()).success) { addHistory(`Manual Register: ${document.getElementById('regID').value}`); alert("User Added"); loadData(); }
     }
 
+    function findMemberById(schoolId) {
+        const sid = String(schoolId || '').toLowerCase();
+        return [...masterUsers, ...masterAdmins].find(u => String(u.school_id || '').toLowerCase() === sid) || null;
+    }
+
+    function showTransactionInfo(bookNo) {
+        const transaction = masterTransactions.find(t => t.book_no === bookNo && (t.status === 'Borrowed' || t.status === 'Reserved'));
+        if (!transaction) return;
+        const member = findMemberById(transaction.school_id) || {};
+        document.getElementById('transactionModalTitle').innerText = 'Reservation Info';
+        document.getElementById('transactionModalBody').innerHTML = `
+            <div class="d-flex align-items-center gap-3 mb-3">
+                <img src="/Profile/${member.photo || 'default.png'}" class="rounded-circle" style="width:58px;height:58px;object-fit:cover;" alt="profile">
+                <div>
+                    <div class="fw-bold text-dark">${member.name || transaction.borrower_name || transaction.school_id}</div>
+                    <div class="small text-muted">ID: ${transaction.school_id || '-'}</div>
+                </div>
+            </div>
+            <div class="border rounded-3 p-3 bg-light">
+                <div><span class="fw-bold text-dark">Book No:</span> <code>${transaction.book_no || '-'}</code></div>
+                <div class="mt-1"><span class="fw-bold text-dark">Title:</span> ${transaction.title || 'Unknown Title'}</div>
+                <div class="mt-1"><span class="fw-bold text-dark">Pickup Location:</span> ${transaction.pickup_location || 'Not specified'}</div>
+                <div class="mt-1"><span class="fw-bold text-dark">Note:</span> ${transaction.reservation_note || 'N/A'}</div>
+            </div>`;
+        transactionDetailModal.show();
+    }
+
+    function showBorrowedInfo(bookNo) {
+        const transaction = masterTransactions.find(t => t.book_no === bookNo && t.status === 'Borrowed');
+        if (!transaction) {
+            alert('Borrowed details are available once the reservation is converted to Borrowed.');
+            return;
+        }
+        document.getElementById('transactionModalTitle').innerText = 'Borrowed Schedule';
+        document.getElementById('transactionModalBody').innerHTML = `
+            <div class="border rounded-3 p-3 bg-light">
+                <div><span class="fw-bold text-dark">Book:</span> <code>${transaction.book_no || '-'}</code> - ${transaction.title || 'Unknown Title'}</div>
+                <div class="mt-2"><span class="fw-bold text-dark">Borrowed Date:</span> ${transaction.date || '-'}</div>
+                <div class="mt-1"><span class="fw-bold text-dark">Return Due Date:</span> ${transaction.expiry || '-'}</div>
+                <div class="mt-1"><span class="fw-bold text-dark">Reserved At:</span> ${transaction.reserved_at || transaction.date || '-'}</div>
+                <div class="mt-1"><span class="fw-bold text-dark">Reservation Countdown (legacy):</span> 30 minutes</div>
+            </div>`;
+        transactionDetailModal.show();
+    }
+
     async function syncMonitor() {
         const active = masterTransactions.filter(t => t.status === 'Borrowed' || t.status === 'Reserved');
-        document.getElementById('monitorBody').innerHTML = active.map(t => `<tr><td class="ps-4"><span class="status-pill badge-${t.status.toLowerCase()}">${t.status}</span></td><td><code class="fw-bold text-dark">${t.book_no}</code></td><td class="small fw-bold">${t.school_id}</td><td class="timer font-monospace fw-bold text-primary" data-expiry="${t.expiry}">...</td><td class="text-end pe-4">${isStaff ? `<button class="btn btn-sm btn-danger px-3 rounded-pill fw-bold" onclick="releaseAsset('${t.book_no}')">RELEASE</button>` : `<i class="fas fa-lock text-muted"></i>`}</td></tr>`).join('') || '<tr><td colspan="5" class="text-center py-4 text-muted">No active transactions.</td></tr>';
+        document.getElementById('monitorBody').innerHTML = active.map(t => `<tr><td class="ps-4"><span class="status-pill badge-${t.status.toLowerCase()}">${t.status}</span></td><td><code class="fw-bold text-dark">${t.book_no}</code></td><td class="small fw-bold">${t.school_id}</td><td>${t.status === 'Reserved' ? '<span class="small text-warning fw-bold">Awaiting pickup</span>' : `<span class="timer font-monospace fw-bold text-primary" data-expiry="${t.expiry || ''}">...</span>`}</td><td class="text-end pe-4">${isStaff ? `<div class="dropdown d-inline-block"><button class="btn btn-sm btn-light border rounded-circle" data-bs-toggle="dropdown"><i class="fas fa-ellipsis-v"></i></button><ul class="dropdown-menu dropdown-menu-end shadow"><li><button class="dropdown-item" onclick="showTransactionInfo('${t.book_no}')">Info</button></li><li><button class="dropdown-item" onclick="showBorrowedInfo('${t.book_no}')">Borrowed</button></li><li><hr class="dropdown-divider"></li><li><button class="dropdown-item text-danger" onclick="releaseAsset('${t.book_no}')">Release</button></li></ul></div>` : `<i class="fas fa-lock text-muted"></i>`}</td></tr>`).join('') || '<tr><td colspan="5" class="text-center py-4 text-muted">No active transactions.</td></tr>';
         updateTimers();
     }
 
@@ -1324,12 +1385,13 @@
 
     async function releaseAsset(b_no) {
         if(!confirm("Return " + b_no + "?")) return;
-        const res = await fetch('/api/process_transaction', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ book_no: b_no, action: 'return' }) });
+        const res = await fetch('/api/process_transaction', { method: 'POST', headers: {'Content-Type': 'application/json', ...getAuthHeaders()}, body: JSON.stringify({ book_no: b_no, action: 'return' }) });
         if((await res.json()).success) { addHistory(`Returned Book: ${b_no}`); loadData(); }
     }
 
     function updateTimers() {
         document.querySelectorAll('.timer').forEach(el => {
+            if(!el.dataset.expiry){ el.innerText = 'Awaiting pickup'; return; }
             const diff = new Date(el.dataset.expiry) - new Date();
             el.innerText = diff <= 0 ? "OVERDUE" : `${Math.floor(diff / 60000)}m ${Math.floor((diff % 60000) / 1000)}s`;
             if(diff <= 0) el.classList.add('text-danger', 'fw-black');

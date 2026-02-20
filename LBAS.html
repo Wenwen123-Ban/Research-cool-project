@@ -822,6 +822,27 @@
       </div>
     </div>
 
+    <div id="reserveModal" class="modal-overlay">
+      <div class="custom-modal text-start">
+        <h4 class="fw-bold text-center mb-1">Reserve Book</h4>
+        <p class="text-muted small text-center mb-4">Confirm reservation details.</p>
+        <div class="mb-3">
+          <label class="small fw-bold ms-2">Borrower Name</label>
+          <input type="text" id="reserveBorrowerName" class="form-control rounded-pill bg-light border-0 px-3" placeholder="Your full name" />
+        </div>
+        <div class="mb-3">
+          <label class="small fw-bold ms-2">Pickup Location</label>
+          <input type="text" id="reservePickupLocation" class="form-control rounded-pill bg-light border-0 px-3" placeholder="e.g. Main Library Counter" />
+        </div>
+        <div class="mb-4">
+          <label class="small fw-bold ms-2">Reservation Note</label>
+          <textarea id="reserveNote" rows="3" class="form-control rounded-4 bg-light border-0 px-3" placeholder="Reason / additional details"></textarea>
+        </div>
+        <button class="btn btn-primary w-100 rounded-pill fw-bold py-2 mb-2 shadow-sm" onclick="submitReserveForm()">CONFIRM RESERVATION</button>
+        <button class="btn btn-outline-secondary w-100 rounded-pill fw-bold py-2" onclick="toggleModal('reserveModal', false)">CANCEL</button>
+      </div>
+    </div>
+
     <div id="loginSection" class="content">
       <div class="login-card">
         <div class="mb-4">
@@ -1052,10 +1073,11 @@
       const ALL_COLLECTION_LIMIT = 20;
       const CATEGORY_LIMIT = 10;
       const MAX_ACTIVE_RESERVATIONS = 5;
-      const RESERVATION_DURATION_MS = 30 * 60 * 1000;
+      const BORROW_DURATION_MS = 2 * 24 * 60 * 60 * 1000;
       let userReservations = {};
       let userActiveLeases = {};
       let pendingReservationRequests = new Set();
+      let pendingReserveBookNo = null;
       let latestBooksByCode = {};
       let allCollectionOrder = [];
       let categoryCollectionOrder = {};
@@ -1093,15 +1115,9 @@
       }
 
       function normalizeReservation(transaction) {
-        const expiryDate = transaction.expiry
-          ? new Date(transaction.expiry)
-          : transaction.date
-            ? new Date(new Date(transaction.date).getTime() + RESERVATION_DURATION_MS)
-            : new Date(Date.now() + RESERVATION_DURATION_MS);
-
         return {
           book_no: transaction.book_no,
-          expiry: expiryDate.toISOString(),
+          expiry: transaction.expiry || null,
         };
       }
 
@@ -1124,23 +1140,19 @@
       }
 
       function normalizeLease(transaction) {
-        const expiryDate = transaction.expiry
-          ? new Date(transaction.expiry)
-          : transaction.date
-            ? new Date(
-                new Date(transaction.date).getTime() +
-                  (transaction.status === "Borrowed"
-                    ? 7 * 24 * 60 * 60 * 1000
-                    : RESERVATION_DURATION_MS),
-              )
-            : new Date(Date.now() + RESERVATION_DURATION_MS);
+        let expiryDate = null;
+        if (transaction.expiry) {
+          expiryDate = new Date(transaction.expiry);
+        } else if (transaction.date && getNormalizedStatus(transaction) === "borrowed") {
+          expiryDate = new Date(new Date(transaction.date).getTime() + BORROW_DURATION_MS);
+        }
 
         const book = latestBooksByCode[transaction.book_no] || {};
         return {
           book_no: transaction.book_no,
           title: transaction.title || book.title || "Unknown Title",
           status: transaction.status,
-          expiry: expiryDate.toISOString(),
+          expiry: expiryDate ? expiryDate.toISOString() : null,
         };
       }
 
@@ -1186,6 +1198,7 @@
         }
 
         userActiveLeases[key] = userActiveLeases[key].filter((lease) => {
+          if (getNormalizedStatus(lease) === "reserved") return true;
           const expiryTime = new Date(lease.expiry).getTime();
           return Number.isFinite(expiryTime) && expiryTime > now;
         });
@@ -1242,7 +1255,7 @@
                     <span class="badge ${getNormalizedStatus(lease) === "reserved" ? "bg-warning text-dark" : "bg-success"}">${lease.status}</span>
                   </div>
                   <div class="text-end">
-                    <span class="timer small fw-bold text-primary d-block" data-expiry="${lease.expiry}" data-status="${lease.status}" data-book-no="${lease.book_no}">Calculating...</span>
+                    ${getNormalizedStatus(lease) === "reserved" ? `<span class="small fw-bold text-warning d-block">Awaiting pickup</span>` : `<span class="timer small fw-bold text-primary d-block" data-expiry="${lease.expiry}" data-status="${lease.status}" data-book-no="${lease.book_no}">Calculating...</span>`}
                     ${getNormalizedStatus(lease) === "reserved" ? `<button class="btn btn-sm btn-outline-danger rounded-pill mt-1" onclick="releaseReservation('${lease.book_no}')">Release</button>` : ""}
                   </div>
                 </div>`,
@@ -1641,29 +1654,54 @@
         }
       }
 
-      async function reserveBook(no) {
+      function reserveBook(no) {
         const schoolID = String(currentID);
         if (!schoolID) return;
         if (pendingReservationRequests.has(no)) return;
 
-        const reserveButton = document.querySelector(
-          `button[data-book-no="${no}"]`,
-        );
+        pendingReserveBookNo = no;
+        document.getElementById("reserveBorrowerName").value =
+          document.getElementById("full_name")?.innerText || "";
+        document.getElementById("reservePickupLocation").value = "";
+        document.getElementById("reserveNote").value = "";
+        toggleModal("reserveModal", true);
+      }
+
+      async function submitReserveForm() {
+        const no = pendingReserveBookNo;
+        if (!no) return;
+
+        const reserveButton = document.querySelector(`button[data-book-no="${no}"]`);
+        const borrowerName = document
+          .getElementById("reserveBorrowerName")
+          .value.trim();
+        const pickupLocation = document
+          .getElementById("reservePickupLocation")
+          .value.trim();
+        const reservationNote = document.getElementById("reserveNote").value.trim();
+
+        if (!borrowerName || !pickupLocation) {
+          alert("Please provide borrower name and pickup location.");
+          return;
+        }
+        if (pendingReservationRequests.has(no)) return;
+
         pendingReservationRequests.add(no);
         if (reserveButton) reserveButton.disabled = true;
 
         try {
-          if (!confirm("Reserve this book? You have 30 minutes to claim it.")) {
-            return;
-          }
-
           const res = await fetch("/api/reserve", {
             method: "POST",
-            headers: { "Content-Type": "application/json" },
+            headers: {
+              "Content-Type": "application/json",
+              ...(currentToken ? { Authorization: currentToken } : {}),
+            },
             body: JSON.stringify({
               book_no: no,
               school_id: currentID,
-              token: currentToken,
+              borrower_name: borrowerName,
+              pickup_location: pickupLocation,
+              reservation_note: reservationNote,
             }),
           });
 
@@ -1678,14 +1716,13 @@
           if (!Array.isArray(userReservations[key])) userReservations[key] = [];
           if (!Array.isArray(userActiveLeases[key])) userActiveLeases[key] = [];
 
-          const expiry = new Date(Date.now() + RESERVATION_DURATION_MS).toISOString();
           const leaseTitle = (latestBooksByCode[no] && latestBooksByCode[no].title) ||
             result.title ||
             "Unknown Title";
 
           userReservations[key].push({
             book_no: no,
-            expiry,
+            expiry: null,
           });
           userActiveLeases[key] = userActiveLeases[key].filter(
             (lease) => lease.book_no !== no,
@@ -1694,9 +1731,11 @@
             book_no: no,
             title: leaseTitle,
             status: "Reserved",
-            expiry,
+            expiry: null,
           });
           renderActiveLeases();
+          toggleModal("reserveModal", false);
+          pendingReserveBookNo = null;
 
           showStatusPopup(
             "success",
@@ -1724,7 +1763,10 @@
         try {
           const res = await fetch("/api/process_transaction", {
             method: "POST",
-            headers: { "Content-Type": "application/json" },
+            headers: {
+              "Content-Type": "application/json",
+              ...(currentToken ? { Authorization: currentToken } : {}),
+            },
             body: JSON.stringify({
               book_no: bookNo,
               action: "return",
@@ -1764,6 +1806,10 @@
       function updateTimers() {
         let foundExpiredReservation = false;
         document.querySelectorAll(".timer").forEach((el) => {
+          if (!el.dataset.expiry) {
+            el.innerText = "Awaiting librarian confirmation";
+            return;
+          }
           const diff = new Date(el.dataset.expiry) - new Date();
           if (diff <= 0) {
             if (el.dataset.status === "Reserved") {
@@ -1852,6 +1898,7 @@
         userReservations = {};
         userActiveLeases = {};
         pendingReservationRequests = new Set();
+        pendingReserveBookNo = null;
         latestBooksByCode = {};
         allCollectionOrder = [];
         categoryCollectionOrder = {};
@@ -1862,6 +1909,7 @@
         document.getElementById("portalSection").style.display = "none";
         document.getElementById("loginSection").style.display = "flex";
         document.getElementById("accountPanel").style.display = "none";
+        toggleModal("reserveModal", false);
         document.getElementById("bookContainer").innerHTML = "";
       }
 
