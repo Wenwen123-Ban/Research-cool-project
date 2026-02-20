@@ -124,7 +124,7 @@ def initialize_system():
         if not os.path.exists(file_path):
             if key == "config":
                 initial_data = {
-                    "system_version": "7.2 Beta",
+                    "system_version": "8.0",
                     "rating_enabled": True,
                     "last_reboot": datetime.now().strftime("%Y-%m-%d %H:%M"),
                 }
@@ -264,18 +264,62 @@ def run_auto_sync_engine():
     now = datetime.now()
     changes_made = False
 
-    # 1. Sync Reservations (Expire if not claimed)
+    # 1. Sync Reservations (Expire if not claimed) - backend authoritative
+    active_transactions = []
     for t in transactions:
-        if t["status"] == "Reserved" and "expiry" in t:
+        status = str(t.get("status", "")).strip()
+        if status != "Reserved":
+            active_transactions.append(t)
+            continue
+
+        expiry_raw = t.get("reservation_expiry") or t.get("expiry")
+        if not expiry_raw:
+            active_transactions.append(t)
+            continue
+
+        expired = False
+        for fmt in ("%Y-%m-%d %H:%M:%S", "%Y-%m-%d %H:%M"):
             try:
-                if now > datetime.strptime(t["expiry"], "%Y-%m-%d %H:%M"):
-                    t["status"] = "Expired"
-                    for b in books:
-                        if b["book_no"] == t["book_no"]:
-                            b["status"] = "Available"
-                            changes_made = True
-            except:
-                pass
+                expired = now > datetime.strptime(expiry_raw, fmt)
+                break
+            except ValueError:
+                continue
+
+        if expired:
+            for b in books:
+                if b.get("book_no") == t.get("book_no") and b.get("status") == "Reserved":
+                    b["status"] = "Available"
+                    changes_made = True
+                    break
+            continue
+
+        active_transactions.append(t)
+
+    if len(active_transactions) != len(transactions):
+        transactions = active_transactions
+        changes_made = True
+
+    # 1.1 Overdue detection for borrowed books
+    for t in transactions:
+        if str(t.get("status", "")).strip() != "Borrowed":
+            continue
+        due_raw = t.get("return_date")
+        if not due_raw:
+            continue
+        due = None
+        for fmt in ("%Y-%m-%d", "%Y-%m-%d %H:%M", "%Y-%m-%d %H:%M:%S"):
+            try:
+                due = datetime.strptime(due_raw, fmt)
+                break
+            except ValueError:
+                continue
+        if due and now.date() > due.date():
+            t["status"] = "Unreturned"
+            for b in books:
+                if b.get("book_no") == t.get("book_no"):
+                    b["status"] = "Unreturned"
+                    break
+            changes_made = True
 
     # 2. Sync Recovery Tickets (Cleanup expired)
     initial_tickets = len(tickets)
@@ -308,12 +352,6 @@ def index_gateway():
 @app.route("/lbas")
 def lbas_site():
     return render_template("LBAS.html")
-
-
-@app.route("/tablet")
-def tablet_kiosk():
-    """Restored Kiosk Mode for Library Tablet"""
-    return render_template("user_tablet.html")
 
 
 @app.route("/audit_users")
@@ -755,6 +793,7 @@ def api_get_admins():
 def api_get_transactions():
     if not require_auth():
         return jsonify({"success": False, "message": "Unauthorized"}), 401
+    run_auto_sync_engine()
     return jsonify(get_db("transactions"))
 
 
@@ -872,6 +911,7 @@ def api_process_trans():
     b_no = data.get("book_no")
     action = data.get("action")  # 'borrow' or 'return'
     s_id = str(data.get("school_id", "")).strip().lower()
+    return_date = str(data.get("return_date", "")).strip()
 
     books = get_db("books")
     transactions = get_db("transactions")
@@ -883,58 +923,43 @@ def api_process_trans():
                 b["status"] = "Available"
         # Close all open transactions for this book
         for t in transactions:
-            if t["book_no"] == b_no and t["status"] in ["Reserved", "Borrowed"]:
+            if t["book_no"] == b_no and t["status"] in ["Reserved", "Borrowed", "Unreturned"]:
                 t["status"] = "Returned"
                 t["return_date"] = datetime.now().strftime("%Y-%m-%d %H:%M")
 
     # LOGIC 2: BORROW (Restored for Tablet)
     elif action == "borrow":
-        target_book = next((b for b in books if b["book_no"] == b_no), None)
+        if not return_date:
+            return jsonify({"success": False, "message": "Return date is required."}), 400
+        try:
+            datetime.strptime(return_date, "%Y-%m-%d")
+        except ValueError:
+            return jsonify({"success": False, "message": "Invalid return date format."}), 400
 
-        # Validation: Is it available or reserved by THIS user?
-        user_reserved = any(
-            t["book_no"] == b_no
-            and t["school_id"] == s_id
-            and t["status"] == "Reserved"
-            for t in transactions
+        target_book = next((b for b in books if b.get("book_no") == b_no), None)
+        reservation = next(
+            (
+                t
+                for t in transactions
+                if t.get("book_no") == b_no
+                and t.get("school_id") == s_id
+                and t.get("status") == "Reserved"
+            ),
+            None,
         )
 
-        if target_book and (target_book["status"] == "Available" or user_reserved):
-            target_book["status"] = "Borrowed"
+        if not target_book or not reservation or target_book.get("status") != "Reserved":
+            return jsonify({"success": False, "message": "Book must be reserved before borrowing."}), 400
 
-            # Close reservation if exists
-            for t in transactions:
-                if t["book_no"] == b_no and t["status"] == "Reserved":
-                    t["status"] = "Converted"  # Mark old reservation as done
-
-            # Create Borrow Record
-            previous_reservation = next(
-                (
-                    t
-                    for t in transactions
-                    if t.get("book_no") == b_no
-                    and t.get("school_id") == s_id
-                    and t.get("status") in ["Reserved", "Converted"]
-                ),
-                None,
-            )
-            now = datetime.now()
-            transactions.append(
-                {
-                    "book_no": b_no,
-                    "title": (target_book or {}).get("title", ""),
-                    "school_id": s_id,
-                    "status": "Borrowed",
-                    "date": now.strftime("%Y-%m-%d %H:%M"),
-                    "expiry": (now + timedelta(days=2)).strftime("%Y-%m-%d %H:%M"),
-                    "pickup_location": (previous_reservation or {}).get("pickup_location", ""),
-                    "reservation_note": (previous_reservation or {}).get("reservation_note", ""),
-                    "borrower_name": (previous_reservation or {}).get("borrower_name", ""),
-                    "reserved_at": (previous_reservation or {}).get("date", ""),
-                }
-            )
-        else:
-            return jsonify({"success": False, "message": "Book Unavailable"}), 400
+        now = datetime.now()
+        reservation["status"] = "Borrowed"
+        reservation["borrow_date"] = now.strftime("%Y-%m-%d %H:%M")
+        reservation["return_date"] = return_date
+        reservation["date"] = reservation["borrow_date"]
+        reservation.pop("reservation_expiry", None)
+        reservation.pop("reservation_start", None)
+        reservation.pop("expiry", None)
+        target_book["status"] = "Borrowed"
 
     save_db("books", books)
     save_db("transactions", transactions)
@@ -953,24 +978,10 @@ def api_reserve():
     transactions = get_db("transactions")
     now = datetime.now()
 
-    # 1) Cleanup expired reservations for this user before any validation.
-    expired_found = False
-    for t in transactions:
-        if t.get("school_id") != s_id or t.get("status") != "Reserved":
-            continue
-        expiry_raw = t.get("expiry")
-        if not expiry_raw:
-            continue
-        try:
-            if now > datetime.strptime(expiry_raw, "%Y-%m-%d %H:%M"):
-                t["status"] = "Expired"
-                expired_found = True
-                for b in books:
-                    if b.get("book_no") == t.get("book_no") and b.get("status") == "Reserved":
-                        b["status"] = "Available"
-                        break
-        except ValueError:
-            continue
+    run_auto_sync_engine()
+    books = get_db("books")
+    transactions = get_db("transactions")
+    now = datetime.now()
 
     # 2) Query active reservations after cleanup.
     active_reservations = [
@@ -981,9 +992,6 @@ def api_reserve():
 
     # 3) Block duplicate active reservation for same book.
     if any(t.get("book_no") == b_no for t in active_reservations):
-        if expired_found:
-            save_db("books", books)
-            save_db("transactions", transactions)
         return (
             jsonify(
                 {
@@ -997,9 +1005,6 @@ def api_reserve():
 
     # 4) Enforce max active reservation count.
     if len(active_reservations) >= 5:
-        if expired_found:
-            save_db("books", books)
-            save_db("transactions", transactions)
         return (
             jsonify(
                 {
@@ -1014,6 +1019,10 @@ def api_reserve():
     for b in books:
         if b["book_no"] == b_no and b["status"] == "Available":
             b["status"] = "Reserved"
+            reservation_start = now.strftime("%Y-%m-%d %H:%M:%S")
+            reservation_expiry = (now + timedelta(minutes=30)).strftime(
+                "%Y-%m-%d %H:%M:%S"
+            )
             transactions.append(
                 {
                     "book_no": b_no,
@@ -1021,7 +1030,9 @@ def api_reserve():
                     "school_id": s_id,
                     "status": "Reserved",
                     "date": now.strftime("%Y-%m-%d %H:%M"),
-                    "expiry": None,
+                    "reservation_start": reservation_start,
+                    "reservation_expiry": reservation_expiry,
+                    "expiry": reservation_expiry,
                     "borrower_name": str(data.get("borrower_name", "")).strip(),
                     "pickup_location": str(data.get("pickup_location", "")).strip(),
                     "reservation_note": str(data.get("reservation_note", "")).strip(),
@@ -1030,10 +1041,6 @@ def api_reserve():
             save_db("books", books)
             save_db("transactions", transactions)
             return jsonify({"success": True})
-
-    if expired_found:
-        save_db("books", books)
-        save_db("transactions", transactions)
 
     return jsonify({"success": False, "message": "Unavailable"})
 
