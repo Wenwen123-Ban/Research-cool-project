@@ -872,21 +872,30 @@
         if (!currentUser) return;
         const pulse = document.getElementById("syncIndicator");
         pulse.classList.add("syncing");
+        const token = sessionStorage.getItem("kiosk_token");
+        const authHeaders = token ? { Authorization: token } : {};
 
         try {
           const [bRes, tRes] = await Promise.all([
-            fetch("/api/books"),
-            fetch("/api/transactions"),
+            fetch("/api/books", { headers: authHeaders }),
+            fetch("/api/transactions", { headers: authHeaders }),
           ]);
 
-          books = await bRes.json();
-          transactions = await tRes.json();
+          if (!bRes.ok || !tRes.ok) {
+            throw new Error("Unable to load books and transactions");
+          }
+
+          const booksData = await bRes.json();
+          const txData = await tRes.json();
+
+          books = Array.isArray(booksData) ? booksData : [];
+          transactions = Array.isArray(txData) ? txData : [];
 
           renderCategories();
           syncUI();
           updateUserLoanCard();
         } catch (e) {
-          console.error("Sync Error");
+          console.error("Sync Error", e);
         } finally {
           setTimeout(() => pulse.classList.remove("syncing"), 800);
         }
