@@ -1548,12 +1548,29 @@
       async function loadData() {
         if (!currentID) return;
         try {
+          const authHeaders = currentToken
+            ? { Authorization: currentToken }
+            : {};
           const [bRes, tRes] = await Promise.all([
-            fetch("/api/books"),
-            fetch("/api/transactions"),
+            fetch("/api/books", { headers: authHeaders }),
+            fetch("/api/transactions", { headers: authHeaders }),
           ]);
+
+          if (!bRes.ok) {
+            document.getElementById("bookContainer").innerHTML =
+              '<div class="text-center text-danger mt-5"><i class="fas fa-lock fa-2x mb-3"></i><br>Unable to load books. Please login again.</div>';
+            return;
+          }
+
           const books = await bRes.json();
           const trans = parseTransactionPayload(await tRes.json());
+
+          if (!Array.isArray(books)) {
+            document.getElementById("bookContainer").innerHTML =
+              '<div class="text-center text-danger mt-5"><i class="fas fa-exclamation-triangle fa-2x mb-3"></i><br>Book data is unavailable right now.</div>';
+            return;
+          }
+
           latestBooksByCode = books.reduce((acc, book) => {
             acc[book.book_no] = book;
             return acc;
