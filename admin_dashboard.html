@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Admin Command Center | LBAS System v8.0 – UI Stabilization & Structural Hardening</title>
+    <title>Admin Command Center | LBAS System v8.0 – Lifecycle Stabilization & Structural Hardening</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
@@ -44,7 +44,7 @@
 
         header {
             position: relative;
-            z-index: 2000;
+            z-index: 1000;
         }
         .main-content,
         .dashboard-main {
@@ -119,8 +119,8 @@
         .is-unlocked .control-lock-overlay { opacity: 0; pointer-events: none; transform: scale(1.1); }
         
         /* Component Styling */
-        .card { border: none; border-radius: 24px; box-shadow: var(--card-shadow); margin-bottom: 30px; transition: 0.3s; overflow: hidden; background: white; }
-        .card:hover { transform: translateY(-3px); }
+        .card { border: none; border-radius: 24px; box-shadow: var(--card-shadow); margin-bottom: 30px; transition: 0.3s; overflow: visible; background: white; }
+        .card:hover { box-shadow: 0 12px 34px rgba(0,0,0,0.12); }
 
         .glass-card {
             background: rgba(0, 0, 0, 0.55);
@@ -302,6 +302,19 @@
             font-weight: 700;
         }
 
+
+        .dropdown-menu {
+            position: absolute !important;
+            z-index: 6000 !important;
+        }
+
+        .modal {
+            z-index: 10000 !important;
+        }
+
+        .modal-backdrop {
+            z-index: 9990 !important;
+        }
         #bulkCard .batch-category-dropdown .dropdown-menu {
             background: rgba(0, 0, 0, 0.85) !important;
             border: 1px solid #ffd54f !important;
@@ -515,7 +528,7 @@
     </style>
 </head>
 <body id="mainBody">
-<!-- LBAS System v8.0 – UI Stabilization & Structural Hardening -->
+<!-- LBAS System v8.0 – Lifecycle Stabilization & Structural Hardening -->
 <div id="global-dropdown-container"></div>
 <!-- ===== HEADER SECTION ===== -->
     <header class="main-header">
@@ -850,6 +863,35 @@
     </div>
 </div>
 
+<div class="modal fade" id="borrowConfirmModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg rounded-4">
+            <div class="modal-header border-0 pb-0">
+                <h5 class="fw-bold mb-0"><i class="fas fa-hand-holding text-primary me-2"></i>Confirm Borrow</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body p-4">
+                <div class="mb-3">
+                    <label class="small fw-bold text-muted mb-1">Book Title</label>
+                    <input type="text" id="borrowModalBookTitle" class="form-control" readonly>
+                </div>
+                <div class="mb-3">
+                    <label class="small fw-bold text-muted mb-1">User Account</label>
+                    <input type="text" id="borrowModalUser" class="form-control" readonly>
+                </div>
+                <div class="mb-3">
+                    <label class="small fw-bold text-muted mb-1">Return Date</label>
+                    <input type="date" id="borrowModalReturnDate" class="form-control">
+                </div>
+                <div class="d-flex gap-2">
+                    <button class="btn btn-secondary w-50" data-bs-dismiss="modal">Cancel</button>
+                    <button class="btn btn-primary w-50 fw-bold" onclick="confirmBorrowAction()">Confirm</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
 <div class="modal fade" id="editModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content border-0 shadow-lg" style="border-radius: 24px; overflow: hidden;">
@@ -926,6 +968,9 @@
     const editModal = new bootstrap.Modal(document.getElementById('editModal'));
     const leaderboardProfileModal = new bootstrap.Modal(document.getElementById('leaderboardProfileModal'));
     const transactionDetailModal = new bootstrap.Modal(document.getElementById('transactionDetailModal'));
+    const borrowConfirmModal = new bootstrap.Modal(document.getElementById('borrowConfirmModal'));
+    let pendingBorrowBookNo = '';
+    let pendingBorrowSchoolId = '';
 
     window.onload = () => {
         mountAdminDropdown();
@@ -1316,18 +1361,61 @@
         document.getElementById('transactionModalBody').innerHTML = `
             <div class="border rounded-3 p-3 bg-light">
                 <div><span class="fw-bold text-dark">Book:</span> <code>${transaction.book_no || '-'}</code> - ${transaction.title || 'Unknown Title'}</div>
-                <div class="mt-2"><span class="fw-bold text-dark">Borrowed Date:</span> ${transaction.date || '-'}</div>
-                <div class="mt-1"><span class="fw-bold text-dark">Return Due Date:</span> ${transaction.expiry || '-'}</div>
+                <div class="mt-2"><span class="fw-bold text-dark">Borrowed Date:</span> ${transaction.borrow_date || transaction.date || '-'}</div>
+                <div class="mt-1"><span class="fw-bold text-dark">Return Due Date:</span> ${transaction.return_date || '-'}</div>
                 <div class="mt-1"><span class="fw-bold text-dark">Reserved At:</span> ${transaction.reserved_at || transaction.date || '-'}</div>
-                <div class="mt-1"><span class="fw-bold text-dark">Reservation Countdown (legacy):</span> 30 minutes</div>
-            </div>`;
+                            </div>`;
         transactionDetailModal.show();
     }
 
     async function syncMonitor() {
-        const active = masterTransactions.filter(t => t.status === 'Borrowed' || t.status === 'Reserved');
-        document.getElementById('monitorBody').innerHTML = active.map(t => `<tr><td class="ps-4"><span class="status-pill badge-${t.status.toLowerCase()}">${t.status}</span></td><td><code class="fw-bold text-dark">${t.book_no}</code></td><td class="small fw-bold">${t.school_id}</td><td>${t.status === 'Reserved' ? '<span class="small text-warning fw-bold">Awaiting pickup</span>' : `<span class="timer font-monospace fw-bold text-primary" data-expiry="${t.expiry || ''}">...</span>`}</td><td class="text-end pe-4">${isStaff ? `<div class="dropdown d-inline-block"><button class="btn btn-sm btn-light border rounded-circle" data-bs-toggle="dropdown"><i class="fas fa-ellipsis-v"></i></button><ul class="dropdown-menu dropdown-menu-end shadow"><li><button class="dropdown-item" onclick="showTransactionInfo('${t.book_no}')">Info</button></li><li><button class="dropdown-item" onclick="showBorrowedInfo('${t.book_no}')">Borrowed</button></li><li><hr class="dropdown-divider"></li><li><button class="dropdown-item text-danger" onclick="releaseAsset('${t.book_no}')">Release</button></li></ul></div>` : `<i class="fas fa-lock text-muted"></i>`}</td></tr>`).join('') || '<tr><td colspan="5" class="text-center py-4 text-muted">No active transactions.</td></tr>';
-        updateTimers();
+        const active = masterTransactions.filter(t => ['Borrowed', 'Reserved', 'Unreturned'].includes(t.status));
+        document.getElementById('monitorBody').innerHTML = active.map(t => {
+            const dueLabel = (t.status === 'Reserved')
+                ? '<span class="small text-warning fw-bold">Awaiting pickup</span>'
+                : `<span class="small fw-bold text-primary">Due: ${t.return_date || '-'}</span>`;
+            const borrowItem = (t.status === 'Reserved' && isStaff)
+                ? `<li><button class="dropdown-item" onclick="openBorrowModal('${t.book_no}','${t.school_id}')">Borrow</button></li><li><hr class="dropdown-divider"></li>`
+                : '';
+            return `<tr><td class="ps-4"><span class="status-pill badge-${t.status.toLowerCase()}">${t.status}</span></td><td><code class="fw-bold text-dark">${t.book_no}</code></td><td class="small fw-bold">${t.school_id}</td><td>${dueLabel}</td><td class="text-end pe-4">${isStaff ? `<div class="dropdown d-inline-block"><button class="btn btn-sm btn-light border rounded-circle" data-bs-toggle="dropdown"><i class="fas fa-ellipsis-v"></i></button><ul class="dropdown-menu dropdown-menu-end shadow"><li><button class="dropdown-item" onclick="showTransactionInfo('${t.book_no}')">Info</button></li>${borrowItem}<li><button class="dropdown-item" onclick="showBorrowedInfo('${t.book_no}')">Borrowed</button></li><li><hr class="dropdown-divider"></li><li><button class="dropdown-item text-danger" onclick="releaseAsset('${t.book_no}')">Release</button></li></ul></div>` : `<i class="fas fa-lock text-muted"></i>`}</td></tr>`;
+        }).join('') || '<tr><td colspan="5" class="text-center py-4 text-muted">No active transactions.</td></tr>';
+    }
+
+    function openBorrowModal(bookNo, schoolId) {
+        const tx = masterTransactions.find(t => t.book_no === bookNo && t.school_id === schoolId && t.status === 'Reserved');
+        if (!tx) return alert('Reservation not found.');
+        pendingBorrowBookNo = bookNo;
+        pendingBorrowSchoolId = schoolId;
+        document.getElementById('borrowModalBookTitle').value = tx.title || bookNo;
+        document.getElementById('borrowModalUser').value = schoolId;
+        document.getElementById('borrowModalReturnDate').value = '';
+        borrowConfirmModal.show();
+    }
+
+    async function confirmBorrowAction() {
+        if (!pendingBorrowBookNo || !pendingBorrowSchoolId) return;
+        const returnDate = document.getElementById('borrowModalReturnDate').value;
+        if (!returnDate) return alert('Please select a return date.');
+        const res = await fetch('/api/process_transaction', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
+            body: JSON.stringify({
+                book_no: pendingBorrowBookNo,
+                school_id: pendingBorrowSchoolId,
+                action: 'borrow',
+                return_date: returnDate
+            })
+        });
+        const data = await res.json();
+        if (!res.ok || !data.success) {
+            alert(data.message || 'Unable to process borrow.');
+            return;
+        }
+        borrowConfirmModal.hide();
+        addHistory(`Borrow confirmed: ${pendingBorrowBookNo} for ${pendingBorrowSchoolId}`);
+        pendingBorrowBookNo = '';
+        pendingBorrowSchoolId = '';
+        loadData();
     }
 
 
@@ -1444,7 +1532,25 @@
     }
 
     function setRole(role) { currentRole = role; document.getElementById('btnStudent').classList.toggle('active', role === 'student'); document.getElementById('btnAdmin').classList.toggle('active', role === 'admin'); }
-    function logout() { localStorage.clear(); location.reload(); }
+    async function logout() {
+        try {
+            await fetch('/api/logout', { method: 'POST', headers: getAuthHeaders() });
+        } catch (e) {}
+        isStaff = false;
+        staffSessionID = '';
+        staffSessionToken = '';
+        localStorage.removeItem('isStaffAuth');
+        localStorage.removeItem('adminName');
+        localStorage.removeItem('adminPhoto');
+        localStorage.removeItem('adminSchoolId');
+        localStorage.removeItem('adminToken');
+        document.getElementById('mainBody').classList.remove('is-unlocked');
+        document.getElementById('loginForm').style.display = 'block';
+        document.getElementById('adminProfile').style.display = 'none';
+        const link = document.getElementById('linkLeaderboard');
+        if (link) link.style.display = 'none';
+        loadData();
+    }
     function addHistory(msg) { adminHistory.unshift({ msg, time: new Date().toLocaleTimeString() }); localStorage.setItem('adminHistory', JSON.stringify(adminHistory.slice(0, 20))); renderAdminHistory(); }
     function renderAdminHistory() { const log = document.getElementById('adminActionLog'); if(log) log.innerHTML = adminHistory.map(h => `<div class="history-item"><div class="fw-bold">${h.msg}</div><div class="text-muted smaller">${h.time}</div></div>`).join(''); }
     function clearHistory() { adminHistory = []; localStorage.removeItem('adminHistory'); renderAdminHistory(); }
