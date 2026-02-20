@@ -908,15 +908,29 @@ def api_process_trans():
                     t["status"] = "Converted"  # Mark old reservation as done
 
             # Create Borrow Record
+            previous_reservation = next(
+                (
+                    t
+                    for t in transactions
+                    if t.get("book_no") == b_no
+                    and t.get("school_id") == s_id
+                    and t.get("status") in ["Reserved", "Converted"]
+                ),
+                None,
+            )
+            now = datetime.now()
             transactions.append(
                 {
                     "book_no": b_no,
+                    "title": (target_book or {}).get("title", ""),
                     "school_id": s_id,
                     "status": "Borrowed",
-                    "date": datetime.now().strftime("%Y-%m-%d %H:%M"),
-                    "expiry": (datetime.now() + timedelta(days=7)).strftime(
-                        "%Y-%m-%d %H:%M"
-                    ),  # 7 Day Loan
+                    "date": now.strftime("%Y-%m-%d %H:%M"),
+                    "expiry": (now + timedelta(days=2)).strftime("%Y-%m-%d %H:%M"),
+                    "pickup_location": (previous_reservation or {}).get("pickup_location", ""),
+                    "reservation_note": (previous_reservation or {}).get("reservation_note", ""),
+                    "borrower_name": (previous_reservation or {}).get("borrower_name", ""),
+                    "reserved_at": (previous_reservation or {}).get("date", ""),
                 }
             )
         else:
@@ -1003,12 +1017,14 @@ def api_reserve():
             transactions.append(
                 {
                     "book_no": b_no,
+                    "title": b.get("title", ""),
                     "school_id": s_id,
                     "status": "Reserved",
                     "date": now.strftime("%Y-%m-%d %H:%M"),
-                    "expiry": (now + timedelta(minutes=30)).strftime(
-                        "%Y-%m-%d %H:%M"
-                    ),
+                    "expiry": None,
+                    "borrower_name": str(data.get("borrower_name", "")).strip(),
+                    "pickup_location": str(data.get("pickup_location", "")).strip(),
+                    "reservation_note": str(data.get("reservation_note", "")).strip(),
                 }
             )
             save_db("books", books)
