@@ -278,7 +278,7 @@ def run_auto_sync_engine():
             continue
 
         expired = False
-        for fmt in ("%Y-%m-%d %H:%M:%S", "%Y-%m-%d %H:%M"):
+        for fmt in ("%Y-%m-%d %H:%M:%S", "%Y-%m-%d %H:%M", "%Y-%m-%d"):
             try:
                 expired = now > datetime.strptime(expiry_raw, fmt)
                 break
@@ -1020,9 +1020,17 @@ def api_reserve():
         if b["book_no"] == b_no and b["status"] == "Available":
             b["status"] = "Reserved"
             reservation_start = now.strftime("%Y-%m-%d %H:%M:%S")
-            reservation_expiry = (now + timedelta(minutes=30)).strftime(
-                "%Y-%m-%d %H:%M:%S"
-            )
+            pickup_date_raw = str(data.get("pickup_date", "")).strip()
+            pickup_date = ""
+            reservation_expiry_dt = now + timedelta(minutes=30)
+            if pickup_date_raw:
+                try:
+                    pickup_day = datetime.strptime(pickup_date_raw, "%Y-%m-%d")
+                    reservation_expiry_dt = pickup_day.replace(hour=23, minute=59, second=59)
+                    pickup_date = pickup_day.strftime("%Y-%m-%d")
+                except ValueError:
+                    pickup_date = ""
+            reservation_expiry = reservation_expiry_dt.strftime("%Y-%m-%d %H:%M:%S")
             transactions.append(
                 {
                     "book_no": b_no,
@@ -1034,8 +1042,8 @@ def api_reserve():
                     "reservation_expiry": reservation_expiry,
                     "expiry": reservation_expiry,
                     "borrower_name": str(data.get("borrower_name", "")).strip(),
-                    "pickup_location": str(data.get("pickup_location", "")).strip(),
-                    "reservation_note": str(data.get("reservation_note", "")).strip(),
+                    "pickup_date": pickup_date,
+                    "reserved_at": reservation_start,
                 }
             )
             save_db("books", books)

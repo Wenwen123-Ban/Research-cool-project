@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Admin Command Center | LBAS System v8.0 – Lifecycle Stabilization & Structural Hardening</title>
+    <title>Admin Command Center | LBAS System v9.2 – Reservation & Borrow Lifecycle Upgrade</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
@@ -528,7 +528,7 @@
     </style>
 </head>
 <body id="mainBody">
-<!-- LBAS System v8.0 – Lifecycle Stabilization & Structural Hardening -->
+<!-- LBAS System v9.2 – Reservation & Borrow Lifecycle Upgrade -->
 <div id="global-dropdown-container"></div>
 <!-- ===== HEADER SECTION ===== -->
     <header class="main-header">
@@ -701,7 +701,7 @@
                 <table class="table table-hover align-middle mb-0">
                     <thead class="bg-light text-muted">
                         <tr class="small text-uppercase">
-                            <th class="ps-4">Status</th><th>Book Code</th><th>Borrowed By</th><th>Timer</th><th class="text-end pe-4">Menu</th>
+                            <th class="ps-4">Book No.</th><th>Book Title</th><th>Borrower ID</th><th>Date</th><th>Status</th><th class="text-end pe-4">Info / Borrow / Release</th>
                         </tr>
                     </thead>
                     <tbody id="monitorBody"></tbody>
@@ -876,8 +876,20 @@
                     <input type="text" id="borrowModalBookTitle" class="form-control" readonly>
                 </div>
                 <div class="mb-3">
-                    <label class="small fw-bold text-muted mb-1">User Account</label>
+                    <label class="small fw-bold text-muted mb-1">Book Number</label>
+                    <input type="text" id="borrowModalBookNumber" class="form-control" readonly>
+                </div>
+                <div class="mb-3">
+                    <label class="small fw-bold text-muted mb-1">Borrower Name</label>
+                    <input type="text" id="borrowModalBorrowerName" class="form-control" readonly>
+                </div>
+                <div class="mb-3">
+                    <label class="small fw-bold text-muted mb-1">Borrower ID</label>
                     <input type="text" id="borrowModalUser" class="form-control" readonly>
+                </div>
+                <div class="mb-3">
+                    <label class="small fw-bold text-muted mb-1">Pickup Date</label>
+                    <input type="text" id="borrowModalPickupDate" class="form-control" readonly>
                 </div>
                 <div class="mb-3">
                     <label class="small fw-bold text-muted mb-1">Return Date</label>
@@ -1345,8 +1357,8 @@
             <div class="border rounded-3 p-3 bg-light">
                 <div><span class="fw-bold text-dark">Book No:</span> <code>${transaction.book_no || '-'}</code></div>
                 <div class="mt-1"><span class="fw-bold text-dark">Title:</span> ${transaction.title || 'Unknown Title'}</div>
-                <div class="mt-1"><span class="fw-bold text-dark">Pickup Location:</span> ${transaction.pickup_location || 'Not specified'}</div>
-                <div class="mt-1"><span class="fw-bold text-dark">Note:</span> ${transaction.reservation_note || 'N/A'}</div>
+                <div class="mt-1"><span class="fw-bold text-dark">Pickup Date:</span> ${transaction.pickup_date || '-'}</div>
+                <div class="mt-1"><span class="fw-bold text-dark">Reserved At:</span> ${transaction.reserved_at || transaction.date || '-'}</div>
             </div>`;
         transactionDetailModal.show();
     }
@@ -1371,14 +1383,20 @@
     async function syncMonitor() {
         const active = masterTransactions.filter(t => ['Borrowed', 'Reserved', 'Unreturned'].includes(t.status));
         document.getElementById('monitorBody').innerHTML = active.map(t => {
-            const dueLabel = (t.status === 'Reserved')
-                ? '<span class="small text-warning fw-bold">Awaiting pickup</span>'
-                : `<span class="small fw-bold text-primary">Due: ${t.return_date || '-'}</span>`;
-            const borrowItem = (t.status === 'Reserved' && isStaff)
-                ? `<li><button class="dropdown-item" onclick="openBorrowModal('${t.book_no}','${t.school_id}')">Borrow</button></li><li><hr class="dropdown-divider"></li>`
-                : '';
-            return `<tr><td class="ps-4"><span class="status-pill badge-${t.status.toLowerCase()}">${t.status}</span></td><td><code class="fw-bold text-dark">${t.book_no}</code></td><td class="small fw-bold">${t.school_id}</td><td>${dueLabel}</td><td class="text-end pe-4">${isStaff ? `<div class="dropdown d-inline-block"><button class="btn btn-sm btn-light border rounded-circle" data-bs-toggle="dropdown"><i class="fas fa-ellipsis-v"></i></button><ul class="dropdown-menu dropdown-menu-end shadow"><li><button class="dropdown-item" onclick="showTransactionInfo('${t.book_no}')">Info</button></li>${borrowItem}<li><button class="dropdown-item" onclick="showBorrowedInfo('${t.book_no}')">Borrowed</button></li><li><hr class="dropdown-divider"></li><li><button class="dropdown-item text-danger" onclick="releaseAsset('${t.book_no}')">Release</button></li></ul></div>` : `<i class="fas fa-lock text-muted"></i>`}</td></tr>`;
-        }).join('') || '<tr><td colspan="5" class="text-center py-4 text-muted">No active transactions.</td></tr>';
+            const infoButton = `<button class="btn btn-sm btn-light border me-1" onclick="showTransactionInfo('${t.book_no}')">Info</button>`;
+            const borrowedButton = `<button class="btn btn-sm btn-primary me-1" onclick="openBorrowModal('${t.book_no}','${t.school_id}')" ${t.status === 'Reserved' && isStaff ? '' : 'disabled'}>Borrow</button>`;
+            const releaseButton = `<button class="btn btn-sm btn-outline-danger" onclick="releaseAsset('${t.book_no}')" ${isStaff ? '' : 'disabled'}>Release</button>`;
+            const dateLabel = t.status === 'Reserved' ? (t.pickup_date || t.reservation_expiry || '-') : (t.return_date || '-');
+            const statusText = t.status === 'Unreturned' ? 'Over Due' : t.status;
+            return `<tr>
+                <td class="ps-4"><code class="fw-bold text-dark">${t.book_no}</code></td>
+                <td class="small fw-bold">${t.title || '-'}</td>
+                <td class="small fw-bold">${t.school_id}</td>
+                <td>${dateLabel}</td>
+                <td><span class="status-pill badge-${t.status.toLowerCase()}">${statusText}</span></td>
+                <td class="text-end pe-4">${isStaff ? `${infoButton}${borrowedButton}${releaseButton}` : `<i class="fas fa-lock text-muted"></i>`}</td>
+            </tr>`;
+        }).join('') || '<tr><td colspan="6" class="text-center py-4 text-muted">No active transactions.</td></tr>';
     }
 
     function openBorrowModal(bookNo, schoolId) {
@@ -1387,7 +1405,10 @@
         pendingBorrowBookNo = bookNo;
         pendingBorrowSchoolId = schoolId;
         document.getElementById('borrowModalBookTitle').value = tx.title || bookNo;
+        document.getElementById('borrowModalBookNumber').value = bookNo;
+        document.getElementById('borrowModalBorrowerName').value = tx.borrower_name || schoolId;
         document.getElementById('borrowModalUser').value = schoolId;
+        document.getElementById('borrowModalPickupDate').value = tx.pickup_date || tx.reservation_expiry || '-';
         document.getElementById('borrowModalReturnDate').value = '';
         borrowConfirmModal.show();
     }

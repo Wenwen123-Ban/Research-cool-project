@@ -6,7 +6,7 @@
       name="viewport"
       content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
     />
-    <title>LBAS | Secured Mobile Access | LBAS System v8.0</title>
+    <title>LBAS | Secured Mobile Access | LBAS System v9.2</title>
     <link
       href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css"
       rel="stylesheet"
@@ -674,7 +674,7 @@
     </style>
   </head>
   <body class="main-wrapper">
-    <!-- LBAS System v8.0 – UI Stabilization & Structural Hardening -->
+    <!-- LBAS System v9.2 – Reservation & Borrow Lifecycle Upgrade -->
     <!-- ===== HEADER SECTION ===== -->
     <header class="main-header">
       <div class="header-content">
@@ -689,7 +689,7 @@
       </div>
     </header>
 
-    <div class="network-banner">LBAS System v8.0 – UI Stabilization & Structural Hardening</div>
+    <div class="network-banner">LBAS System v9.2 – Reservation & Borrow Lifecycle Upgrade</div>
 
     <div
       id="fabReview"
@@ -826,18 +826,26 @@
         <h4 class="fw-bold text-center mb-1">Reserve Book</h4>
         <p class="text-muted small text-center mb-4">Confirm reservation details.</p>
         <div class="mb-3">
-          <label class="small fw-bold ms-2">Borrower Name</label>
-          <input type="text" id="reserveBorrowerName" class="form-control rounded-pill bg-light border-0 px-3" placeholder="Your full name" />
+          <label class="small fw-bold ms-2">Book borrower name</label>
+          <input type="text" id="reserveBorrowerName" class="form-control rounded-pill bg-light border-0 px-3" readonly />
         </div>
         <div class="mb-3">
-          <label class="small fw-bold ms-2">Pickup Location</label>
-          <input type="text" id="reservePickupLocation" class="form-control rounded-pill bg-light border-0 px-3" placeholder="e.g. Main Library Counter" />
+          <label class="small fw-bold ms-2">Borrower ID</label>
+          <input type="text" id="reserveBorrowerId" class="form-control rounded-pill bg-light border-0 px-3" readonly />
+        </div>
+        <div class="mb-3">
+          <label class="small fw-bold ms-2">Borrowed book Title</label>
+          <input type="text" id="reserveBookTitle" class="form-control rounded-pill bg-light border-0 px-3" readonly />
+        </div>
+        <div class="mb-3">
+          <label class="small fw-bold ms-2">Borrowed Book number</label>
+          <input type="text" id="reserveBookNumber" class="form-control rounded-pill bg-light border-0 px-3" readonly />
         </div>
         <div class="mb-4">
-          <label class="small fw-bold ms-2">Reservation Note</label>
-          <textarea id="reserveNote" rows="3" class="form-control rounded-4 bg-light border-0 px-3" placeholder="Reason / additional details"></textarea>
+          <label class="small fw-bold ms-2">Date to be Picked up</label>
+          <input type="date" id="reservePickupDate" class="form-control rounded-pill bg-light border-0 px-3" />
         </div>
-        <button class="btn btn-primary w-100 rounded-pill fw-bold py-2 mb-2 shadow-sm" onclick="submitReserveForm()">CONFIRM RESERVATION</button>
+        <button class="btn btn-primary w-100 rounded-pill fw-bold py-2 mb-2 shadow-sm" onclick="submitReserveForm()">CONFIRM</button>
         <button class="btn btn-outline-secondary w-100 rounded-pill fw-bold py-2" onclick="toggleModal('reserveModal', false)">CANCEL</button>
       </div>
     </div>
@@ -853,7 +861,7 @@
           </div>
         </div>
         <h3 class="fw-bold text-dark mb-1">LBAS PORTAL</h3>
-        <p class="text-muted small mb-4">LBAS System v8.0 – UI Stabilization & Structural Hardening</p>
+        <p class="text-muted small mb-4">LBAS System v9.2 – Reservation & Borrow Lifecycle Upgrade</p>
 
         <div class="mb-3">
           <input
@@ -1152,6 +1160,8 @@
           title: transaction.title || book.title || "Unknown Title",
           status: transaction.status,
           expiry: expiryDate ? expiryDate.toISOString() : null,
+          pickup_date: transaction.pickup_date || transaction.reservation_expiry || transaction.expiry || "",
+          return_date: transaction.return_date || "",
         };
       }
 
@@ -1254,7 +1264,7 @@
                     <span class="badge ${getNormalizedStatus(lease) === "reserved" ? "bg-warning text-dark" : "bg-success"}">${lease.status}</span>
                   </div>
                   <div class="text-end">
-                    ${getNormalizedStatus(lease) === "reserved" ? `<span class="small fw-bold text-warning d-block">Awaiting pickup</span>` : `<span class="timer small fw-bold text-primary d-block" data-expiry="${lease.expiry}" data-status="${lease.status}" data-book-no="${lease.book_no}">Calculating...</span>`}
+                    ${getNormalizedStatus(lease) === "reserved" ? `<span class="small fw-bold text-warning d-block">Pick up on: ${lease.pickup_date || "-"}</span>` : `<span class="small fw-bold text-info d-block">Return on: ${lease.return_date || "-"}</span><span class="timer small fw-bold text-primary d-block" data-expiry="${lease.expiry}" data-status="${lease.status}" data-book-no="${lease.book_no}">Calculating...</span>`}
                     ${getNormalizedStatus(lease) === "reserved" ? `<button class="btn btn-sm btn-outline-danger rounded-pill mt-1" onclick="releaseReservation('${lease.book_no}')">Release</button>` : ""}
                   </div>
                 </div>`,
@@ -1659,10 +1669,15 @@
         if (pendingReservationRequests.has(no)) return;
 
         pendingReserveBookNo = no;
+        const selectedBook = latestBooksByCode[no] || {};
         document.getElementById("reserveBorrowerName").value =
           document.getElementById("full_name")?.innerText || "";
-        document.getElementById("reservePickupLocation").value = "";
-        document.getElementById("reserveNote").value = "";
+        document.getElementById("reserveBorrowerId").value = currentID || "";
+        document.getElementById("reserveBookTitle").value = selectedBook.title || "";
+        document.getElementById("reserveBookNumber").value = no;
+        const pickupDateField = document.getElementById("reservePickupDate");
+        const defaultPickupDate = new Date(Date.now() + 24 * 60 * 60 * 1000);
+        pickupDateField.value = defaultPickupDate.toISOString().slice(0, 10);
         toggleModal("reserveModal", true);
       }
 
@@ -1674,13 +1689,16 @@
         const borrowerName = document
           .getElementById("reserveBorrowerName")
           .value.trim();
-        const pickupLocation = document
-          .getElementById("reservePickupLocation")
+        const borrowerId = document
+          .getElementById("reserveBorrowerId")
           .value.trim();
-        const reservationNote = document.getElementById("reserveNote").value.trim();
+        const bookTitle = document
+          .getElementById("reserveBookTitle")
+          .value.trim();
+        const pickupDate = document.getElementById("reservePickupDate").value;
 
-        if (!borrowerName || !pickupLocation) {
-          alert("Please provide borrower name and pickup location.");
+        if (!borrowerName || !borrowerId || !bookTitle || !pickupDate) {
+          alert("Please complete reservation details first.");
           return;
         }
         if (pendingReservationRequests.has(no)) return;
@@ -1699,8 +1717,8 @@
               book_no: no,
               school_id: currentID,
               borrower_name: borrowerName,
-              pickup_location: pickupLocation,
-              reservation_note: reservationNote,
+              pickup_date: pickupDate,
+              title: bookTitle,
             }),
           });
 
@@ -1739,7 +1757,7 @@
           showStatusPopup(
             "success",
             "Reservation Confirmed",
-            "Please proceed to the librarian desk to claim your book.",
+            "Please proceed to the librarian desk before the pickup date.",
           );
           await loadReservations();
           loadData();
