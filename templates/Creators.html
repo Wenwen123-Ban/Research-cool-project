@@ -9,7 +9,7 @@
       rel="stylesheet"
     />
     
-      <link rel="stylesheet" href="Creators.css">
+      <link rel="stylesheet" href="{{ url_for('static', filename='Creators.css') }}">
 </head>
   <body>
     <!-- LBAS System v8.0 – Lifecycle Stabilization & Structural Hardening -->
@@ -91,6 +91,7 @@
     </footer>
 
     
-      <script src="Creators.js" defer></script>
+      <script>window.PROFILE_BASE = "{{ url_for('profile_image', filename='') }}";</script>
+      <script src="{{ url_for('static', filename='Creators.js') }}" defer></script>
 </body>
 </html>

@@ -16,7 +16,7 @@
       href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css"
     />
     
-      <link rel="stylesheet" href="LBAS.css">
+      <link rel="stylesheet" href="{{ url_for('static', filename='LBAS.css') }}">
 </head>
   <body class="main-wrapper">
     <!-- LBAS System v9.2 – Reservation & Borrow Lifecycle Upgrade -->
@@ -400,7 +400,7 @@
           <div class="modal-body p-4">
             <div class="card border-0 bg-light rounded-4">
               <div class="card-body text-center">
-                <img id="leaderboardProfilePhoto" src="/Profile/default.png" class="rounded-circle shadow-sm mb-3" style="width:90px;height:90px;object-fit:cover;" alt="Profile">
+                <img id="leaderboardProfilePhoto" src="{{ url_for('profile_image', filename='default.png') }}" class="rounded-circle shadow-sm mb-3" style="width:90px;height:90px;object-fit:cover;" alt="Profile">
                 <h5 id="leaderboardProfileName" class="fw-bold mb-1">-</h5>
                 <div id="leaderboardProfileId" class="text-muted small mb-3">ID: -</div>
                 <div class="d-flex justify-content-between small"><span class="text-muted">Total borrowed this month</span><span id="leaderboardProfileTotal" class="fw-bold">0</span></div>
@@ -426,6 +426,9 @@
         </p>
       </div>
     </footer>
-      <script src="LBAS.js" defer></script>
+      <script>
+        window.PROFILE_BASE = "{{ url_for('profile_image', filename='') }}";
+      </script>
+      <script src="{{ url_for('static', filename='LBAS.js') }}" defer></script>
 </body>
 </html>

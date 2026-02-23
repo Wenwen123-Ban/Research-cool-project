@@ -242,7 +242,7 @@
         const tbody = document.getElementById('requestsBody');
         tbody.innerHTML = pendingRequests.map(u => `
             <tr>
-                <td class="ps-4"><img src="/Profile/${u.photo || 'default.png'}" class="user-row-img shadow-sm"></td>
+                <td class="ps-4"><img src="${window.PROFILE_BASE || '/Profile/'}${u.photo || 'default.png'}" class="user-row-img shadow-sm"></td>
                 <td><code class="fw-bold text-dark">${u.school_id}</code></td>
                 <td class="fw-bold">${u.name}</td>
                 <td><span class="badge badge-pending">PENDING</span></td>
@@ -274,7 +274,7 @@
 
         tbody.innerHTML = filtered.map(u => `
             <tr>
-                <td class="ps-4"><img src="/Profile/${u.photo || 'default.png'}" class="user-row-img shadow-sm"></td>
+                <td class="ps-4"><img src="${window.PROFILE_BASE || '/Profile/'}${u.photo || 'default.png'}" class="user-row-img shadow-sm"></td>
                 <td><code class="fw-bold text-dark">${u.school_id}</code></td>
                 <td class="fw-bold">${u.name}</td>
                 <td><span class="badge ${u.type === 'admin' ? 'bg-danger' : 'bg-primary'}">${u.type.toUpperCase()}</span></td>
@@ -352,8 +352,8 @@
         document.getElementById('loginForm').style.display = 'none';
         document.getElementById('adminProfile').style.display = 'block';
         document.getElementById('activeAdminName').innerText = name;
-        document.getElementById('headerAvatar').src = `/Profile/${photo}`;
-        document.getElementById('activeAdminPhoto').src = `/Profile/${photo}`;
+        document.getElementById('headerAvatar').src = `${window.PROFILE_BASE || '/Profile/'}${photo}`;
+        document.getElementById('activeAdminPhoto').src = `${window.PROFILE_BASE || '/Profile/'}${photo}`;
         document.getElementById('authStatusBadge').className = "alert alert-success py-2 small fw-bold text-center border-0 shadow-sm rounded-4";
         document.getElementById('authStatusBadge').innerHTML = '<i class="fas fa-check-circle me-2"></i>AUTHORIZED';
         const link = document.getElementById('linkLeaderboard');
@@ -387,7 +387,7 @@
         document.getElementById('transactionModalTitle').innerText = 'Reservation Info';
         document.getElementById('transactionModalBody').innerHTML = `
             <div class="d-flex align-items-center gap-3 mb-3">
-                <img src="/Profile/${member.photo || 'default.png'}" class="rounded-circle" style="width:58px;height:58px;object-fit:cover;" alt="profile">
+                <img src="${window.PROFILE_BASE || '/Profile/'}${member.photo || 'default.png'}" class="rounded-circle" style="width:58px;height:58px;object-fit:cover;" alt="profile">
                 <div>
                     <div class="fw-bold text-dark">${member.name || transaction.borrower_name || transaction.school_id}</div>
                     <div class="small text-muted">ID: ${transaction.school_id || '-'}</div>
@@ -493,7 +493,7 @@
                     <td class="ps-4 fw-bold">#${r.rank || i + 1}</td>
                     <td>
                         <div class="d-flex align-items-center gap-2">
-                            <img src="/Profile/${r.photo || 'default.png'}" class="rounded-circle" style="width:36px;height:36px;object-fit:cover;" alt="${r.name}">
+                            <img src="${window.PROFILE_BASE || '/Profile/'}${r.photo || 'default.png'}" class="rounded-circle" style="width:36px;height:36px;object-fit:cover;" alt="${r.name}">
                             <div>
                                 <div class="fw-bold">${r.name || r.school_id}</div>
                                 <div class="small text-muted">${r.school_id}</div>
@@ -520,7 +520,7 @@
             if (!res.ok || !data.success) throw new Error(data.message || 'Unable to load profile.');
 
             const p = data.profile;
-            document.getElementById('leaderboardProfilePhoto').src = `/Profile/${p.photo || 'default.png'}`;
+            document.getElementById('leaderboardProfilePhoto').src = `${window.PROFILE_BASE || '/Profile/'}${p.photo || 'default.png'}`;
             document.getElementById('leaderboardProfileName').innerText = p.name || p.school_id;
             document.getElementById('leaderboardProfileId').innerText = `ID: ${p.school_id || '-'}`;
             document.getElementById('leaderboardProfileTotal').innerText = p.total_borrowed ?? 0;
