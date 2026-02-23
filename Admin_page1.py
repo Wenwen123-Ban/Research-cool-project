@@ -28,7 +28,6 @@ logging.basicConfig(
 logger = logging.getLogger("LBAS_Command_Center")
 
 PROFILE_FOLDER = "Profile"
-CREATORS_PROFILE_DB = "creators_profiles.json"
 app.config["UPLOAD_FOLDER"] = PROFILE_FOLDER
 app.config["MAX_CONTENT_LENGTH"] = 32 * 1024 * 1024
 app.config["JSONIFY_PRETTYPRINT_REGULAR"] = True
@@ -81,45 +80,8 @@ def is_session_valid(user_id, token):
     return True
 
 
-def ensure_creators_profile_db():
-    if not os.path.exists(CREATORS_PROFILE_DB):
-        with open(CREATORS_PROFILE_DB, "w", encoding="utf-8") as f:
-            json.dump({}, f, indent=4, ensure_ascii=False)
-
-
-def load_creators_profiles():
-    ensure_creators_profile_db()
-    try:
-        with open(CREATORS_PROFILE_DB, "r", encoding="utf-8") as f:
-            data = json.load(f)
-            if isinstance(data, dict):
-                return data
-            if isinstance(data, list):
-                normalized = {}
-                for idx, entry in enumerate(data):
-                    if isinstance(entry, dict):
-                        slot_key = str(entry.get("slot") or f"legacy_{idx}")
-                        normalized[slot_key] = entry
-                return normalized
-            return {}
-    except Exception:
-        return {}
-
-
-def save_creators_profiles(data):
-    ensure_creators_profile_db()
-    with open(CREATORS_PROFILE_DB, "w", encoding="utf-8") as f:
-        json.dump(data if isinstance(data, dict) else {}, f, indent=4, ensure_ascii=False)
-
-
-def sanitize_creator_name(value):
-    base = secure_filename(str(value or "").strip())
-    return base[:80] or "creator"
-
-
 def initialize_system():
     logger.info("SYSTEM INIT: verifying database integrity...")
-    ensure_creators_profile_db()
     for key, file_path in DB_FILES.items():
         if not os.path.exists(file_path):
             if key == "config":
@@ -362,54 +324,6 @@ def audit_view():
 @app.route("/dev/analysis")
 def dev_analysis():
     return render_template("Developers_rate_analysis.html")
-
-
-@app.route("/creators")
-def creators_page():
-    return render_template("Creators.html")
-
-
-@app.route("/api/creators/upload", methods=["POST"])
-def api_creators_upload():
-    payload = request.get_json(silent=True) or {}
-    slot = str(request.form.get("slot") or payload.get("slot") or "").strip()
-    role = str(request.form.get("role") or payload.get("role") or "").strip()
-    name = str(request.form.get("name") or payload.get("name") or "").strip()
-    description = str(
-        request.form.get("description") or payload.get("description") or ""
-    ).strip()
-
-    if not slot or not role or not name:
-        return (
-            jsonify({"success": False, "message": "slot, role and name are required"}),
-            400,
-        )
-
-    photo_file = request.files.get("photo")
-    profiles = load_creators_profiles()
-    existing = profiles.get(slot, {})
-    photo_filename = existing.get("photo", "")
-
-    if photo_file and photo_file.filename:
-        ext = os.path.splitext(secure_filename(photo_file.filename))[1].lower() or ".png"
-        photo_filename = f"{sanitize_creator_name(name)}_{int(datetime.now().timestamp() * 1000)}{ext}"
-        photo_file.save(os.path.join(app.config["UPLOAD_FOLDER"], photo_filename))
-    profiles[slot] = {
-        "slot": slot,
-        "role": role,
-        "name": name,
-        "description": description,
-        "photo": photo_filename,
-        "updated_at": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-    }
-    save_creators_profiles(profiles)
-
-    return jsonify({"success": True, "profile": profiles[slot], "total": len(profiles)})
-
-
-@app.route("/api/creators/profiles")
-def api_creators_profiles():
-    return jsonify({"success": True, "profiles": load_creators_profiles()})
 
 
 @app.route("/api/bulk_register", methods=["POST"])
