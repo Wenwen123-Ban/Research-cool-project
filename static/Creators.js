@@ -17,7 +17,7 @@
         slide.querySelector('.creator-role').value = profile.role || slide.querySelector('.creator-role').value;
         slide.querySelector('.creator-desc').value = profile.description || '';
         if (profile.photo) {
-          slide.querySelector('.creator-photo').style.backgroundImage = `url(Profile/${profile.photo})`;
+          slide.querySelector('.creator-photo').style.backgroundImage = `url(${(window.PROFILE_BASE || "/Profile/") + profile.photo})`;
         }
       }
 
@@ -34,7 +34,7 @@
 
         const result = await response.json();
         if (result?.success && result.profile?.photo) {
-          slide.querySelector('.creator-photo').style.backgroundImage = `url(Profile/${result.profile.photo})`;
+          slide.querySelector('.creator-photo').style.backgroundImage = `url(${(window.PROFILE_BASE || "/Profile/") + result.profile.photo})`;
         }
       }
 

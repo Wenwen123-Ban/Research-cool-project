@@ -408,7 +408,7 @@
                     <td class="fw-bold">#${row.rank || idx + 1}</td>
                     <td>
                       <div class="d-flex align-items-center gap-2">
-                        <img src="/Profile/${row.photo || "default.png"}" class="rounded-circle" style="width:36px;height:36px;object-fit:cover;" alt="${row.name}">
+                        <img src="${window.PROFILE_BASE || '/Profile/'}${row.photo || 'default.png'}" class="rounded-circle" style="width:36px;height:36px;object-fit:cover;" alt="${row.name}">
                         <div>
                           <div class="fw-bold">${row.name || row.school_id}</div>
                           <div class="small text-muted">${row.school_id}</div>
@@ -436,7 +436,7 @@
           if (!res.ok || !data.success) throw new Error();
           const p = data.profile;
           document.getElementById("leaderboardProfilePhoto").src =
-            `/Profile/${p.photo || "default.png"}`;
+            `${window.PROFILE_BASE || '/Profile/'}${p.photo || 'default.png'}`;
           document.getElementById("leaderboardProfileName").innerText =
             p.name || p.school_id;
           document.getElementById("leaderboardProfileId").innerText =
@@ -484,8 +484,8 @@
         document.getElementById("id_val").innerText =
           "ID: " + profile.school_id;
         document.getElementById("user_pic").src = profile.photo
-          ? "/Profile/" + profile.photo
-          : "/Profile/default.png";
+          ? (window.PROFILE_BASE || "/Profile/") + profile.photo
+          : `${window.PROFILE_BASE || '/Profile/'}default.png`;
         switchPortalView("catalog");
 
         fetchCategories();
