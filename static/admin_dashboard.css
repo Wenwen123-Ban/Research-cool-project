@@ -197,6 +197,19 @@
         .dashboard-main table tr { border-bottom: 1px solid rgba(255,255,255,0.2); }
         .dashboard-main table tr:hover { background: rgba(255,255,255,0.08); }
 
+
+        /* Ensure the user directory filter select remains readable on light backgrounds */
+        #userTypeFilter {
+            color: #1f2937 !important;
+            background-color: #f8f9fa !important;
+            border: 1px solid rgba(31, 41, 55, 0.2) !important;
+        }
+
+        #userTypeFilter option {
+            color: #111827;
+            background-color: #ffffff;
+        }
+
         .dashboard-main .btn-primary {
             background: #ffd54f;
             color: #000;
